@@ -36,7 +36,7 @@ Outcome
 
 Artifacts generated into:
 
- $GOBIN/appname/<os>/<arch>/latest/appname(.exe?)
+ $GOBIN/appname/$GOOS/$GOARCH/latest/appname(.exe?)
 
 Todo
 ----
