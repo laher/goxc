@@ -1,11 +1,10 @@
 goxc
 ====
 
-Cross compiler for Go, written in Go but still using *os.exec()* to call 'go build'.
+GoXC is a cross-compilation utility for Go, written in Go but using *os.exec()* to call 'go build'.
 
-This is inspired by Dave Cheney's Bash script [golang-crosscompile](https://github.com/davecheney/golang-crosscompile).
+GoXC inspired by Dave Cheney's Bash script [golang-crosscompile](https://github.com/davecheney/golang-crosscompile).
 BUT, goxc crosscompiles to all platforms at once. The artifacts are saved into a folder structure.
-
 
 Pre-requisites
 --------------
