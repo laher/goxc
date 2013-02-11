@@ -9,29 +9,40 @@ BUT, goxc crosscompiles to all platforms at once. The artifacts are saved into a
 
 Pre-requisites
 --------------
-
 At this stage you still need to:
 
- * Download the go source code and set up the GOROOT accordingly.
- * Use golang-crosscompile (above) to build the toolchains.
+ 1. Use Linux (I haven't tested on other platforms)
+ 2. Download the go source code and set up the GOROOT accordingly.
 
 Basic Usage
 -----------
-Simply run:
- go gocx.go .
-Or using the binary:
- gocx .
+
+ 1. To build the toolchains for all platforms:
+
+  go gocx.go -t
+
+ 2. To build binaries for your library:
+
+  go gocx.go path/to/library
+
+ Or using the binary:
+
+  gocx path/to/library
+
+ Or use 'gocx -h' for more options
 
 Outcome
 -------
-Artifacts stored in:
+
+Artifacts generated into:
+
  $GOBIN/appname/<os>/<arch>/latest/appname(.exe?)
 
 Todo
 ----
 
- * 'build toolchains' option.
- * 'generate Downloads page' option.
+ * 'specify artifact folder' option
+ * 'generate Downloads page' option
  * 'download golang source' option?
 
 See also
