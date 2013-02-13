@@ -123,7 +123,7 @@ func XCPlat(goos string ,arch string, call []string, is_first bool) string {
       if gobin == "" {
          gobin= gopath+"/bin"
       }
-      out_destination_root = gobin + app_name
+      out_destination_root = gobin + "/" + app_name + "-xc"
    }
 
    out_dir:= out_destination_root+"/"+relative_dir
@@ -136,6 +136,7 @@ func XCPlat(goos string ,arch string, call []string, is_first bool) string {
    if goos == WINDOWS {
       ending= ".exe"
    }
+   relative_bin_for_markdown:= goos+"_"+arch+"/"+app_name+ending
    relative_bin:= relative_dir+"/"+app_name+ending
    cmd.Args= append(cmd.Args,out_destination_root+"/"+relative_bin)
    cmd.Args= append(cmd.Args,call[0])
@@ -179,7 +180,7 @@ func XCPlat(goos string ,arch string, call []string, is_first bool) string {
             if is_first {
                _, err = fmt.Fprintf(f,"%s downloads (%s)\n------------\n\n", app_name, artifact_version)
             }
-            _, err = fmt.Fprintf(f," * [%s %s](%s)\n", goos, arch, relative_bin)
+            _, err = fmt.Fprintf(f," * [%s %s](%s)\n", goos, arch, relative_bin_for_markdown)
          }
          if err != nil {
             log.Printf("Could not report to '%s': %s", report_filename, err )
