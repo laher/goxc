@@ -1,7 +1,7 @@
 goxc
 ====
 
-goxc cross-compiles Go programs to (up to) 11 target platforms at once.
+goxc cross-compiles Go programs to (up to) 9 target platforms at once.
 
 goxc is written in Go but using *os.exec()* to call 'go build'.
 
@@ -18,18 +18,24 @@ At this stage you still need to:
 Basic Usage
 -----------
 
- 1. To build the toolchains for all platforms:
+### Run once:
 
-      goxc -t
+To build the toolchains for all 9 platforms:
 
- 2. To build binaries for your app:
+       goxc -t
 
-      cd path/to/app/folder
-      goxc .
+### Now build your artifacts
 
- Or use 'goxc -h' for more options.
+To build binaries for your app:
 
- Note that if running from source, replace 'goxc' with 'go run goxc.go'
+       cd path/to/app/folder
+       goxc .
+
+### Going further
+
+See 'goxc -h' for more options.
+
+Note that if running from source, replace 'goxc' with 'go run goxc.go'
 
 Outcome
 -------
