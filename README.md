@@ -1,10 +1,12 @@
 goxc
 ====
 
-goxc is a cross-compilation utility for Go programs, written in Go but using *os.exec()* to call 'go build'.
+goxc cross-compiles Go programs to (up to) 11 target platforms at once.
 
-goxc inspired by Dave Cheney's Bash script [golang-crosscompile](https://github.com/davecheney/golang-crosscompile).
-BUT, goxc crosscompiles to all platforms at once. The artifacts are saved into a folder structure.
+goxc is written in Go but using *os.exec()* to call 'go build'.
+
+goxc was inspired by Dave Cheney's Bash script [golang-crosscompile](https://github.com/davecheney/golang-crosscompile).
+BUT, goxc crosscompiles to all platforms at once. The artifacts are saved into a folder structure along with a markdown file of relative links.
 
 Pre-requisites
 --------------
@@ -45,14 +47,14 @@ e.g.
 Limitations
 -----------
 
- * Only tested on Linux. No idea if it would work on Win/Mac/FreeBSD
  * Currently there's a bug meaning you can only run goxc on the current folder.
+ * Only tested on Linux. No idea if it would work on Win/Mac/FreeBSD
  * Currently goxc is only designed to build standalone Go apps without linked libraries. You can try but YMMV
 
 Todo
 ----
 
- * Fix bug to allow building of a different directory other than current working directory.
+ * Fix bug to allow building of a different directory (other than current working directory)
  * 'specify artifact folder' option
  * 'specify version name' option
  * 'generate Downloads page' option
