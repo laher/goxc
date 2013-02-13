@@ -18,31 +18,46 @@ Basic Usage
 
  1. To build the toolchains for all platforms:
 
-  go goxc.go -t
+      goxc -t
 
- 2. To build binaries for your library:
+ 2. To build binaries for your app:
 
-  go goxc.go path/to/library
+      cd path/to/app/folder
+      goxc .
 
- Or using the binary:
+ Or use 'goxc -h' for more options.
 
-  goxc path/to/library
-
- Or use 'goxc -h' for more options
+ Note that if running from source, replace 'goxc' with 'go run goxc.go'
 
 Outcome
 -------
 
 Artifacts generated into:
 
- $GOBIN/appname/$GOOS/$GOARCH/latest/appname(.exe?)
+ (outputfolder)/(version)/(OS)/(ARCH)/appname(.exe)
+
+By default, the output folder is ($GOBIN)/appname, and the version is 'latest', but you can specify these.
+
+e.g.
+
+      goxc -av=0.1 -d=/home/me/myapp/ghpages/downloads/ .
+
+Limitations
+-----------
+
+ * Only tested on Linux. No idea if it would work on Win/Mac/FreeBSD
+ * Currently there's a bug meaning you can only run goxc on the current folder.
+ * Currently goxc is only designed to build standalone Go apps without linked libraries. You can try but YMMV
 
 Todo
 ----
 
+ * Fix bug to allow building of a different directory other than current working directory.
  * 'specify artifact folder' option
+ * 'specify version name' option
  * 'generate Downloads page' option
  * 'download golang source' option?
+ * building .so/.dll shared libraries?
 
 See also
 --------
