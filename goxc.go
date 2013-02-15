@@ -94,12 +94,12 @@ func BuildToolchain(goos string, arch string) {
 	}
 	var scriptname string
 	if gohostos == WINDOWS {
-		scriptname = `\src\make.bat`
+		scriptname = "make.bat"
 	} else {
-		scriptname = "/src/make.bash"
+		scriptname = "make.bash"
 	}
-	cmd := exec.Command(goroot + scriptname)
-	cmd.Dir = goroot + string(os.PathSeparator) + "src"
+	cmd := exec.Command(filepath.Join(goroot, "src", scriptname))
+	cmd.Dir = filepath.Join(goroot, "src")
 	cmd.Args = append(cmd.Args, "--no-clean")
 	var cgoEnabled string
 	if goos == gohostos && arch == gohostarch {
@@ -162,7 +162,7 @@ func XCPlat(goos string, arch string, call []string, isFirst bool) string {
 	}
 	appName := filepath.Base(appDirname)
 
-	relativeDir := artifactVersion + string(os.PathSeparator) + goos + "_" + arch
+	relativeDir := filepath.Join(artifactVersion, goos+"_"+arch)
 
 	var outDestRoot string
 	if artifactsDest != "" {
@@ -170,12 +170,12 @@ func XCPlat(goos string, arch string, call []string, isFirst bool) string {
 	} else {
 		gobin := os.Getenv("GOBIN")
 		if gobin == "" {
-			gobin = gopath + string(os.PathSeparator) + "bin"
+			gobin = filepath.Join(gopath, "bin")
 		}
-		outDestRoot = gobin + string(os.PathSeparator) + appName + "-xc"
+		outDestRoot = filepath.Join(gobin, appName+"-xc")
 	}
 
-	outDir := outDestRoot + string(os.PathSeparator) + relativeDir
+	outDir := filepath.Join(outDestRoot, relativeDir)
 	os.MkdirAll(outDir, 0755)
 
 	cmd := exec.Command("go")
@@ -185,10 +185,10 @@ func XCPlat(goos string, arch string, call []string, isFirst bool) string {
 	if goos == WINDOWS {
 		ending = ".exe"
 	}
-	relativeBinForMarkdown := goos + "_" + arch + string(os.PathSeparator) + appName + ending
-	relativeBin := relativeDir + string(os.PathSeparator) + appName + ending
-	cmd.Args = append(cmd.Args, outDestRoot+string(os.PathSeparator)+relativeBin)
-	cmd.Args = append(cmd.Args, ".") //relative to pwd (specified in call[0])
+	relativeBinForMarkdown := filepath.Join(goos+"_"+arch, appName+ending)
+	relativeBin := filepath.Join(relativeDir, appName+ending)
+	cmd.Args = append(cmd.Args, filepath.Join(outDestRoot, relativeBin), ".")
+	//cmd.Args = append(cmd.Args, ".") //relative to pwd (specified in call[0])
 
 	var cgoEnabled string
 	if goos == gohostos {
@@ -212,7 +212,7 @@ func XCPlat(goos string, arch string, call []string, isFirst bool) string {
 			log.Printf("Compiler error: %s", err)
 		} else {
 			log.Printf("Artifact generated OK")
-			reportFilename := outDestRoot + string(os.PathSeparator) + artifactVersion + string(os.PathSeparator) + "downloads.md"
+			reportFilename := filepath.Join(outDestRoot, artifactVersion, "downloads.md")
 			var flags int
 			if isFirst {
 				log.Printf("Creating %s", reportFilename)
