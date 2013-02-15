@@ -1,7 +1,7 @@
 goxc
 ====
 
-goxc cross-compiles Go programs to (up to) 9 target platforms at once.
+[goxc](http://www.laher.net.nz/goxc) cross-compiles Go programs to (up to) 9 target platforms at once.
 
 goxc is written in Go but uses *os.exec* to call 'go build' with the appropriate flags & env variables for each supported platform.
 
@@ -16,7 +16,7 @@ goxc requires the go source and the go toolchain.
 
  2. Install goxc:
 
- 	go get github.com/laher/goxc
+            go get github.com/laher/goxc
 
 Basic Usage
 -----------
@@ -38,7 +38,13 @@ To build binaries for your app:
 
 See 'goxc -h' for more options.
 
-Note that if running from source, replace 'goxc' with 'go run goxc.go'
+e.g. To restrict by OS and Architecture:
+
+      goxc -os=windows -arch=amd64 .
+
+e.g. To set a destination root folder:
+
+      goxc -d=my/jekyll/site/downloads .
 
 Outcome
 -------
