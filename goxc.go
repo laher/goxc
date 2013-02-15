@@ -1,5 +1,20 @@
 package main
+/* 
+   Copyright 2013 Am Laher
 
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+ 
 import (
 //   "go/build"
    "flag"
@@ -9,10 +24,11 @@ import (
    "log"
    "io"
    "path/filepath"
+   "runtime"
 //   "github.com/laher/mkdo"
 )
 
-const VERSION="0.0.2"
+const VERSION="0.0.3"
 const AMD64="amd64"
 const X86="386"
 const ARM="arm"
@@ -45,7 +61,7 @@ var (
    artifacts_destination string
 )
 
-//this function copied from 'mkdo'
+//this function copied from 'https://github.com/laher/mkdo'
 func redirectIO(cmd *exec.Cmd) (*os.File, error) {
    stdout, err := cmd.StdoutPipe()
    if err != nil {
@@ -65,9 +81,16 @@ func redirectIO(cmd *exec.Cmd) (*os.File, error) {
 
 func BuildToolchain(goos string, arch string) {
    goroot:= os.Getenv("GOROOT")
-   gohostos:= os.Getenv("GOHOSTOS")
-   cmd := exec.Command(goroot+"/src/make.bash")
-   cmd.Dir= goroot+"/src/"
+   gohostos:= runtime.GOOS
+   if verbose { log.Printf("Host OS = %s", gohostos) }
+   var scriptname string
+   if gohostos == WINDOWS {
+	scriptname= "\\src\\make.bat"
+   } else {
+	scriptname= "/src/make.bash"
+   }
+   cmd := exec.Command(goroot+scriptname)
+   cmd.Dir= goroot+string(os.PathSeparator)+"src"
    cmd.Args= append(cmd.Args,"--no-clean")
    cgo_enabled := func()string{if goos == gohostos {return "1"}
    return "0"}()
@@ -106,14 +129,18 @@ func XCPlat(goos string ,arch string, call []string, is_first bool) string {
    log.Printf("building for platform %s_%s.", goos, arch)
 
    gopath:= os.Getenv("GOPATH")
-   gohostos:= os.Getenv("GOHOSTOS")
+   if gopath == "" {
+	log.Printf("GOPATH env variable not set!! Using '.'")
+	gopath = "."
+   }
+   gohostos:= runtime.GOOS
    app_dirname,err:= filepath.Abs(call[0])
    if err != nil {
       log.Printf("Error: %v",err)
    }
    app_name:= filepath.Base(app_dirname)
 
-   relative_dir:= artifact_version+"/"+goos+"_"+arch
+   relative_dir:= artifact_version+string(os.PathSeparator)+goos+"_"+arch
 
    var out_destination_root string
    if artifacts_destination != "" {
@@ -121,12 +148,12 @@ func XCPlat(goos string ,arch string, call []string, is_first bool) string {
    } else {
       gobin:= os.Getenv("GOBIN")
       if gobin == "" {
-         gobin= gopath+"/bin"
+         gobin= gopath+string(os.PathSeparator)+"bin"
       }
-      out_destination_root = gobin + "/" + app_name + "-xc"
+      out_destination_root = gobin + string(os.PathSeparator) + app_name + "-xc"
    }
 
-   out_dir:= out_destination_root+"/"+relative_dir
+   out_dir:= out_destination_root+string(os.PathSeparator)+relative_dir
    os.MkdirAll(out_dir, 0755)
 
    cmd := exec.Command("go")
@@ -136,9 +163,9 @@ func XCPlat(goos string ,arch string, call []string, is_first bool) string {
    if goos == WINDOWS {
       ending= ".exe"
    }
-   relative_bin_for_markdown:= goos+"_"+arch+"/"+app_name+ending
-   relative_bin:= relative_dir+"/"+app_name+ending
-   cmd.Args= append(cmd.Args,out_destination_root+"/"+relative_bin)
+   relative_bin_for_markdown:= goos+"_"+arch+string(os.PathSeparator)+app_name+ending
+   relative_bin:= relative_dir+string(os.PathSeparator)+app_name+ending
+   cmd.Args= append(cmd.Args,out_destination_root+string(os.PathSeparator)+relative_bin)
    cmd.Args= append(cmd.Args,call[0])
 
    cmd.Env= os.Environ()
@@ -150,7 +177,6 @@ func XCPlat(goos string ,arch string, call []string, is_first bool) string {
       cgo_enabled= "0"
    }
 
-   //host OS/arch
    cmd.Env= append(cmd.Env,"GOOS="+goos)
    cmd.Env= append(cmd.Env,"CGO_ENABLED="+cgo_enabled)
    cmd.Env= append(cmd.Env,"GOARCH="+arch)
@@ -165,7 +191,7 @@ func XCPlat(goos string ,arch string, call []string, is_first bool) string {
          log.Printf("Compiler error: %s",err);
       } else {
          log.Printf("Artifact generated OK");
-         report_filename:= out_destination_root+"/"+artifact_version+"/downloads.md"
+         report_filename:= out_destination_root+string(os.PathSeparator)+artifact_version+string(os.PathSeparator)+"downloads.md"
          var flags int
          if is_first {
             log.Printf("Creating %s", report_filename)
