@@ -13,9 +13,9 @@ Installation
 goxc requires the go source and the go toolchain.
 
  1. [Install go from source](http://golang.org/doc/install/source). (Requires 'hg' and gcc (or MinGW))
-	
+
  2. Install goxc:
- 
+
  	go get github.com/laher/goxc
 
 Basic Usage
@@ -59,7 +59,7 @@ Limitations
 -----------
 
  * Currently there's a bug meaning you can only run goxc on the current folder.
- * Only tested on Linux. No idea if it would work on Win/Mac/FreeBSD
+ * Only tested on Linux & Windows. Please test on Mac/FreeBSD
  * Currently goxc is only designed to build standalone Go apps without linked libraries. You can try but YMMV
 
 License
@@ -79,8 +79,6 @@ License
    See the License for the specific language governing permissions and
    limitations under the License.
 
- 
- 
 Todo
 ----
 

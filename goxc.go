@@ -1,5 +1,5 @@
 package main
-/* 
+/*
    Copyright 2013 Am Laher
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@ package main
    See the License for the specific language governing permissions and
    limitations under the License.
 */
- 
+
 import (
 //   "go/build"
    "flag"
@@ -42,6 +42,8 @@ var PLATFORMS = [][]string {
    []string{ DARWIN, AMD64 },
    []string{ FREEBSD, X86 },
    []string{ FREEBSD, AMD64 },
+   //tried to add FREEBSD/ARM but not working for me yet. 2013-02-15
+   []string{ FREEBSD, ARM },
    []string{ LINUX, X86 },
    []string{ LINUX, AMD64 },
    []string{ LINUX, ARM },
@@ -82,6 +84,7 @@ func redirectIO(cmd *exec.Cmd) (*os.File, error) {
 func BuildToolchain(goos string, arch string) {
    goroot:= os.Getenv("GOROOT")
    gohostos:= runtime.GOOS
+   gohostarch:= runtime.GOARCH
    if verbose { log.Printf("Host OS = %s", gohostos) }
    var scriptname string
    if gohostos == WINDOWS {
@@ -92,13 +95,26 @@ func BuildToolchain(goos string, arch string) {
    cmd := exec.Command(goroot+scriptname)
    cmd.Dir= goroot+string(os.PathSeparator)+"src"
    cmd.Args= append(cmd.Args,"--no-clean")
-   cgo_enabled := func()string{if goos == gohostos {return "1"}
-   return "0"}()
+   var cgo_enabled string
+   if goos == gohostos && arch == gohostarch {
+      //note: added conditional in line with Dave Cheney, but this combination is not yet supported.
+      if gohostos == FREEBSD && gohostarch == ARM {
+         cgo_enabled= "0"
+      } else {
+         cgo_enabled= "1"
+      }
+   } else {
+      cgo_enabled= "0"
+   }
 
    cmd.Env= os.Environ()
    cmd.Env= append(cmd.Env,"GOOS="+goos)
    cmd.Env= append(cmd.Env,"CGO_ENABLED="+cgo_enabled)
    cmd.Env= append(cmd.Env,"GOARCH="+arch)
+   if goos == LINUX && arch == ARM {
+      // see http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go
+      cmd.Env= append(cmd.Env,"GOARM=5")
+   }
    log.Printf("'make.bash' env: GOOS=%s, CGO_ENABLED=%s, GOARCH=%s, GOROOT=%s", goos, cgo_enabled, arch, goroot)
    log.Printf("'make.bash' args: %s",cmd.Args)
    log.Printf("'make.bash' working directory: %s",cmd.Dir)
