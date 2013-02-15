@@ -227,7 +227,6 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 	relativeBinForMarkdown := filepath.Join(goos+"_"+arch, appName+ending)
 	relativeBin := filepath.Join(relativeDir, appName+ending)
 	cmd.Args = append(cmd.Args, filepath.Join(outDestRoot, relativeBin), ".")
-	//cmd.Args = append(cmd.Args, ".") //relative to pwd (specified in call[0])
 
 	var cgoEnabled string
 	if goos == gohostos {
