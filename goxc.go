@@ -60,11 +60,12 @@ var (
 	isHelp           bool
 	isVersion        bool
 	isBuildToolchain bool
+	zipArchives      bool
 	aos              string
 	aarch            string
 	artifactVersion  string
 	artifactsDest    string
-	zipArchives      bool
+	codesign         string
 )
 
 func redirectIO(cmd *exec.Cmd) (*os.File, error) {
@@ -194,6 +195,18 @@ func moveBinaryToZIP(outDir, binPath, appName string) (zipFilename string, err e
 	return
 }
 
+func signBinary(binPath string) error {
+	cmd := exec.Command("codesign")
+	cmd.Args = append(cmd.Args, "-s", codesign, binPath)
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	if err := cmd.Wait(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func XCPlat(goos, arch string, call []string, isFirst bool) string {
 	log.Printf("building for platform %s_%s.", goos, arch)
 
@@ -258,6 +271,15 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 			log.Printf("Compiler error: %s", err)
 		} else {
 			log.Printf("Artifact generated OK")
+
+			// Codesign only works on OS X for binaries generated for OS X.
+			if codesign != "" && gohostos == DARWIN && goos == DARWIN {
+				if err := signBinary(filepath.Join(outDestRoot, relativeBin)); err != nil {
+					log.Printf("codesign failed: %s", err)
+				} else {
+					log.Printf("Signed with ID: %q", codesign)
+				}
+			}
 
 			if zipArchives {
 				// Create ZIP archive.
@@ -347,6 +369,7 @@ func main() {
 	flagSet.StringVar(&aarch, "arch", "", "Specify Arch (386/x64/arm). Compiles all by default")
 	flagSet.StringVar(&artifactVersion, "av", "latest", "Artifact version (default='latest')")
 	flagSet.StringVar(&artifactsDest, "d", "", "Destination root directory (default=$GOBIN)")
+	flagSet.StringVar(&codesign, "codesign", "", "identity to sign darwin binaries with (only when host OS is OS X)")
 	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s)")
 	flagSet.BoolVar(&isHelp, "h", false, "Show this help")
 	flagSet.BoolVar(&isVersion, "version", false, "version info")
