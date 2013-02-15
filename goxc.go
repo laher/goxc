@@ -29,7 +29,6 @@ import (
 
 const VERSION = "0.0.4"
 
-// Platform names.
 const (
 	AMD64   = "amd64"
 	X86     = "386"
@@ -256,23 +255,23 @@ func printVersion() {
 	fmt.Fprintf(os.Stderr, " goxc version %s\n", VERSION)
 }
 
-func GOXC(call []string) (int, error) {
-	e := flagSet.Parse(call[1:])
-	if e != nil {
-		return 1, e
+func GOXC(call []string) {
+	if err := flagSet.Parse(call[1:]); err != nil {
+		log.Printf("Error parsing arguments: %s", err)
+		os.Exit(1)
 	}
-	remainder := flagSet.Args()
 	if isHelp {
 		printHelp()
-		return 0, nil
-	} else if isVersion {
+		os.Exit(0)
+	}
+	if isVersion {
 		printVersion()
-		return 0, nil
-	} else if isBuildToolchain {
-		//no need for remaining args
-	} else if len(remainder) < 1 {
+		os.Exit(0)
+	}
+	remainder := flagSet.Args()
+	if !isBuildToolchain && len(remainder) < 1 {
 		printHelp()
-		return 1, nil
+		os.Exit(1)
 	}
 
 	isFirst := true
@@ -288,7 +287,6 @@ func GOXC(call []string) (int, error) {
 			}
 		}
 	}
-	return 0, nil
 }
 
 func main() {
@@ -301,5 +299,6 @@ func main() {
 	flagSet.BoolVar(&isHelp, "h", false, "Show this help")
 	flagSet.BoolVar(&isVersion, "version", false, "version info")
 	flagSet.BoolVar(&verbose, "v", false, "verbose")
+
 	GOXC(os.Args)
 }
