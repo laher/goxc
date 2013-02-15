@@ -87,7 +87,7 @@ License
 Todo
 ----
 
- * Artifact types: zip/tgz, maybe packaging too (.deb/.rpm/.pkg...).
+ * Artifact types: tgz, maybe packaging too (.deb/.rpm/.pkg...).
  * Automatically build target toolchain if missing? (need to work out detection mechanism)
  * 'download golang source' option (if it's not there)?
  * building .so/.dll shared libraries?
