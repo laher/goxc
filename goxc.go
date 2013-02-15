@@ -119,9 +119,9 @@ func BuildToolchain(goos string, arch string) {
 		cmd.Env = append(cmd.Env, "GOARM=5")
 	}
 	if verbose {
-		log.Printf("'make.bash' env: GOOS=%s, CGO_ENABLED=%s, GOARCH=%s, GOROOT=%s", goos, cgoEnabled, arch, goroot)
-		log.Printf("'make.bash' args: %s", cmd.Args)
-		log.Printf("'make.bash' working directory: %s", cmd.Dir)
+		log.Printf("'%s' env: GOOS=%s, CGO_ENABLED=%s, GOARCH=%s, GOROOT=%s", scriptname, goos, cgoEnabled, arch, goroot)
+		log.Printf("'%s' args: %s", scriptname, cmd.Args)
+		log.Printf("'%s' working directory: %s", scriptname, cmd.Dir)
 	}
 	f, err := redirectIO(cmd)
 	if err != nil {
