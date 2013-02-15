@@ -28,7 +28,7 @@ import (
 //   "github.com/laher/mkdo"
 )
 
-const VERSION="0.0.3"
+const VERSION="0.0.4"
 const AMD64="amd64"
 const X86="386"
 const ARM="arm"
@@ -43,7 +43,7 @@ var PLATFORMS = [][]string {
    []string{ FREEBSD, X86 },
    []string{ FREEBSD, AMD64 },
    //tried to add FREEBSD/ARM but not working for me yet. 2013-02-15
-   []string{ FREEBSD, ARM },
+   //[]string{ FREEBSD, ARM },
    []string{ LINUX, X86 },
    []string{ LINUX, AMD64 },
    []string{ LINUX, ARM },
@@ -115,10 +115,11 @@ func BuildToolchain(goos string, arch string) {
       // see http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go
       cmd.Env= append(cmd.Env,"GOARM=5")
    }
-   log.Printf("'make.bash' env: GOOS=%s, CGO_ENABLED=%s, GOARCH=%s, GOROOT=%s", goos, cgo_enabled, arch, goroot)
-   log.Printf("'make.bash' args: %s",cmd.Args)
-   log.Printf("'make.bash' working directory: %s",cmd.Dir)
-
+   if verbose {
+      log.Printf("'make.bash' env: GOOS=%s, CGO_ENABLED=%s, GOARCH=%s, GOROOT=%s", goos, cgo_enabled, arch, goroot)
+      log.Printf("'make.bash' args: %s",cmd.Args)
+      log.Printf("'make.bash' working directory: %s",cmd.Dir)
+   }
       f, err:= redirectIO(cmd)
       if err != nil {
          log.Printf("Error redirecting IO: %s",err);
@@ -129,14 +130,16 @@ func BuildToolchain(goos string, arch string) {
 
    err = cmd.Start()
    if err != nil {
-      log.Printf("Launch error: %s",err);
+      log.Printf("Launch error: %s",err)
      // return 1, err
    } else {
       err = cmd.Wait()
       if err != nil {
-         log.Printf("Wait error: %s",err);
+         log.Printf("Wait error: %s",err)
       } else {
-         log.Printf("Complete");
+         if verbose {
+            log.Printf("Complete")
+         }
       }
    }
 }
@@ -175,6 +178,7 @@ func XCPlat(goos string ,arch string, call []string, is_first bool) string {
    cmd := exec.Command("go")
    cmd.Args= append(cmd.Args,"build")
    cmd.Args= append(cmd.Args,"-o")
+   cmd.Dir= call[0]
    var ending = ""
    if goos == WINDOWS {
       ending= ".exe"
@@ -182,7 +186,7 @@ func XCPlat(goos string ,arch string, call []string, is_first bool) string {
    relative_bin_for_markdown:= goos+"_"+arch+string(os.PathSeparator)+app_name+ending
    relative_bin:= relative_dir+string(os.PathSeparator)+app_name+ending
    cmd.Args= append(cmd.Args,out_destination_root+string(os.PathSeparator)+relative_bin)
-   cmd.Args= append(cmd.Args,call[0])
+   cmd.Args= append(cmd.Args,".") //relative to pwd (specified in call[0])
 
    cmd.Env= os.Environ()
 
@@ -196,8 +200,11 @@ func XCPlat(goos string ,arch string, call []string, is_first bool) string {
    cmd.Env= append(cmd.Env,"GOOS="+goos)
    cmd.Env= append(cmd.Env,"CGO_ENABLED="+cgo_enabled)
    cmd.Env= append(cmd.Env,"GOARCH="+arch)
-   log.Printf("'go' env: GOOS=%s, CGO_ENABLED=%s, GOARCH=%s", goos, cgo_enabled, arch)
-   log.Printf("'go' args: %s",cmd.Args)
+   if verbose {
+      log.Printf("'go' env: GOOS=%s, CGO_ENABLED=%s, GOARCH=%s", goos, cgo_enabled, arch)
+      log.Printf("'go' args: %s",cmd.Args)
+      log.Printf("'go' working directory: %s",cmd.Dir)
+   }
    err = cmd.Start()
    if err != nil {
       log.Printf("Launch error: %s",err);

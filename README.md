@@ -64,7 +64,6 @@ e.g.
 Limitations
 -----------
 
- * Currently there's a bug meaning you can only run goxc on the current folder.
  * Only tested on Linux & Windows. Please test on Mac/FreeBSD
  * Currently goxc is only designed to build standalone Go apps without linked libraries. You can try but YMMV
 
@@ -77,7 +76,7 @@ License
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+   http://www.apache.org/licenses/LICENSE-2.0
 
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
@@ -88,7 +87,6 @@ License
 Todo
 ----
 
- * Fix bug to allow building of a different directory (other than current working directory)
  * 'specify artifact folder' option
  * 'specify version name' option
  * 'generate Downloads page' option
