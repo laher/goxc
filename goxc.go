@@ -62,8 +62,8 @@ var (
 	artifacts_destination string
 )
 
-//this function copied from 'https://github.com/laher/mkdo'
 func redirectIO(cmd *exec.Cmd) (*os.File, error) {
+	// this function copied from 'https://github.com/laher/mkdo'
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Println(err)
@@ -287,7 +287,6 @@ func GOXC(call []string) (int, error) {
 	return 0, nil
 }
 
-//main
 func main() {
 	log.SetPrefix("[goxc] ")
 	flagSet.StringVar(&aos, "os", "", "Specify OS (linux/darwin/windows). Compiles all by default")
