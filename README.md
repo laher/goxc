@@ -87,10 +87,9 @@ License
 Todo
 ----
 
- * 'specify artifact folder' option
- * 'specify version name' option
- * 'generate Downloads page' option
- * 'download golang source' option?
+ * Artifact types: zip/tgz, maybe packaging too (.deb/.rpm/.pkg...).
+ * Automatically build target toolchain if missing? (need to work out detection mechanism)
+ * 'download golang source' option (if it's not there)?
  * building .so/.dll shared libraries?
 
 See also
