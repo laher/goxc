@@ -17,6 +17,7 @@ package main
 */
 
 import (
+	"archive/zip"
 	"flag"
 	"fmt"
 	"io"
@@ -63,6 +64,7 @@ var (
 	aarch            string
 	artifactVersion  string
 	artifactsDest    string
+	zipArchives      bool
 )
 
 func redirectIO(cmd *exec.Cmd) (*os.File, error) {
@@ -145,7 +147,46 @@ func BuildToolchain(goos string, arch string) {
 	}
 }
 
-func XCPlat(goos string, arch string, call []string, isFirst bool) string {
+func moveBinaryToZIP(outDir, binPath, appName string) (zipFilename string, err error) {
+	zipFilename = appName + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
+	zf, err := os.Create(filepath.Join(outDir, zipFilename))
+	if err != nil {
+		return
+	}
+	defer zf.Close()
+	bf, err := os.Open(binPath)
+	if err != nil {
+		return
+	}
+	defer bf.Close()
+	zw := zip.NewWriter(zf)
+	w, err := zw.Create(filepath.Base(binPath))
+	if err != nil {
+		zw.Close()
+		return
+	}
+	_, err = io.Copy(w, bf)
+	if err != nil {
+		zw.Close()
+		return
+	}
+	err = zw.Close()
+	if err != nil {
+		return
+	}
+	// Remove binary and its directory.
+	err = os.Remove(binPath)
+	if err != nil {
+		return
+	}
+	err = os.Remove(filepath.Dir(binPath))
+	if err != nil {
+		return
+	}
+	return
+}
+
+func XCPlat(goos, arch string, call []string, isFirst bool) string {
 	log.Printf("building for platform %s_%s.", goos, arch)
 
 	gopath := os.Getenv("GOPATH")
@@ -210,6 +251,18 @@ func XCPlat(goos string, arch string, call []string, isFirst bool) string {
 			log.Printf("Compiler error: %s", err)
 		} else {
 			log.Printf("Artifact generated OK")
+
+			if zipArchives {
+				// Create ZIP archive.
+				relativeBinForMarkdown, err = moveBinaryToZIP(
+					filepath.Join(outDestRoot, artifactVersion),
+					filepath.Join(outDestRoot, relativeBin), appName)
+				if err != nil {
+					log.Printf("ZIP error: %s", err)
+				}
+			}
+
+			// Output report
 			reportFilename := filepath.Join(outDestRoot, artifactVersion, "downloads.md")
 			var flags int
 			if isFirst {
@@ -289,6 +342,7 @@ func main() {
 	flagSet.BoolVar(&isHelp, "h", false, "Show this help")
 	flagSet.BoolVar(&isVersion, "version", false, "version info")
 	flagSet.BoolVar(&verbose, "v", false, "verbose")
+	flagSet.BoolVar(&zipArchives, "z", false, "create ZIP archives instead of folders")
 
 	GOXC(os.Args)
 }
