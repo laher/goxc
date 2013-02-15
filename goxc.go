@@ -156,11 +156,11 @@ func XCPlat(goos string, arch string, call []string, isFirst bool) string {
 		gopath = "."
 	}
 	gohostos := runtime.GOOS
-	app_dirname, err := filepath.Abs(call[0])
+	appDirname, err := filepath.Abs(call[0])
 	if err != nil {
 		log.Printf("Error: %v", err)
 	}
-	appName := filepath.Base(app_dirname)
+	appName := filepath.Base(appDirname)
 
 	relativeDir := artifactVersion + string(os.PathSeparator) + goos + "_" + arch
 
