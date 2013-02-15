@@ -253,11 +253,13 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 
 			if zipArchives {
 				// Create ZIP archive.
-				relativeBinForMarkdown, err = moveBinaryToZIP(
+				zipPath, err = moveBinaryToZIP(
 					filepath.Join(outDestRoot, artifactVersion),
 					filepath.Join(outDestRoot, relativeBin), appName)
 				if err != nil {
 					log.Printf("ZIP error: %s", err)
+				} else {
+					relativeBinForMarkdown = zipPath
 				}
 			}
 
