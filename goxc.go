@@ -130,20 +130,18 @@ func BuildToolchain(goos string, arch string) {
 	if f != nil {
 		defer f.Close()
 	}
-
 	err = cmd.Start()
 	if err != nil {
 		log.Printf("Launch error: %s", err)
-		// return 1, err
-	} else {
-		err = cmd.Wait()
-		if err != nil {
-			log.Printf("Wait error: %s", err)
-		} else {
-			if verbose {
-				log.Printf("Complete")
-			}
-		}
+		return
+	}
+	err = cmd.Wait()
+	if err != nil {
+		log.Printf("Wait error: %s", err)
+		return
+	}
+	if verbose {
+		log.Printf("Complete")
 	}
 }
 
