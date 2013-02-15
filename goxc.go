@@ -113,10 +113,7 @@ func BuildToolchain(goos string, arch string) {
 		cgoEnabled = "0"
 	}
 
-	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, "GOOS="+goos)
-	cmd.Env = append(cmd.Env, "CGO_ENABLED="+cgoEnabled)
-	cmd.Env = append(cmd.Env, "GOARCH="+arch)
+	cmd.Env = append(os.Environ(), "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
 	if goos == LINUX && arch == ARM {
 		// see http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go
 		cmd.Env = append(cmd.Env, "GOARM=5")
@@ -182,8 +179,7 @@ func XCPlat(goos string, arch string, call []string, isFirst bool) string {
 	os.MkdirAll(outDir, 0755)
 
 	cmd := exec.Command("go")
-	cmd.Args = append(cmd.Args, "build")
-	cmd.Args = append(cmd.Args, "-o")
+	cmd.Args = append(cmd.Args, "build", "-o")
 	cmd.Dir = call[0]
 	var ending = ""
 	if goos == WINDOWS {
@@ -194,8 +190,6 @@ func XCPlat(goos string, arch string, call []string, isFirst bool) string {
 	cmd.Args = append(cmd.Args, outDestRoot+string(os.PathSeparator)+relativeBin)
 	cmd.Args = append(cmd.Args, ".") //relative to pwd (specified in call[0])
 
-	cmd.Env = os.Environ()
-
 	var cgoEnabled string
 	if goos == gohostos {
 		cgoEnabled = "1"
@@ -203,9 +197,7 @@ func XCPlat(goos string, arch string, call []string, isFirst bool) string {
 		cgoEnabled = "0"
 	}
 
-	cmd.Env = append(cmd.Env, "GOOS="+goos)
-	cmd.Env = append(cmd.Env, "CGO_ENABLED="+cgoEnabled)
-	cmd.Env = append(cmd.Env, "GOARCH="+arch)
+	cmd.Env = append(os.Environ(), "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
 	if verbose {
 		log.Printf("'go' env: GOOS=%s, CGO_ENABLED=%s, GOARCH=%s", goos, cgoEnabled, arch)
 		log.Printf("'go' args: %s", cmd.Args)
