@@ -28,7 +28,7 @@ import (
 	"runtime"
 )
 
-const VERSION = "0.0.4"
+const VERSION = "0.1.1"
 
 const (
 	AMD64   = "amd64"
@@ -149,7 +149,12 @@ func BuildToolchain(goos string, arch string) {
 }
 
 func moveBinaryToZIP(outDir, binPath, appName string) (zipFilename string, err error) {
-	zipFilename = appName + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
+	zipFileBaseName := appName + "_" + filepath.Base(filepath.Dir(binPath))
+	if artifactVersion != "" && artifactVersion != "latest" {
+		zipFilename = zipFileBaseName + "_" + artifactVersion + ".zip"
+	} else {
+		zipFilename = zipFileBaseName + ".zip"
+	}
 	zf, err := os.Create(filepath.Join(outDir, zipFilename))
 	if err != nil {
 		return
@@ -271,7 +276,6 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 			log.Printf("Compiler error: %s", err)
 		} else {
 			log.Printf("Artifact generated OK")
-
 			// Codesign only works on OS X for binaries generated for OS X.
 			if codesign != "" && gohostos == DARWIN && goos == DARWIN {
 				if err := signBinary(filepath.Join(outDestRoot, relativeBin)); err != nil {
@@ -290,6 +294,7 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 					log.Printf("ZIP error: %s", err)
 				} else {
 					relativeBinForMarkdown = zipPath
+					log.Printf("Artifact zipped OK")
 				}
 			}
 
@@ -374,7 +379,7 @@ func main() {
 	flagSet.BoolVar(&isHelp, "h", false, "Show this help")
 	flagSet.BoolVar(&isVersion, "version", false, "version info")
 	flagSet.BoolVar(&verbose, "v", false, "verbose")
-	flagSet.BoolVar(&zipArchives, "z", false, "create ZIP archives instead of folders")
+	flagSet.BoolVar(&zipArchives, "z", true, "create ZIP archives instead of folders")
 
 	GOXC(os.Args)
 }

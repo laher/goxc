@@ -8,6 +8,8 @@ goxc is written in Go but uses *os.exec* to call 'go build' with the appropriate
 goxc was inspired by Dave Cheney's Bash script [golang-crosscompile](https://github.com/davecheney/golang-crosscompile).
 BUT, goxc crosscompiles to all platforms at once. The artifacts are saved into a folder structure along with a markdown file of relative links.
 
+Thanks to [dchest](https://github.com/dchest) for the tidy-up and adding the zip feature.
+
 Installation
 --------------
 goxc requires the go source and the go toolchain.
@@ -29,10 +31,9 @@ To build the toolchains for all 9 platforms:
 
 ### Now build your artifacts
 
-To build binaries for your app:
+To build zipped binaries for your app:
 
-       cd path/to/app/folder
-       goxc .
+       goxc path/to/app/folder
 
 ### Going further
 
@@ -42,9 +43,13 @@ e.g. To restrict by OS and Architecture:
 
       goxc -os=windows -arch=amd64 .
 
-e.g. To set a destination root folder:
+e.g. To set a destination root folder and artifact version number:
 
-      goxc -d=my/jekyll/site/downloads .
+      goxc -d=my/jekyll/site/downloads -v=0.1.1 .
+
+e.g. To output non-zipped binaries into folders:
+
+      goxc -z=false .
 
 Outcome
 -------
