@@ -154,13 +154,21 @@ func moveBinaryToZIP(outDir, binPath, appName string) (zipFilename string, err e
 		return
 	}
 	defer zf.Close()
+	binfo, err := os.Stat(binPath)
+	if err != nil {
+		return
+	}
 	bf, err := os.Open(binPath)
 	if err != nil {
 		return
 	}
 	defer bf.Close()
 	zw := zip.NewWriter(zf)
-	w, err := zw.Create(filepath.Base(binPath))
+	header, err := zip.FileInfoHeader(binfo)
+	if err != nil {
+		return
+	}
+	w, err := zw.CreateHeader(header)
 	if err != nil {
 		zw.Close()
 		return
@@ -253,7 +261,7 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 
 			if zipArchives {
 				// Create ZIP archive.
-				zipPath, err = moveBinaryToZIP(
+				zipPath, err := moveBinaryToZIP(
 					filepath.Join(outDestRoot, artifactVersion),
 					filepath.Join(outDestRoot, relativeBin), appName)
 				if err != nil {
