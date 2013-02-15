@@ -28,7 +28,7 @@ import (
 	"runtime"
 )
 
-const VERSION = "0.1.1"
+const VERSION = "0.1.2"
 
 const (
 	AMD64   = "amd64"
@@ -174,6 +174,7 @@ func moveBinaryToZIP(outDir, binPath, appName string) (zipFilename string, err e
 	if err != nil {
 		return
 	}
+	header.Method = zip.Deflate
 	w, err := zw.CreateHeader(header)
 	if err != nil {
 		zw.Close()
