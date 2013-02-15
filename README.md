@@ -54,17 +54,22 @@ e.g. To output non-zipped binaries into folders:
 Outcome
 -------
 
-Artifacts generated into a folder structure as follows:
+By default, artifacts are generated and then immediately zipped into (outputfolder).
 
- (outputfolder)/(version)/(OS)_(ARCH)/(appname)(.exe?)
+e.g. /my/outputfolder/latest/myapp_linux_arm.zip
 
-e.g. /my/outputfolder/latest/linux_arm/myapp
+If you specified the version number -av=123 then the filename would be myapp_linux_arm_123.zip.
 
 By default, the output folder is ($GOBIN)/(appname)-xc, and the version is 'latest', but you can specify these.
 
 e.g.
 
       goxc -av=0.1 -d=/home/me/myapp/ghpages/downloads/ .
+
+
+If non-zipped, artifacts generated into a folder structure as follows:
+
+ (outputfolder)/(version)/(OS)_(ARCH)/(appname)(.exe?)
 
 Limitations
 -----------
