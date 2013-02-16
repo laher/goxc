@@ -29,7 +29,7 @@ import (
 	"strings"
 )
 
-const VERSION = "0.1.2"
+const VERSION = "0.1.3"
 
 const (
 	AMD64   = "amd64"

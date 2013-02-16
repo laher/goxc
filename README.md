@@ -8,7 +8,7 @@ goxc is written in Go but uses *os.exec* to call 'go build' with the appropriate
 goxc was inspired by Dave Cheney's Bash script [golang-crosscompile](https://github.com/davecheney/golang-crosscompile).
 BUT, goxc crosscompiles to all platforms at once. The artifacts are saved into a folder structure along with a markdown file of relative links.
 
-Thanks to [dchest](https://github.com/dchest) for the tidy-up and adding the zip feature.
+Thanks to [dchest](https://github.com/dchest) for the tidy-up and adding the zip feature, and [matrixik](https://github.com/matrixik) for his improvements.
 
 Installation
 --------------
@@ -97,6 +97,8 @@ License
 Todo
 ----
 
+ * Manifest file for setting up default settings. Preferably manifest.json/goxc.json, similar to Chrome extensions or npm packages.
+ * "Copy resources" option for INSTALL, READMEs, LICENSE, configs etc
  * Artifact types: tgz, maybe packaging too (.deb/.rpm/.pkg...).
  * Automatically build target toolchain if missing? (need to work out detection mechanism)
  * 'download golang source' option (if it's not there)?
