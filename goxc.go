@@ -26,6 +26,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 const VERSION = "0.1.2"
@@ -354,16 +355,23 @@ func GOXC(call []string) {
 		os.Exit(1)
 	}
 
+	destOses := strings.Split(aos, ",")
+	destArchs := strings.Split(aarch, ",")
+
 	isFirst := true
 	for _, v := range PLATFORMS {
-		if aos == "" || v[0] == aos {
-			if aarch == "" || v[1] == aarch {
-				if isBuildToolchain {
-					BuildToolchain(v[0], v[1])
-				} else {
-					XCPlat(v[0], v[1], remainder, isFirst)
+		for _, dOs := range destOses {
+			if dOs == "" || v[0] == dOs {
+				for _, dArch := range destArchs {
+					if dArch == "" || v[1] == dArch {
+						if isBuildToolchain {
+							BuildToolchain(v[0], v[1])
+						} else {
+							XCPlat(v[0], v[1], remainder, isFirst)
+						}
+						isFirst = false
+					}
 				}
-				isFirst = false
 			}
 		}
 	}
