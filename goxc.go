@@ -372,7 +372,7 @@ func GOXC(call []string) {
 func main() {
 	log.SetPrefix("[goxc] ")
 	flagSet.StringVar(&aos, "os", "", "Specify OS (linux/darwin/windows). Compiles all by default")
-	flagSet.StringVar(&aarch, "arch", "", "Specify Arch (386/x64/arm). Compiles all by default")
+	flagSet.StringVar(&aarch, "arch", "", "Specify Arch (386/amd64/arm). Compiles all by default")
 	flagSet.StringVar(&artifactVersion, "av", "latest", "Artifact version (default='latest')")
 	flagSet.StringVar(&artifactsDest, "d", "", "Destination root directory (default=$GOBIN)")
 	flagSet.StringVar(&codesign, "codesign", "", "identity to sign darwin binaries with (only when host OS is OS X)")
