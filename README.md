@@ -97,9 +97,12 @@ License
 Todo
 ----
 
+ * Use go/parse package to interpret PKG_VERSION variable and such.
  * Manifest file for setting up default settings. Preferably manifest.json/goxc.json, similar to Chrome extensions or npm packages.
- * "Copy resources" option for INSTALL, READMEs, LICENSE, configs etc
+ * "Copy resources" option for INSTALL, READMEs, LICENSE, configs etc (DONE for zips. Not done for non-zipped binaries)
  * Much more error handling and potentially stop-on-error=true flag
+ * Refactoring: use a struct for all the options?
+ * Refactoring: Start splitting functionality into separate files, e.g. zipping, build, build-toolchain, config, ...
  * More Unit Tests!!
  * Configurable 'downloads' page: name, format (e.g. markdown/html/ReST) & header/footer.
  * Artifact types: tgz, maybe packaging too (.deb/.rpm/.pkg...).
@@ -107,7 +110,10 @@ Todo
  * 'download golang source' option?
  * building .so/.dll shared libraries?
  * One day: Build plugins (for OS-specific wizardry and stuff)? Pre- and post-processing scripts?
+ * Respect +build flags inside file comments (just like 'go build')
+ * Maybe Someday: Investigate [forking and ?] hooking directly into the gotools build code, instead of using os.exec
+ * Maybe someday: Use goroutines to speed up 'goxc -t'
 
 See also
 --------
-See also [my golang-crosscompile fork](https://github.com/laher/golang-crosscompile) for an added 'build-all' task similar to goxc.
+See also [my golang-crosscompile fork](https://github.com/laher/golang-crosscompile) for an added 'go-build-all' task similar to goxc.

@@ -30,7 +30,7 @@ import (
 	"strings"
 )
 
-const VERSION = "0.1.4"
+const VERSION = "0.1.5"
 
 const (
 	AMD64   = "amd64"
@@ -70,6 +70,7 @@ var (
 	artifactVersion  string
 	artifactsDest    string
 	codesign         string
+	includeResources string
 )
 
 func redirectIO(cmd *exec.Cmd) (*os.File, error) {
@@ -189,7 +190,7 @@ func BuildToolchain(goos string, arch string) {
 	}
 }
 
-func moveBinaryToZIP(outDir, binPath, appName string) (zipFilename string, err error) {
+func moveBinaryToZIP(outDir, binPath, appName string, resources []string) (zipFilename string, err error) {
 	zipFileBaseName := appName + "_" + filepath.Base(filepath.Dir(binPath))
 	if artifactVersion != "" && artifactVersion != "latest" {
 		zipFilename = zipFileBaseName + "_" + artifactVersion + ".zip"
@@ -201,30 +202,21 @@ func moveBinaryToZIP(outDir, binPath, appName string) (zipFilename string, err e
 		return
 	}
 	defer zf.Close()
-	binfo, err := os.Stat(binPath)
-	if err != nil {
-		return
-	}
-	bf, err := os.Open(binPath)
-	if err != nil {
-		return
-	}
-	defer bf.Close()
+
 	zw := zip.NewWriter(zf)
-	header, err := zip.FileInfoHeader(binfo)
-	if err != nil {
-		return
-	}
-	header.Method = zip.Deflate
-	w, err := zw.CreateHeader(header)
+
+	addFileToZIP(zw, binPath)
 	if err != nil {
 		zw.Close()
 		return
 	}
-	_, err = io.Copy(w, bf)
-	if err != nil {
-		zw.Close()
-		return
+	//resources
+	for _, resource := range resources {
+		addFileToZIP(zw, resource)
+		if err != nil {
+			zw.Close()
+			return
+		}
 	}
 	err = zw.Close()
 	if err != nil {
@@ -240,6 +232,50 @@ func moveBinaryToZIP(outDir, binPath, appName string) (zipFilename string, err e
 		return
 	}
 	return
+}
+
+func addFileToZIP(zw *zip.Writer, path string) (err error) {
+	binfo, err := os.Stat(path)
+	if err != nil {
+		return
+	}
+	header, err := zip.FileInfoHeader(binfo)
+	if err != nil {
+		return
+	}
+	header.Method = zip.Deflate
+	w, err := zw.CreateHeader(header)
+	if err != nil {
+		zw.Close()
+		return
+	}
+	bf, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	defer bf.Close()
+	_, err = io.Copy(w, bf)
+	return
+}
+
+func parseIncludeResources(basedir string, includeResources string) []string {
+	allMatches := []string{}
+	if includeResources != "" {
+		resourceGlobs := strings.Split(includeResources, ",")
+		for _, resourceGlob := range resourceGlobs {
+			matches, err := filepath.Glob(filepath.Join(basedir, resourceGlob))
+			if err == nil {
+				allMatches = append(allMatches, matches...)
+			} else {
+				log.Printf("GLOB error: %s: %s", resourceGlob, err)
+			}
+		}
+	}
+	if verbose {
+		log.Printf("Resources to include: %v", allMatches)
+	}
+	return allMatches
+
 }
 
 func signBinary(binPath string) error {
@@ -277,6 +313,7 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 	} else {
 		gobin := os.Getenv("GOBIN")
 		if gobin == "" {
+			// follow usual GO rules for making GOBIN
 			gobin = filepath.Join(gopath, "bin")
 		}
 		outDestRoot = filepath.Join(gobin, appName+"-xc")
@@ -318,6 +355,9 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 			log.Printf("Compiler error: %s", err)
 		} else {
 			log.Printf("Artifact generated OK")
+
+			resources := parseIncludeResources(call[0], includeResources)
+
 			// Codesign only works on OS X for binaries generated for OS X.
 			if codesign != "" && gohostos == DARWIN && goos == DARWIN {
 				if err := signBinary(filepath.Join(outDestRoot, relativeBin)); err != nil {
@@ -331,13 +371,15 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 				// Create ZIP archive.
 				zipPath, err := moveBinaryToZIP(
 					filepath.Join(outDestRoot, artifactVersion),
-					filepath.Join(outDestRoot, relativeBin), appName)
+					filepath.Join(outDestRoot, relativeBin), appName, resources)
 				if err != nil {
 					log.Printf("ZIP error: %s", err)
 				} else {
 					relativeBinForMarkdown = zipPath
 					log.Printf("Artifact zipped OK")
 				}
+			} else {
+				//TODO: move resources to folder & add links to downloads.md
 			}
 
 			// Output report
@@ -429,8 +471,9 @@ func main() {
 	flagSet.StringVar(&aos, "os", "", "Specify OS (linux,darwin,windows,freebsd). Compiles all by default")
 	flagSet.StringVar(&aarch, "arch", "", "Specify Arch (386,amd64,arm). Compiles all by default")
 	flagSet.StringVar(&artifactVersion, "av", "latest", "Artifact version (default='latest')")
-	flagSet.StringVar(&artifactsDest, "d", "", "Destination root directory (default=$GOBIN)")
+	flagSet.StringVar(&artifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
 	flagSet.StringVar(&codesign, "codesign", "", "identity to sign darwin binaries with (only when host OS is OS X)")
+	flagSet.StringVar(&includeResources, "include", "INSTALL*,README*,LICENSE*", "Include resources in zips") //TODO: Add resources to non-zips & downloads.md
 	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s)")
 	flagSet.BoolVar(&isHelp, "h", false, "Show this help")
 	flagSet.BoolVar(&isVersion, "version", false, "version info")
