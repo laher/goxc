@@ -18,6 +18,7 @@ package main
 
 import (
 	"archive/zip"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -29,7 +30,7 @@ import (
 	"strings"
 )
 
-const VERSION = "0.1.3"
+const VERSION = "0.1.4"
 
 const (
 	AMD64   = "amd64"
@@ -40,6 +41,8 @@ const (
 	FREEBSD = "freebsd"
 	WINDOWS = "windows"
 )
+
+const MSG_INSTALL_GO_FROM_SOURCE = "goxc requires GO to be installed from Source. Please follow instructions at http://golang.org/doc/install/source"
 
 var PLATFORMS = [][]string{
 	{DARWIN, X86},
@@ -89,6 +92,48 @@ func redirectIO(cmd *exec.Cmd) (*os.File, error) {
 	return nil, err
 }
 
+func sanityCheck() error {
+	goroot := os.Getenv("GOROOT")
+	if goroot == "" {
+		return errors.New("GOROOT environment variable is NOT set.")
+	} else {
+		log.Printf("Found GOROOT=%s", goroot)
+	}
+	scriptpath := getMakeScriptPath()
+	_, err := os.Stat(scriptpath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return errors.New(fmt.Sprintf("Make script ('%s') does not exist!", scriptpath))
+		} else {
+			return errors.New(fmt.Sprintf("Error reading make script ('%s'): %v", scriptpath, err))
+		}
+	}
+	return nil
+}
+
+func fileExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
+func getMakeScriptPath() string {
+	goroot := os.Getenv("GOROOT")
+	gohostos := runtime.GOOS
+	var scriptname string
+	if gohostos == WINDOWS {
+		scriptname = "make.bat"
+	} else {
+		scriptname = "make.bash"
+	}
+	return filepath.Join(goroot, "src", scriptname)
+}
+
 func BuildToolchain(goos string, arch string) {
 	goroot := os.Getenv("GOROOT")
 	gohostos := runtime.GOOS
@@ -96,13 +141,15 @@ func BuildToolchain(goos string, arch string) {
 	if verbose {
 		log.Printf("Host OS = %s", gohostos)
 	}
+	/*
 	var scriptname string
 	if gohostos == WINDOWS {
 		scriptname = "make.bat"
 	} else {
 		scriptname = "make.bash"
-	}
-	cmd := exec.Command(filepath.Join(goroot, "src", scriptname))
+	}*/
+	scriptpath := getMakeScriptPath()
+	cmd := exec.Command(scriptpath)
 	cmd.Dir = filepath.Join(goroot, "src")
 	cmd.Args = append(cmd.Args, "--no-clean")
 	var cgoEnabled string
@@ -123,9 +170,9 @@ func BuildToolchain(goos string, arch string) {
 		cmd.Env = append(cmd.Env, "GOARM=5")
 	}
 	if verbose {
-		log.Printf("'%s' env: GOOS=%s, CGO_ENABLED=%s, GOARCH=%s, GOROOT=%s", scriptname, goos, cgoEnabled, arch, goroot)
-		log.Printf("'%s' args: %s", scriptname, cmd.Args)
-		log.Printf("'%s' working directory: %s", scriptname, cmd.Dir)
+		log.Printf("'make' env: GOOS=%s, CGO_ENABLED=%s, GOARCH=%s, GOROOT=%s", goos, cgoEnabled, arch, goroot)
+		log.Printf("'make' args: %s", cmd.Args)
+		log.Printf("'make' working directory: %s", cmd.Dir)
 	}
 	f, err := redirectIO(cmd)
 	if err != nil {
@@ -349,6 +396,13 @@ func GOXC(call []string) {
 		printVersion()
 		os.Exit(0)
 	}
+
+	if err := sanityCheck(); err != nil {
+		log.Printf("Error: %s", err)
+		log.Printf(MSG_INSTALL_GO_FROM_SOURCE)
+		os.Exit(1)
+	}
+
 	remainder := flagSet.Args()
 	if !isBuildToolchain && len(remainder) < 1 {
 		printHelp()
@@ -379,8 +433,8 @@ func GOXC(call []string) {
 
 func main() {
 	log.SetPrefix("[goxc] ")
-	flagSet.StringVar(&aos, "os", "", "Specify OS (linux/darwin/windows). Compiles all by default")
-	flagSet.StringVar(&aarch, "arch", "", "Specify Arch (386/amd64/arm). Compiles all by default")
+	flagSet.StringVar(&aos, "os", "", "Specify OS (linux,darwin,windows,freebsd). Compiles all by default")
+	flagSet.StringVar(&aarch, "arch", "", "Specify Arch (386,amd64,arm). Compiles all by default")
 	flagSet.StringVar(&artifactVersion, "av", "latest", "Artifact version (default='latest')")
 	flagSet.StringVar(&artifactsDest, "d", "", "Destination root directory (default=$GOBIN)")
 	flagSet.StringVar(&codesign, "codesign", "", "identity to sign darwin binaries with (only when host OS is OS X)")

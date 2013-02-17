@@ -100,7 +100,7 @@ Todo
  * Manifest file for setting up default settings. Preferably manifest.json/goxc.json, similar to Chrome extensions or npm packages.
  * "Copy resources" option for INSTALL, READMEs, LICENSE, configs etc
  * Much more error handling and potentially stop-on-error=true flag
- * Unit Tests!!
+ * More Unit Tests!!
  * Configurable 'downloads' page: name, format (e.g. markdown/html/ReST) & header/footer.
  * Artifact types: tgz, maybe packaging too (.deb/.rpm/.pkg...).
  * Automatically build target toolchain if missing? (need to work out detection mechanism)
