@@ -8,7 +8,7 @@ import (
 )
 
 func TestSanityCheck(t *testing.T) {
-	goroot:= os.Getenv("GOROOT")
+	goroot := os.Getenv("GOROOT")
 	defer os.Setenv("GOROOT", goroot) //just incase it doesnt sort itself out in time for subsequent tests
 	os.Setenv("GOROOT", "")
 	err := sanityCheck()
@@ -25,8 +25,8 @@ func TestSanityCheck(t *testing.T) {
 
 	srcDir := filepath.Join(tmpDir, "src")
 	os.Mkdir(srcDir, 0700)
-	scriptname:= getMakeScriptPath()
-	ioutil.WriteFile(scriptname, []byte("1"),0111)
+	scriptname := getMakeScriptPath()
+	ioutil.WriteFile(scriptname, []byte("1"), 0111)
 	err = sanityCheck()
 	if err != nil {
 		//os.Remove(srcDir)

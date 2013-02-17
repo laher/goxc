@@ -42,7 +42,7 @@ const (
 	WINDOWS = "windows"
 )
 
-const MSG_INSTALL_GO_FROM_SOURCE = "goxc requires GO to be installed from Source. Please follow instructions at http://golang.org/doc/install/source"
+const MSG_INSTALL_GO_FROM_SOURCE = "goxc requires Go to be installed from Source. Please follow instructions at http://golang.org/doc/install/source"
 
 var PLATFORMS = [][]string{
 	{DARWIN, X86},
@@ -141,13 +141,6 @@ func BuildToolchain(goos string, arch string) {
 	if verbose {
 		log.Printf("Host OS = %s", gohostos)
 	}
-	/*
-	var scriptname string
-	if gohostos == WINDOWS {
-		scriptname = "make.bat"
-	} else {
-		scriptname = "make.bash"
-	}*/
 	scriptpath := getMakeScriptPath()
 	cmd := exec.Command(scriptpath)
 	cmd.Dir = filepath.Join(goroot, "src")
