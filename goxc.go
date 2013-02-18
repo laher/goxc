@@ -43,6 +43,8 @@ const (
 	DARWIN  = "darwin"
 	LINUX   = "linux"
 	FREEBSD = "freebsd"
+	NETBSD  = "netbsd"
+	OPENBSD = "openbsd"
 	WINDOWS = "windows"
 
 	DEFAULT_VERSION   = "latest"
@@ -54,13 +56,17 @@ const (
 var PLATFORMS = [][]string{
 	{DARWIN, X86},
 	{DARWIN, AMD64},
-	{FREEBSD, X86},
-	{FREEBSD, AMD64},
-	//tried to add FREEBSD/ARM but not working for me yet. 2013-02-15
-	//{ FREEBSD, ARM },
 	{LINUX, X86},
 	{LINUX, AMD64},
 	{LINUX, ARM},
+	{FREEBSD, X86},
+	{FREEBSD, AMD64},
+	{FREEBSD, ARM},
+	// couldnt build toolchain for netbsd using a linux 386 host: 2013-02-19
+	//	{NETBSD, X86},
+	//	{NETBSD, AMD64},
+	{OPENBSD, X86},
+	{OPENBSD, AMD64},
 	{WINDOWS, X86},
 	{WINDOWS, AMD64},
 }
@@ -527,7 +533,7 @@ func GOXC(call []string) {
 
 func main() {
 	log.SetPrefix("[goxc] ")
-	flagSet.StringVar(&settings.aos, "os", "", "Specify OS (linux,darwin,windows,freebsd). Compiles all by default")
+	flagSet.StringVar(&settings.aos, "os", "", "Specify OS (linux,darwin,windows,freebsd,openbsd). Compiles all by default")
 	flagSet.StringVar(&settings.arch, "arch", "", "Specify Arch (386,amd64,arm). Compiles all by default")
 	flagSet.StringVar(&settings.packageVersion, "pv", DEFAULT_VERSION, "Package version (default='latest')")
 	flagSet.StringVar(&settings.packageVersion, "av", DEFAULT_VERSION, "Package version (deprecated option name)")
