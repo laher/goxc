@@ -202,11 +202,11 @@ func BuildToolchain(goos string, arch string) {
 }
 
 func moveBinaryToZIP(outDir, binPath, appName string, resources []string) (zipFilename string, err error) {
-	zipFileBaseName := appName + "_" + filepath.Base(filepath.Dir(binPath))
 	if settings.packageVersion != "" && settings.packageVersion != DEFAULT_VERSION {
-		zipFilename = zipFileBaseName + "_" + settings.packageVersion + ".zip"
+		// v0.1.6 using appname_version_platform. See issue 3
+		zipFilename = appName + "_" + settings.packageVersion + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
 	} else {
-		zipFilename = zipFileBaseName + ".zip"
+		zipFilename = appName + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
 	}
 	zf, err := os.Create(filepath.Join(outDir, zipFilename))
 	if err != nil {
@@ -488,13 +488,17 @@ func GOXC(call []string) {
 	}
 
 	remainder := flagSet.Args()
+	workingFolder := "."
 	if !settings.isBuildToolchain && len(remainder) < 1 {
 		printHelp()
 		os.Exit(1)
 	}
+	if len(remainder) > 0 {
+		workingFolder = remainder[0]
+	}
 
 	//taken from config plus parsed sources
-	mergeConfiguredSettings(remainder[0])
+	mergeConfiguredSettings(workingFolder)
 
 	if settings.verbose {
 		log.Printf("looping through each platform")

@@ -99,7 +99,7 @@ License
 Todo
 ----
 
-Contributions welcome. Please use github 'issues' for discussion.
+Contributions welcome via pull requests, thanks. Please use github 'issues' for discussion.
 
  * ~~Done v0.1.6: Use go/parse package to interpret PKG_VERSION variable and such.~~
  * Make PKG_VERSION constant name configurable.
@@ -111,6 +111,7 @@ Contributions welcome. Please use github 'issues' for discussion.
  * ~~Done v0.1.6: Refactoring: use a struct for all the options?~~
  * Refactoring: Start splitting functionality into separate packages, e.g. zipping, build, build-toolchain, config, ...
  * More Unit Tests!!
+ * Run package's unit tests as part of build? (configurable)
  * Configurable 'downloads' page: name, format (e.g. markdown,html,ReST,jekyll-markdown), header/footer?
  * Artifact types: ~~Done: zip,~~ tgz, ...
  * Packaging (source deb & .deb, .srpm & .rpm, .pkg? ...).
