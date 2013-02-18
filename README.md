@@ -23,7 +23,7 @@ goxc requires the go source and the go toolchain.
 Basic Usage
 -----------
 
-### Run once:
+### Run once
 
 To build the toolchains for all 9 platforms:
 
@@ -51,7 +51,7 @@ e.g. To output non-zipped binaries into folders:
 
       goxc -z=false .
 
-'Package version' will now be read from a constant PKG_VERSION.
+'Package version' can be automatically parsed from a constant in your source called PKG_VERSION.
 
 Outcome
 -------
@@ -105,14 +105,15 @@ Contributions welcome via pull requests, thanks. Please use github 'issues' for 
  * Make PKG_VERSION constant name configurable.
  * Config file for setting up default settings. Preferably json. Support use of local overrides file (my.xxx.json). Similar to Chrome extensions or npm packages? See [issue 3](https://github.com/laher/goxc/issues/3)
  * Respect +build flags inside file comments (just like 'go build' does)
- * "Copy resources" option for INSTALL, READMEs, LICENSE, configs etc (~~DONE v0.1.5 for zips~~. Not done for non-zipped binaries). See [issue 4](https://github.com/laher/goxc/issues/4)
+ * "Copy resources" option for INSTALL, READMEs, LICENSE, configs etc ( ~~Done v0.1.5: for zips.~~ Not done for non-zipped binaries). See [issue 4](https://github.com/laher/goxc/issues/4)
  * Much more error handling and potentially stop-on-error=true flag
  * Refactoring: Utilise/copy from [gotools source](http://golang.org/src/cmd/go/build.go)
- * ~~Done v0.1.6: Refactoring: use a struct for all the options?~~
+ * ~~Done v0.1.6: Refactoring: use a struct for all the options~~
  * Refactoring: Start splitting functionality into separate packages, e.g. zipping, build, build-toolchain, config, ...
  * More Unit Tests!!
  * Run package's unit tests as part of build? (configurable)
  * Configurable 'downloads' page: name, format (e.g. markdown,html,ReST,jekyll-markdown), header/footer?
+ * Generate 'downloads overview' page (append each version's page as a relative link) ?
  * Artifact types: ~~Done: zip,~~ tgz, ...
  * Packaging (source deb & .deb, .srpm & .rpm, .pkg? ...).
  * Improve sanity check: automatically build target toolchain if missing? (need to work out detection mechanism)
@@ -120,8 +121,9 @@ Contributions welcome via pull requests, thanks. Please use github 'issues' for 
  * Improve sanity check: warn about non-core libraries and binary dependencies?
  * building .so/.dll shared libraries?
  * One day: Build plugins (for OS-specific wizardry and stuff)? Pre- and post-processing scripts?
- * Maybe Someday: Investigate [forking and ?] hooking directly into the [gotools source](http://golang.org/src/cmd/go/build.go), instead of using os.exec
+ * Maybe Someday: Investigate [forking and ?] hooking directly into the [gotools source](http://golang.org/src/cmd/go/build.go), instead of using os.exec. Fork would be required due to non-exported functions.
  * Maybe someday: Use goroutines to speed up 'goxc -t'
+ * Maybe someday: pre- & post-build scripts to run?
 
 See also
 --------
