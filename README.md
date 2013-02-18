@@ -8,7 +8,7 @@ goxc is written in Go but uses *os.exec* to call 'go build' with the appropriate
 goxc was inspired by Dave Cheney's Bash script [golang-crosscompile](https://github.com/davecheney/golang-crosscompile).
 BUT, goxc crosscompiles to all platforms at once. The artifacts are saved into a folder structure along with a markdown file of relative links.
 
-Thanks to [dchest](https://github.com/dchest) for the tidy-up and adding the zip feature, and [matrixik](https://bitbucket.org/matrixik) for his improvements.
+Thanks to [dchest](https://github.com/dchest) for the tidy-up and adding the zip feature, and [matrixik](https://bitbucket.org/matrixik) for his improvements and input.
 
 Installation
 --------------
@@ -45,11 +45,13 @@ e.g. To restrict by OS and Architecture:
 
 e.g. To set a destination root folder and artifact version number:
 
-      goxc -d=my/jekyll/site/downloads -v=0.1.1 .
+      goxc -d=my/jekyll/site/downloads -pv=0.1.1 .
 
 e.g. To output non-zipped binaries into folders:
 
       goxc -z=false .
+
+'Package version' will now be read from a constant PKG_VERSION.
 
 Outcome
 -------
@@ -74,7 +76,7 @@ If non-zipped, artifacts generated into a folder structure as follows:
 Limitations
 -----------
 
- * Only tested on Linux & Windows. Please test on Mac/FreeBSD
+ * Tested on Linux, Windows (and Mac during an early version). Please test on Mac/FreeBSD
  * Currently goxc is only designed to build standalone Go apps without linked libraries. You can try but YMMV
 
 License
@@ -97,8 +99,8 @@ License
 Todo
 ----
 
- * Use go/parse package to interpret PKG_VERSION variable and such.
- * Manifest file for setting up default settings. Preferably manifest.json/goxc.json, similar to Chrome extensions or npm packages.
+ * ~~Done: Use go/parse package to interpret PKG_VERSION variable and such.~~
+ * Config file for setting up default settings. Preferably json. Support use of local overrides file (my.xxx.json). Similar to Chrome extensions or npm packages?
  * "Copy resources" option for INSTALL, READMEs, LICENSE, configs etc (DONE for zips. Not done for non-zipped binaries)
  * Much more error handling and potentially stop-on-error=true flag
  * Refactoring: use a struct for all the options?
