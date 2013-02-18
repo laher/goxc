@@ -66,7 +66,7 @@ By default, the output folder is ($GOBIN)/(appname)-xc, and the version is 'late
 
 e.g.
 
-      goxc -av=0.1 -d=/home/me/myapp/ghpages/downloads/ .
+      goxc -pv=0.1 -d=/home/me/myapp/ghpages/downloads/ .
 
 
 If non-zipped, artifacts generated into a folder structure as follows:
@@ -99,21 +99,27 @@ License
 Todo
 ----
 
- * ~~Done: Use go/parse package to interpret PKG_VERSION variable and such.~~
- * Config file for setting up default settings. Preferably json. Support use of local overrides file (my.xxx.json). Similar to Chrome extensions or npm packages?
- * "Copy resources" option for INSTALL, READMEs, LICENSE, configs etc (DONE for zips. Not done for non-zipped binaries)
+Contributions welcome. Please use github 'issues' for discussion.
+
+ * ~~Done v0.1.6: Use go/parse package to interpret PKG_VERSION variable and such.~~
+ * Make PKG_VERSION constant name configurable.
+ * Config file for setting up default settings. Preferably json. Support use of local overrides file (my.xxx.json). Similar to Chrome extensions or npm packages? See [issue 3](https://github.com/laher/goxc/issues/3)
+ * Respect +build flags inside file comments (just like 'go build' does)
+ * "Copy resources" option for INSTALL, READMEs, LICENSE, configs etc (~~DONE v0.1.5 for zips~~. Not done for non-zipped binaries). See [issue 4](https://github.com/laher/goxc/issues/4)
  * Much more error handling and potentially stop-on-error=true flag
- * Refactoring: use a struct for all the options?
- * Refactoring: Start splitting functionality into separate files, e.g. zipping, build, build-toolchain, config, ...
+ * Refactoring: Utilise/copy from [gotools source](http://golang.org/src/cmd/go/build.go)
+ * ~~Done v0.1.6: Refactoring: use a struct for all the options?~~
+ * Refactoring: Start splitting functionality into separate packages, e.g. zipping, build, build-toolchain, config, ...
  * More Unit Tests!!
- * Configurable 'downloads' page: name, format (e.g. markdown/html/ReST) & header/footer.
- * Artifact types: tgz, maybe packaging too (.deb/.rpm/.pkg...).
- * Automatically build target toolchain if missing? (need to work out detection mechanism)
- * 'download golang source' option?
+ * Configurable 'downloads' page: name, format (e.g. markdown,html,ReST,jekyll-markdown), header/footer?
+ * Artifact types: ~~Done: zip,~~ tgz, ...
+ * Packaging (source deb & .deb, .srpm & .rpm, .pkg? ...).
+ * Improve sanity check: automatically build target toolchain if missing? (need to work out detection mechanism)
+ * Improve sanity check: 'download golang source' option?
+ * Improve sanity check: warn about non-core libraries and binary dependencies?
  * building .so/.dll shared libraries?
  * One day: Build plugins (for OS-specific wizardry and stuff)? Pre- and post-processing scripts?
- * Respect +build flags inside file comments (just like 'go build')
- * Maybe Someday: Investigate [forking and ?] hooking directly into the gotools build code, instead of using os.exec
+ * Maybe Someday: Investigate [forking and ?] hooking directly into the [gotools source](http://golang.org/src/cmd/go/build.go), instead of using os.exec
  * Maybe someday: Use goroutines to speed up 'goxc -t'
 
 See also

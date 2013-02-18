@@ -34,7 +34,7 @@ import (
 )
 
 const PKG_NAME = "goxc"
-const PKG_VERSION = "0.1.5"
+const PKG_VERSION = "0.1.6"
 
 const (
 	AMD64   = "amd64"
@@ -455,7 +455,7 @@ func mergeConfiguredSettings(dir string) {
 				return
 			}
 			for _, f := range files {
-				pkgVersion := source.FindConstantValue(f, "xPKG_VERSION")
+				pkgVersion := source.FindConstantValue(f, "PKG_VERSION")
 				if pkgVersion != "" {
 					settings.packageVersion = pkgVersion
 					log.Printf("Package version = %v", pkgVersion)
