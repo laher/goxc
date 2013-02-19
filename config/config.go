@@ -1,49 +1,20 @@
 package config
 
-/*
-   Copyright 2013 Am Laher
+type Settings struct {
+	Verbose          bool
+	//TODO: replace with list of artifact types
+	ZipArchives      bool
+	//TODO: replace Os/Arch with +build type arguments
+	Os              string
+	Arch             string
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+	PackageVersion   string
+	ArtifactsDest    string
+	Codesign         string
+	IncludeResources string
 
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
-
-
-import (
-	"encoding/json"
-	"fmt"
-)
-
-//TODO!!
-type Config struct {
-	Name            string
-	Version         string
-	ManifestVersion string
-	Author          string
-	Description     string
-	Url             string
-	License         string
-	//Platforms       Platforms
+	IsHelp           bool
+	IsVersion        bool
+	IsBuildToolchain bool
 }
 
-//use json
-func ReadConfig(js []byte) {
-	var config Config
-	err := json.Unmarshal(js, &config)
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	fmt.Printf("%+v", archs)
-}
-
-func WriteConfig(m Manifest) ([]byte, error) {
-	return json.Marshal(m)
-}

@@ -26,7 +26,7 @@ func TestSanityCheck(t *testing.T) {
 	ioutil.WriteFile(scriptname, []byte("1"), 0111)
 	err = sanityCheck(tmpDir)
 	if err != nil {
-		t.Fatalf("sanity check failed! Did not find src folder", err)
+		t.Fatalf("sanity check failed! Did not find src folder: %v", err)
 	}
 	os.Chmod(srcDir, 0600)
 	defer os.Chmod(srcDir, 0700)

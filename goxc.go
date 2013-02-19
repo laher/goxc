@@ -31,10 +31,11 @@ import (
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/source"
+	"github.com/laher/goxc/config"
 )
 
 const PKG_NAME = "goxc"
-const PKG_VERSION = "0.1.6"
+const PKG_VERSION = "0.1.7"
 
 const (
 	AMD64   = "amd64"
@@ -65,23 +66,9 @@ var PLATFORMS = [][]string{
 	{WINDOWS, AMD64},
 }
 
-type Settings struct {
-	verbose          bool
-	isHelp           bool
-	isVersion        bool
-	isBuildToolchain bool
-	zipArchives      bool
-	aos              string
-	arch             string
-	packageVersion   string
-	artifactsDest    string
-	codesign         string
-	includeResources string
-}
-
 var (
 	flagSet  = flag.NewFlagSet("goxc", flag.ExitOnError)
-	settings Settings
+	settings config.Settings
 )
 
 func redirectIO(cmd *exec.Cmd) (*os.File, error) {
@@ -94,7 +81,7 @@ func redirectIO(cmd *exec.Cmd) (*os.File, error) {
 	if err != nil {
 		log.Println(err)
 	}
-	if settings.verbose {
+	if settings.Verbose {
 		log.Printf("Redirecting output")
 	}
 	go io.Copy(os.Stdout, stdout)
@@ -108,7 +95,7 @@ func sanityCheck(goroot string) error {
 	if goroot == "" {
 		return errors.New("GOROOT environment variable is NOT set.")
 	} else {
-		if settings.verbose {
+		if settings.Verbose {
 			log.Printf("Found GOROOT=%s", goroot)
 		}
 	}
@@ -150,7 +137,7 @@ func BuildToolchain(goos string, arch string) {
 	goroot := runtime.GOROOT()
 	gohostos := runtime.GOOS
 	gohostarch := runtime.GOARCH
-	if settings.verbose {
+	if settings.Verbose {
 		log.Printf("Host OS = %s", gohostos)
 	}
 	scriptpath := getMakeScriptPath(goroot)
@@ -174,7 +161,7 @@ func BuildToolchain(goos string, arch string) {
 		// see http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go
 		cmd.Env = append(cmd.Env, "GOARM=5")
 	}
-	if settings.verbose {
+	if settings.Verbose {
 		log.Printf("'make' env: GOOS=%s, CGO_ENABLED=%s, GOARCH=%s, GOROOT=%s", goos, cgoEnabled, arch, goroot)
 		log.Printf("'make' args: %s", cmd.Args)
 		log.Printf("'make' working directory: %s", cmd.Dir)
@@ -196,15 +183,15 @@ func BuildToolchain(goos string, arch string) {
 		log.Printf("Wait error: %s", err)
 		return
 	}
-	if settings.verbose {
+	if settings.Verbose {
 		log.Printf("Complete")
 	}
 }
 
 func moveBinaryToZIP(outDir, binPath, appName string, resources []string) (zipFilename string, err error) {
-	if settings.packageVersion != "" && settings.packageVersion != DEFAULT_VERSION {
+	if settings.PackageVersion != "" && settings.PackageVersion != DEFAULT_VERSION {
 		// v0.1.6 using appname_version_platform. See issue 3
-		zipFilename = appName + "_" + settings.packageVersion + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
+		zipFilename = appName + "_" + settings.PackageVersion + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
 	} else {
 		zipFilename = appName + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
 	}
@@ -282,7 +269,7 @@ func parseIncludeResources(basedir string, includeResources string) []string {
 			}
 		}
 	}
-	if settings.verbose {
+	if settings.Verbose {
 		log.Printf("Resources to include: %v", allMatches)
 	}
 	return allMatches
@@ -290,8 +277,8 @@ func parseIncludeResources(basedir string, includeResources string) []string {
 }
 
 func signBinary(binPath string) error {
-	cmd := exec.Command("settings.codesign")
-	cmd.Args = append(cmd.Args, "-s", settings.codesign, binPath)
+	cmd := exec.Command("codesign")
+	cmd.Args = append(cmd.Args, "-s", settings.Codesign, binPath)
 	if err := cmd.Start(); err != nil {
 		return err
 	}
@@ -316,11 +303,11 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 	}
 	appName := filepath.Base(appDirname)
 
-	relativeDir := filepath.Join(settings.packageVersion, goos+"_"+arch)
+	relativeDir := filepath.Join(settings.PackageVersion, goos+"_"+arch)
 
 	var outDestRoot string
-	if settings.artifactsDest != "" {
-		outDestRoot = settings.artifactsDest
+	if settings.ArtifactsDest != "" {
+		outDestRoot = settings.ArtifactsDest
 	} else {
 		gobin := os.Getenv("GOBIN")
 		if gobin == "" {
@@ -352,7 +339,7 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 	}
 
 	cmd.Env = append(os.Environ(), "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
-	if settings.verbose {
+	if settings.Verbose {
 		log.Printf("'go' env: GOOS=%s, CGO_ENABLED=%s, GOARCH=%s", goos, cgoEnabled, arch)
 		log.Printf("'go' args: %s", cmd.Args)
 		log.Printf("'go' working directory: %s", cmd.Dir)
@@ -367,21 +354,21 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 		} else {
 			log.Printf("Artifact generated OK")
 
-			resources := parseIncludeResources(call[0], settings.includeResources)
+			resources := parseIncludeResources(call[0], settings.IncludeResources)
 
 			// settings.codesign only works on OS X for binaries generated for OS X.
-			if settings.codesign != "" && gohostos == DARWIN && goos == DARWIN {
+			if settings.Codesign != "" && gohostos == DARWIN && goos == DARWIN {
 				if err := signBinary(filepath.Join(outDestRoot, relativeBin)); err != nil {
-					log.Printf("settings.codesign failed: %s", err)
+					log.Printf("codesign failed: %s", err)
 				} else {
-					log.Printf("Signed with ID: %q", settings.codesign)
+					log.Printf("Signed with ID: %q", settings.Codesign)
 				}
 			}
 
-			if settings.zipArchives {
+			if settings.ZipArchives {
 				// Create ZIP archive.
 				zipPath, err := moveBinaryToZIP(
-					filepath.Join(outDestRoot, settings.packageVersion),
+					filepath.Join(outDestRoot, settings.PackageVersion),
 					filepath.Join(outDestRoot, relativeBin), appName, resources)
 				if err != nil {
 					log.Printf("ZIP error: %s", err)
@@ -394,7 +381,7 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 			}
 
 			// Output report
-			reportFilename := filepath.Join(outDestRoot, settings.packageVersion, "downloads.md")
+			reportFilename := filepath.Join(outDestRoot, settings.PackageVersion, "downloads.md")
 			var flags int
 			if isFirst {
 				log.Printf("Creating %s", reportFilename)
@@ -407,7 +394,7 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 			if err == nil {
 				defer f.Close()
 				if isFirst {
-					_, err = fmt.Fprintf(f, "%s downloads (%s)\n------------\n\n", appName, settings.packageVersion)
+					_, err = fmt.Fprintf(f, "%s downloads (%s)\n------------\n\n", appName, settings.PackageVersion)
 				}
 				_, err = fmt.Fprintf(f, " * [%s %s](%s)\n", goos, arch, relativeBinForMarkdown)
 			}
@@ -433,20 +420,20 @@ func printVersion() {
 //TODO honour build flags
 //TODO merge in configuration file
 func mergeConfiguredSettings(dir string) {
-	if settings.verbose {
+	if settings.Verbose {
 		log.Printf("loading configured settings")
 	}
 	// flags take precedence
-	if settings.packageVersion == DEFAULT_VERSION || settings.packageVersion == "" {
+	if settings.PackageVersion == DEFAULT_VERSION || settings.PackageVersion == "" {
 		glob := filepath.Join(dir, "*.go")
-		if settings.verbose {
+		if settings.Verbose {
 			log.Printf("looking up PKG_VERSION in %s", glob)
 		}
 		matches, err := filepath.Glob(glob)
 		if err != nil {
 			log.Printf("Glob error %v", err)
 		} else {
-			if settings.verbose {
+			if settings.Verbose {
 				log.Printf("Glob found %v", matches)
 			}
 			files, err := source.LoadFiles(matches)
@@ -457,7 +444,7 @@ func mergeConfiguredSettings(dir string) {
 			for _, f := range files {
 				pkgVersion := source.FindConstantValue(f, "PKG_VERSION")
 				if pkgVersion != "" {
-					settings.packageVersion = pkgVersion
+					settings.PackageVersion = pkgVersion
 					log.Printf("Package version = %v", pkgVersion)
 				}
 			}
@@ -471,11 +458,11 @@ func GOXC(call []string) {
 		log.Printf("Error parsing arguments: %s", err)
 		os.Exit(1)
 	}
-	if settings.isHelp {
+	if settings.IsHelp {
 		printHelp()
 		os.Exit(0)
 	}
-	if settings.isVersion {
+	if settings.IsVersion {
 		printVersion()
 		os.Exit(0)
 	}
@@ -489,7 +476,7 @@ func GOXC(call []string) {
 
 	remainder := flagSet.Args()
 	workingFolder := "."
-	if !settings.isBuildToolchain && len(remainder) < 1 {
+	if !settings.IsBuildToolchain && len(remainder) < 1 {
 		printHelp()
 		os.Exit(1)
 	}
@@ -500,11 +487,11 @@ func GOXC(call []string) {
 	//taken from config plus parsed sources
 	mergeConfiguredSettings(workingFolder)
 
-	if settings.verbose {
+	if settings.Verbose {
 		log.Printf("looping through each platform")
 	}
-	destOses := strings.Split(settings.aos, ",")
-	destArchs := strings.Split(settings.arch, ",")
+	destOses := strings.Split(settings.Os, ",")
+	destArchs := strings.Split(settings.Arch, ",")
 
 	isFirst := true
 	for _, v := range PLATFORMS {
@@ -512,7 +499,7 @@ func GOXC(call []string) {
 			if dOs == "" || v[0] == dOs {
 				for _, dArch := range destArchs {
 					if dArch == "" || v[1] == dArch {
-						if settings.isBuildToolchain {
+						if settings.IsBuildToolchain {
 							BuildToolchain(v[0], v[1])
 						} else {
 							XCPlat(v[0], v[1], remainder, isFirst)
@@ -527,18 +514,18 @@ func GOXC(call []string) {
 
 func main() {
 	log.SetPrefix("[goxc] ")
-	flagSet.StringVar(&settings.aos, "os", "", "Specify OS (linux,darwin,windows,freebsd). Compiles all by default")
-	flagSet.StringVar(&settings.arch, "arch", "", "Specify Arch (386,amd64,arm). Compiles all by default")
-	flagSet.StringVar(&settings.packageVersion, "pv", DEFAULT_VERSION, "Package version (default='latest')")
-	flagSet.StringVar(&settings.packageVersion, "av", DEFAULT_VERSION, "Package version (deprecated option name)")
-	flagSet.StringVar(&settings.artifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
-	flagSet.StringVar(&settings.codesign, "codesign", "", "identity to sign darwin binaries with (only when host OS is OS X)")
-	flagSet.StringVar(&settings.includeResources, "include", DEFAULT_RESOURCES, "Include resources in zips") //TODO: Add resources to non-zips & downloads.md
-	flagSet.BoolVar(&settings.isBuildToolchain, "t", false, "Build cross-compiler toolchain(s)")
-	flagSet.BoolVar(&settings.isHelp, "h", false, "Show this help")
-	flagSet.BoolVar(&settings.isVersion, "version", false, "version info")
-	flagSet.BoolVar(&settings.verbose, "v", false, "verbose")
-	flagSet.BoolVar(&settings.zipArchives, "z", true, "create ZIP archives instead of folders")
+	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (linux,darwin,windows,freebsd). Compiles all by default")
+	flagSet.StringVar(&settings.Arch, "arch", "", "Specify Arch (386,amd64,arm). Compiles all by default")
+	flagSet.StringVar(&settings.PackageVersion, "pv", DEFAULT_VERSION, "Package version (default='latest')")
+	flagSet.StringVar(&settings.PackageVersion, "av", DEFAULT_VERSION, "Package version (deprecated option name)")
+	flagSet.StringVar(&settings.ArtifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
+	flagSet.StringVar(&settings.Codesign, "codesign", "", "identity to sign darwin binaries with (only when host OS is OS X)")
+	flagSet.StringVar(&settings.IncludeResources, "include", DEFAULT_RESOURCES, "Include resources in zips") //TODO: Add resources to non-zips & downloads.md
+	flagSet.BoolVar(&settings.IsBuildToolchain, "t", false, "Build cross-compiler toolchain(s)")
+	flagSet.BoolVar(&settings.IsHelp, "h", false, "Show this help")
+	flagSet.BoolVar(&settings.IsVersion, "version", false, "version info")
+	flagSet.BoolVar(&settings.Verbose, "v", false, "verbose")
+	flagSet.BoolVar(&settings.ZipArchives, "z", true, "create ZIP archives instead of folders")
 
 	GOXC(os.Args)
 }
