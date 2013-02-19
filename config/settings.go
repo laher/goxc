@@ -1,12 +1,12 @@
 package config
 
 type Settings struct {
-	Verbose          bool
+	Verbose bool
 	//TODO: replace with list of artifact types
-	ZipArchives      bool
+	ZipArchives bool
 	//TODO: replace Os/Arch with +build type arguments
-	Os              string
-	Arch             string
+	Os   string
+	Arch string
 
 	PackageVersion   string
 	ArtifactsDest    string
@@ -17,4 +17,3 @@ type Settings struct {
 	IsVersion        bool
 	IsBuildToolchain bool
 }
-

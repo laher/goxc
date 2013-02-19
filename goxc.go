@@ -30,8 +30,8 @@ import (
 	"strings"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
-	"github.com/laher/goxc/source"
 	"github.com/laher/goxc/config"
+	"github.com/laher/goxc/source"
 )
 
 const PKG_NAME = "goxc"
@@ -484,8 +484,10 @@ func GOXC(call []string) {
 		workingFolder = remainder[0]
 	}
 
-	//taken from config plus parsed sources
-	mergeConfiguredSettings(workingFolder)
+	if !settings.IsBuildToolchain {
+		//taken from config plus parsed sources
+		mergeConfiguredSettings(workingFolder)
+	}
 
 	if settings.Verbose {
 		log.Printf("looping through each platform")

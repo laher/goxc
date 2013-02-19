@@ -16,7 +16,6 @@ package config
    limitations under the License.
 */
 
-
 import (
 	"encoding/json"
 	"fmt"

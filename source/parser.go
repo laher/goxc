@@ -16,7 +16,6 @@ package source
    limitations under the License.
 */
 
-
 import (
 	"go/ast"
 	"go/parser"
