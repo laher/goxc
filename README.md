@@ -76,7 +76,7 @@ If non-zipped, artifacts generated into a folder structure as follows:
 Limitations
 -----------
 
- * Tested on Linux, Windows (and Mac during an early version). Please test on Mac/FreeBSD
+ * Tested on Linux, Windows (and Mac during an early version). Please test on Mac and *BSD
  * Currently goxc is only designed to build standalone Go apps without linked libraries. You can try but YMMV
 
 License
