@@ -86,7 +86,9 @@ You can specify an alternative config using -c=configname (default is .goxc)
  * by convention the .local.json file should not be stored in scm (source control e.g. git/hg/svn...)
  * In particular, the .local.json file should store version information in forked repos.
  * An example of the format can be found in the [goxc code](https://github.com/laher/goxc/blob/master/.goxc.json).
- * cli flags take precedence over any local file variables.
+ * An example of what you might put in the [.local.json file](https://github.com/laher/goxc/blob/master/sample-local.json).
+ * Don't forget to put '*.local.json' in your scm ignore file.
+ * cli flags take precedence over any json file variables.
 
 
 Limitations
@@ -94,6 +96,7 @@ Limitations
 
  * Tested on Linux, Windows (and Mac during an early version). Please test on Mac and *BSD
  * Currently goxc is only designed to build standalone Go apps without linked libraries. You can try but YMMV
+ * Bug: issue with config overriding. Empty strings do not currently override non-empty strings. e.g. -pi="" doesnt override the json setting PackageInfo
 
 License
 -------
@@ -118,16 +121,17 @@ Todo
 Contributions welcome via pull requests, thanks. Please use github 'issues' for discussion.
 
  * *Added but still open v0.2.0*: Config file for setting up default settings. Preferably json. Support use of local overrides file (my.xxx.json). Similar to Chrome extensions or npm packages? See [issue 3](https://github.com/laher/goxc/issues/3)
- * BranchName + PrereleaseInfo (to become part of version name)
+ * Bug: issue with config overriding. Empty strings do not currently override non-empty strings. Would involve more involved use of json and flagSet packages.
+ * Doc for json config format
  * Option to specify precise dir&name for a particular artifact?
- * take in config filename as argument.
  * Respect +build flags inside file comments (just like 'go build' does)
  * "Copy resources" option for INSTALL, READMEs, LICENSE, configs etc ( ~~Done v0.1.5: for zips.~~ Not done for non-zipped binaries). See [issue 4](https://github.com/laher/goxc/issues/4)
  * Much more error handling and potentially stop-on-error=true flag
  * Refactoring: Utilise/copy from [gotools source](http://golang.org/src/cmd/go/build.go)
  * Refactoring: Start splitting functionality into separate packages, e.g. zipping, build, build-toolchain, config, ...
+ * Meaningful godocs everywhere
  * More Unit Tests!!
- * Run package's unit tests as part of build? (configurable)
+ * Run package's unit tests as part of build? (configurable) gofmt? govet?
  * Configurable 'downloads' page: name, format (e.g. markdown,html,ReST,jekyll-markdown), header/footer?
  * Generate 'downloads overview' page (append each version's page as a relative link) ?
  * Artifact types: ~~Done: zip~~, tgz, ...
@@ -149,6 +153,8 @@ Done
  * v0.1.7: Make PKG_VERSION constant name configurable.
  * v0.2.0: Removed PKG_VERSION constant in favour of compiler/linker build flags & main.VERSION variable.
  * v0.2.0: goxc.json file.
+ * v0.2.0: take in config filename as argument - using -c
+ * v0.2.1: BranchName + PrereleaseInfo + BuildName (to become part of version name)
 
 See also
 --------

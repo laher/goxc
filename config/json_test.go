@@ -1,8 +1,8 @@
 package config
 
 import (
-	"testing"
 	"log"
+	"testing"
 )
 
 func TestLoadSettings(t *testing.T) {

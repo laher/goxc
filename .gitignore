@@ -21,3 +21,6 @@ _cgo_export.*
 _testmain.go
 
 *.exe
+
+" goxc 'ignore' files
+*.local.json

@@ -10,24 +10,24 @@ const (
 	OS_DEFAULT                      = ""
 	ARCH_DEFAULT                    = ""
 	PACKAGE_VERSION_DEFAULT         = "unknown"
-	PACKAGE_PRERELEASE_INFO_DEFAULT = ""
+	PRERELEASE_INFO_DEFAULT		= "SNAPSHOT"
 	VERBOSE_DEFAULT                 = false
 	ZIP_ARCHIVES_DEFAULT            = false
 	IS_BUILDTOOLCHAIN_DEFAULT       = false
 	BRANCH_ORIGINAL                 = "original"
 
-	VERBOSITY_QUIET			= "q" //TODO
-	VERBOSITY_DEFAULT		= "d"
-	VERBOSITY_VERBOSE		= "v"
+	VERBOSITY_QUIET   = "q" //TODO
+	VERBOSITY_DEFAULT = "d"
+	VERBOSITY_VERBOSE = "v"
 
-	TASK_BUILD_TOOLCHAIN		= "toolchain"
-	TASK_CROSSCOMPILE		= "xc"
-	TASK_CLEAN			= "clean" //TODO
+	TASK_BUILD_TOOLCHAIN = "toolchain"
+	TASK_CROSSCOMPILE    = "xc"
+	TASK_CLEAN           = "clean" //TODO
 
-	ARTIFACT_TYPE_ZIP		= "zip"
-	ARTIFACT_TYPE_DEFAULT		= "bin"
+	ARTIFACT_TYPE_ZIP     = "zip"
+	ARTIFACT_TYPE_DEFAULT = "bin"
 
-	CONFIG_NAME_DEFAULT		= ".goxc"
+	CONFIG_NAME_DEFAULT = ".goxc"
 )
 
 type Resources struct {
@@ -39,17 +39,17 @@ type Settings struct {
 	ArtifactsDest string
 	//0.2.0 ArtifactTypes replaces ZipArchives bool
 	ArtifactTypes []string //default = 'zip'. Also 'bin'
-	Codesign      string //mac signing identity
+	Codesign      string   //mac signing identity
 
 	//0.2.0 Tasks replaces IsBuildToolChain bool
-	Tasks            []string //TODO: clean,xc,toolchain
+	Tasks []string //TODO: clean,xc,toolchain
 
 	//TODO: replace Os/Arch with BuildConstraints?
 	Arch             string
 	Os               string
 	BuildConstraints string //TODO similar to build constraints used by Golang
 
-	Resources     Resources
+	Resources Resources
 
 	//versioning
 	PackageVersion string
@@ -58,7 +58,7 @@ type Settings struct {
 	BuildName      string
 
 	//0.2.0 Verbosity replaces Verbose bool
-	Verbosity   string // none/debug/
+	Verbosity string // none/debug/
 }
 
 func (s Settings) IsVerbose() bool {
@@ -66,13 +66,40 @@ func (s Settings) IsVerbose() bool {
 }
 
 func (s Settings) IsZip() bool {
-	for _, t := range s.ArtifactTypes { if t == ARTIFACT_TYPE_ZIP { return true } }
+	for _, t := range s.ArtifactTypes {
+		if t == ARTIFACT_TYPE_ZIP {
+			return true
+		}
+	}
 	return false
 }
 
 func (s Settings) IsBuildToolchain() bool {
-	for _, t := range s.Tasks { if t == TASK_BUILD_TOOLCHAIN { return true } }
+	for _, t := range s.Tasks {
+		if t == TASK_BUILD_TOOLCHAIN {
+			return true
+		}
+	}
 	return false
+}
+
+func (settings Settings) GetFullVersionName() string {
+	versionName := settings.PackageVersion
+	if settings.BranchName != "" {
+		versionName += "-" + settings.BranchName
+	}
+	if settings.PrereleaseInfo != "" {
+		if settings.BranchName == "" {
+			versionName += "-"
+		} else {
+			versionName += "."
+		}
+		versionName += settings.PrereleaseInfo
+	}
+	if settings.BuildName != "" {
+		versionName += "+" + settings.BuildName
+	}
+	return versionName
 }
 
 // Merge settings together with priority.
@@ -107,6 +134,9 @@ func Merge(high Settings, low Settings) Settings {
 	if high.PrereleaseInfo == "" {
 		high.PrereleaseInfo = low.PrereleaseInfo
 	}
+	if high.BuildName == "" {
+		high.BuildName = low.BuildName
+	}
 	//TODO: merging of booleans ??
 	if high.Verbosity == "" {
 		high.Verbosity = low.Verbosity
@@ -135,6 +165,7 @@ func FillDefaults(settings Settings) Settings {
 	if settings.PackageVersion == "" {
 		settings.PackageVersion = PACKAGE_VERSION_DEFAULT
 	}
+
 	if len(settings.Tasks) == 0 {
 		settings.Tasks = []string{TASK_CROSSCOMPILE}
 	}

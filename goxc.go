@@ -75,13 +75,13 @@ var PLATFORMS = [][]string{
 
 // settings for this invocation of goxc
 var (
-	settings config.Settings
-	configName string
-	isVersion bool
-	isHelp bool
+	settings         config.Settings
+	configName       string
+	isVersion        bool
+	isHelp           bool
 	isBuildToolchain bool
-	isZipArchives bool
-	isVerbose bool
+	isZipArchives    bool
+	isVerbose        bool
 )
 
 // this function copied from 'https://github.com/laher/mkdo'
@@ -319,7 +319,7 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 	}
 	appName := filepath.Base(appDirname)
 
-	relativeDir := filepath.Join(settings.PackageVersion, goos+"_"+arch)
+	relativeDir := filepath.Join(settings.GetFullVersionName(), goos+"_"+arch)
 
 	var outDestRoot string
 	if settings.ArtifactsDest != "" {
@@ -338,8 +338,8 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 
 	cmd := exec.Command("go")
 	cmd.Args = append(cmd.Args, "build")
-	if settings.PackageVersion != "" {
-		cmd.Args = append(cmd.Args, "-ldflags", "-X main.VERSION "+settings.PackageVersion+"")
+	if settings.GetFullVersionName() != "" {
+		cmd.Args = append(cmd.Args, "-ldflags", "-X main.VERSION "+settings.GetFullVersionName()+"")
 	}
 	cmd.Dir = call[0]
 	var ending = ""
@@ -393,7 +393,7 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 			if settings.IsZip() {
 				// Create ZIP archive.
 				zipPath, err := moveBinaryToZIP(
-					filepath.Join(outDestRoot, settings.PackageVersion),
+					filepath.Join(outDestRoot, settings.GetFullVersionName()),
 					filepath.Join(outDestRoot, relativeBin), appName, resources)
 				if err != nil {
 					log.Printf("ZIP error: %s", err)
@@ -406,7 +406,7 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 			}
 
 			// Output report
-			reportFilename := filepath.Join(outDestRoot, settings.PackageVersion, "downloads.md")
+			reportFilename := filepath.Join(outDestRoot, settings.GetFullVersionName(), "downloads.md")
 			var flags int
 			if isFirst {
 				log.Printf("Creating %s", reportFilename)
@@ -419,7 +419,7 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 			if err == nil {
 				defer f.Close()
 				if isFirst {
-					_, err = fmt.Fprintf(f, "%s downloads (%s)\n------------\n\n", appName, settings.PackageVersion)
+					_, err = fmt.Fprintf(f, "%s downloads (%s)\n------------\n\n", appName, settings.GetFullVersionName())
 				}
 				_, err = fmt.Fprintf(f, " * [%s %s](%s)\n", goos, arch, relativeBinForMarkdown)
 			}
@@ -474,10 +474,10 @@ func GOXC(call []string) {
 			settings.Verbosity = config.VERBOSITY_VERBOSE
 		}
 		if isBuildToolchain {
-			settings.Tasks= []string{config.TASK_BUILD_TOOLCHAIN}
+			settings.Tasks = []string{config.TASK_BUILD_TOOLCHAIN}
 		}
 		if isZipArchives {
-			settings.ArtifactTypes= []string{config.ARTIFACT_TYPE_ZIP}
+			settings.ArtifactTypes = []string{config.ARTIFACT_TYPE_ZIP}
 		}
 	}
 	//log.Printf("Settings: %s", settings)
@@ -545,14 +545,16 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&configName, "c", config.CONFIG_NAME_DEFAULT, "config name (default='goxc')")
 	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (linux,darwin,windows,freebsd,openbsd). Compiles all by default")
 	flagSet.StringVar(&settings.Arch, "arch", "", "Specify Arch (386,amd64,arm). Compiles all by default")
-	flagSet.StringVar(&settings.PackageVersion, "pv", "", "Package version (default='"+config.PACKAGE_VERSION_DEFAULT+"')")
+	flagSet.StringVar(&settings.PackageVersion, "pv", "", "Package version (usually [major].[minor].[patch]. default='"+config.PACKAGE_VERSION_DEFAULT+"')")
 	flagSet.StringVar(&settings.PackageVersion, "av", "", "Package version (deprecated option name)")
+	flagSet.StringVar(&settings.PrereleaseInfo, "pi", "", "Prerelease info (usually 'alpha', 'snapshot',...)")
+	flagSet.StringVar(&settings.BuildName, "bn", "", "Build name")
 	flagSet.StringVar(&settings.ArtifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
 	flagSet.StringVar(&settings.Codesign, "codesign", "", "identity to sign darwin binaries with (only when host OS is OS X)")
 	flagSet.StringVar(&settings.Resources.Include, "include", "", "Include resources in zips (default="+config.RESOURCES_INCLUDE_DEFAULT+")") //TODO: Add resources to non-zips & downloads.md
 
-//0.2.0 Not easy to 'merge' boolean config items. More flexible to translate them to string options anyway
-	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s)")                                              //TODO: task types clean,xc,toolchain
+	//0.2.0 Not easy to 'merge' boolean config items. More flexible to translate them to string options anyway
+	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s)") //TODO: task types clean,xc,toolchain
 	flagSet.BoolVar(&isHelp, "h", false, "Show this help")
 	flagSet.BoolVar(&isVersion, "version", false, "version info")
 	flagSet.BoolVar(&isVerbose, "v", false, "verbose")

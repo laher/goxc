@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"log"
 	"path/filepath"
+	"os"
 )
 
 type JsonSettings struct {
@@ -31,25 +32,51 @@ type JsonSettings struct {
 }
 
 func LoadJsonCascadingConfig(dir string, configName string, verbose bool) (Settings, error) {
-	jsonFile := filepath.Join(dir, configName + ".json")
-	jsonLocalFile := filepath.Join(dir, configName + ".local.json")
+	jsonFile := filepath.Join(dir, configName+".json")
+	jsonLocalFile := filepath.Join(dir, configName+".local.json")
 	localSettings, err := LoadJsonFile(jsonLocalFile, verbose)
 	if err != nil {
+		if os.IsNotExist(err) {
+			if verbose {
+					log.Printf("%s not found", jsonLocalFile)
+			}
+		} else {
+			log.Printf("Could NOT load %s: %s", jsonLocalFile, err)
+		}
 		settings, err := LoadJsonFile(jsonFile, verbose)
 		if err != nil {
-			if verbose {
+			if os.IsNotExist(err) {
+				if verbose {
+					log.Printf("%s not found", jsonFile)
+				}
+			} else {
 				log.Printf("Could NOT load %s: %s", jsonFile, err)
+			}
+		} else {
+			if verbose {
+				log.Printf("%s settings: %v", jsonFile, settings.Settings)
 			}
 		}
 		return settings.Settings, err
 	} else {
+
+		if verbose {
+			log.Printf("%s settings: %v", jsonLocalFile, localSettings.Settings)
+		}
 		settings, err := LoadJsonFile(jsonFile, verbose)
 		if err != nil {
-			if verbose {
-				log.Printf("Could NOT load %s: %s", jsonLocalFile, err)
+			if os.IsNotExist(err) {
+				if verbose {
+					log.Printf("%s not found", jsonFile)
+				}
+			} else {
+				log.Printf("Could NOT load %s: %s", jsonFile, err)
 			}
 			return localSettings.Settings, nil
 		} else {
+			if verbose {
+				log.Printf("%s settings: %v", jsonFile, settings.Settings)
+			}
 			return Merge(localSettings.Settings, settings.Settings), nil
 		}
 	}
@@ -66,14 +93,20 @@ func LoadJsonFile(jsonFile string, verbose bool) (JsonSettings, error) {
 			log.Printf("File error: %v", err)
 		}
 		return settings, err
+	} else {
+		if verbose {
+			log.Printf("Found %s", jsonFile)
+		}
 	}
 	//TODO: super-verbose option for logging file content? log.Printf("%s\n", string(file))
 	json.Unmarshal(file, &settings)
 	if err != nil {
-		if verbose {
-			log.Printf("Unmarshal error: %s", err)
-		}
+		log.Printf("Unmarshal error: %s", err)
 		return settings, err
+	} else {
+		if verbose {
+			log.Printf("unmarshalled settings OK")
+		}
 	}
 	//TODO: verbosity here? log.Printf("Results: %v", settings)
 	return settings, nil
