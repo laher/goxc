@@ -1,0 +1,17 @@
+{
+	"Settings" : {
+		"ArtifactsDest" : "../goxc-pages/dl",
+		"ArtifactTypes" : ["zip", "binary"],
+		"Verbose" : true,
+		"PackageVersion" : "0.2.0",
+		"BranchName" : "", //only fill in local file.
+		"PrereleaseInfo" : "", //
+		"BuildName" : "", //use it?
+		"OS" : "",
+		"ARCH" : "",
+		"Resources" : {
+			"Include" : "README.md"
+		}
+	},
+	"FormatVersion" : "0.2.0"
+}

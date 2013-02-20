@@ -31,11 +31,14 @@ import (
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/config"
-	"github.com/laher/goxc/source"
+
+//	"github.com/laher/goxc/source"
 )
 
-const PKG_NAME = "goxc"
-const PKG_VERSION = "0.1.7"
+// VERSION is initialised by the linker during compilation if the appropriate flag is specified:
+// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
+// thanks to minux for this advice
+var VERSION string
 
 const (
 	AMD64   = "amd64"
@@ -47,13 +50,11 @@ const (
 	NETBSD  = "netbsd"
 	OPENBSD = "openbsd"
 	WINDOWS = "windows"
-
-	DEFAULT_VERSION   = "latest"
-	DEFAULT_RESOURCES = "INSTALL*,README*,LICENSE*"
-
+	// Message to install go from source, incase it is missing
 	MSG_INSTALL_GO_FROM_SOURCE = "goxc requires Go to be installed from Source. Please follow instructions at http://golang.org/doc/install/source"
 )
 
+// Supported platforms
 var PLATFORMS = [][]string{
 	{DARWIN, X86},
 	{DARWIN, AMD64},
@@ -62,7 +63,7 @@ var PLATFORMS = [][]string{
 	{LINUX, ARM},
 	{FREEBSD, X86},
 	{FREEBSD, AMD64},
-	{FREEBSD, ARM},
+	// {FREEBSD, ARM},
 	// couldnt build toolchain for netbsd using a linux 386 host: 2013-02-19
 	//	{NETBSD, X86},
 	//	{NETBSD, AMD64},
@@ -72,13 +73,13 @@ var PLATFORMS = [][]string{
 	{WINDOWS, AMD64},
 }
 
+// settings for this invocation of goxc
 var (
-	flagSet  = flag.NewFlagSet("goxc", flag.ExitOnError)
 	settings config.Settings
 )
 
+// this function copied from 'https://github.com/laher/mkdo'
 func redirectIO(cmd *exec.Cmd) (*os.File, error) {
-	// this function copied from 'https://github.com/laher/mkdo'
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Println(err)
@@ -139,6 +140,7 @@ func getMakeScriptPath(goroot string) string {
 	return filepath.Join(goroot, "src", scriptname)
 }
 
+// Build toolchain for a given target platform
 func BuildToolchain(goos string, arch string) {
 	goroot := runtime.GOROOT()
 	gohostos := runtime.GOOS
@@ -168,7 +170,7 @@ func BuildToolchain(goos string, arch string) {
 		cmd.Env = append(cmd.Env, "GOARM=5")
 	}
 	if settings.Verbose {
-		log.Printf("'make' env: GOOS=%s, CGO_ENABLED=%s, GOARCH=%s, GOROOT=%s", goos, cgoEnabled, arch, goroot)
+		log.Printf("'make' env: GOOS=%s CGO_ENABLED=%s GOARCH=%s GOROOT=%s", goos, cgoEnabled, arch, goroot)
 		log.Printf("'make' args: %s", cmd.Args)
 		log.Printf("'make' working directory: %s", cmd.Dir)
 	}
@@ -195,7 +197,7 @@ func BuildToolchain(goos string, arch string) {
 }
 
 func moveBinaryToZIP(outDir, binPath, appName string, resources []string) (zipFilename string, err error) {
-	if settings.PackageVersion != "" && settings.PackageVersion != DEFAULT_VERSION {
+	if settings.PackageVersion != "" && settings.PackageVersion != config.PACKAGE_VERSION_DEFAULT {
 		// v0.1.6 using appname_version_platform. See issue 3
 		zipFilename = appName + "_" + settings.PackageVersion + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
 	} else {
@@ -294,9 +296,11 @@ func signBinary(binPath string) error {
 	return nil
 }
 
+// XCPlat: Cross compile for a particular platform
+// 'call' represents the package or list of configs to cross compile
+// 'isFirst' is used simply to determine whether to start a new downloads.md page
 func XCPlat(goos, arch string, call []string, isFirst bool) string {
 	log.Printf("building for platform %s_%s.", goos, arch)
-
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
 		log.Printf("GOPATH env variable not set! Using '.'")
@@ -327,7 +331,10 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 	os.MkdirAll(outDir, 0755)
 
 	cmd := exec.Command("go")
-	cmd.Args = append(cmd.Args, "build", "-o")
+	cmd.Args = append(cmd.Args, "build")
+	if settings.PackageVersion != "" {
+		cmd.Args = append(cmd.Args, "-ldflags", "-X main.VERSION "+settings.PackageVersion+"")
+	}
 	cmd.Dir = call[0]
 	var ending = ""
 	if goos == WINDOWS {
@@ -335,8 +342,14 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 	}
 	relativeBinForMarkdown := filepath.Join(goos+"_"+arch, appName+ending)
 	relativeBin := filepath.Join(relativeDir, appName+ending)
-	cmd.Args = append(cmd.Args, filepath.Join(outDestRoot, relativeBin), ".")
-
+	cmd.Args = append(cmd.Args, "-o", filepath.Join(outDestRoot, relativeBin), call[0])
+	f, err := redirectIO(cmd)
+	if err != nil {
+		log.Printf("Error redirecting IO: %s", err)
+	}
+	if f != nil {
+		defer f.Close()
+	}
 	var cgoEnabled string
 	if goos == gohostos {
 		cgoEnabled = "1"
@@ -346,8 +359,8 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 
 	cmd.Env = append(os.Environ(), "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
 	if settings.Verbose {
-		log.Printf("'go' env: GOOS=%s, CGO_ENABLED=%s, GOARCH=%s", goos, cgoEnabled, arch)
-		log.Printf("'go' args: %s", cmd.Args)
+		log.Printf("'go' env: GOOS=%s CGO_ENABLED=%s GOARCH=%s", goos, cgoEnabled, arch)
+		log.Printf("'go' args: %v", cmd.Args)
 		log.Printf("'go' working directory: %s", cmd.Dir)
 	}
 	err = cmd.Start()
@@ -360,7 +373,7 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 		} else {
 			log.Printf("Artifact generated OK")
 
-			resources := parseIncludeResources(call[0], settings.IncludeResources)
+			resources := parseIncludeResources(call[0], settings.Resources.Include)
 
 			// settings.codesign only works on OS X for binaries generated for OS X.
 			if settings.Codesign != "" && gohostos == DARWIN && goos == DARWIN {
@@ -412,67 +425,56 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 	return relativeBin
 }
 
-func printHelp() {
+func printHelp(flagSet *flag.FlagSet) {
 	fmt.Fprint(os.Stderr, "`goxc` [options] <directory_name>\n")
-	fmt.Fprintf(os.Stderr, " Version %s. Options:\n", PKG_VERSION)
+	fmt.Fprintf(os.Stderr, " Version %s. Options:\n", VERSION)
 	flagSet.PrintDefaults()
 }
 
-func printVersion() {
-	fmt.Fprintf(os.Stderr, " goxc version %s\n", PKG_VERSION)
+func printVersion(flagSet *flag.FlagSet) {
+	fmt.Fprintf(os.Stderr, " goxc version %s\n", VERSION)
 }
 
 //merge configuration file and parse source
 //TODO honour build flags
 //TODO merge in configuration file
-func mergeConfiguredSettings(dir string) {
+func mergeConfiguredSettings(dir string, configName string) {
 	if settings.Verbose {
 		log.Printf("loading configured settings")
 	}
-	// flags take precedence
-	if settings.PackageVersion == DEFAULT_VERSION || settings.PackageVersion == "" {
-		glob := filepath.Join(dir, "*.go")
-		if settings.Verbose {
-			log.Printf("looking up PKG_VERSION in %s", glob)
-		}
-		matches, err := filepath.Glob(glob)
-		if err != nil {
-			log.Printf("Glob error %v", err)
-		} else {
-			if settings.Verbose {
-				log.Printf("Glob found %v", matches)
-			}
-			files, err := source.LoadFiles(matches)
-			if err != nil {
-				log.Printf("%v", err)
-				return
-			}
-			for _, f := range files {
-				pkgVersion := source.FindConstantValue(f, "PKG_VERSION")
-				if pkgVersion != "" {
-					settings.PackageVersion = pkgVersion
-					log.Printf("Package version = %v", pkgVersion)
-				}
-			}
-		}
-
+	configuredSettings, err := config.LoadJsonCascadingConfig(filepath.Join(dir, "goxc.json"), settings.Verbose)
+	if settings.Verbose {
+		log.Printf("Settings from config %s: %v : %v", configName, configuredSettings, err)
 	}
+	if err == nil {
+		settings = config.Merge(settings, configuredSettings)
+	}
+	settings = config.FillDefaults(settings)
+	if settings.Verbose {
+		log.Printf("Final settings %s", settings)
+	}
+	//v2.0.0: Removed PKG_VERSION parsing
 }
 
+// GOXC is the goxc startpoint, having already declared the flags inside 'main'.
+// In theory you could call this with a directory name or a list of config files.
 func GOXC(call []string) {
+	var configName string
+	flagSet := setupFlags(configName)
 	if err := flagSet.Parse(call[1:]); err != nil {
 		log.Printf("Error parsing arguments: %s", err)
 		os.Exit(1)
 	}
+	log.Printf("Settings: %s", settings)
 	if settings.IsHelp {
-		printHelp()
+		printHelp(flagSet)
 		os.Exit(0)
 	}
 	if settings.IsVersion {
-		printVersion()
+		printVersion(flagSet)
 		os.Exit(0)
 	}
-
+	//sanity check
 	goroot := runtime.GOROOT()
 	if err := sanityCheck(goroot); err != nil {
 		log.Printf("Error: %s", err)
@@ -483,7 +485,7 @@ func GOXC(call []string) {
 	remainder := flagSet.Args()
 	workingFolder := "."
 	if !settings.IsBuildToolchain && len(remainder) < 1 {
-		printHelp()
+		printHelp(flagSet)
 		os.Exit(1)
 	}
 	if len(remainder) > 0 {
@@ -492,7 +494,7 @@ func GOXC(call []string) {
 
 	if !settings.IsBuildToolchain {
 		//taken from config plus parsed sources
-		mergeConfiguredSettings(workingFolder)
+		mergeConfiguredSettings(workingFolder, configName)
 	}
 
 	if settings.Verbose {
@@ -520,19 +522,28 @@ func GOXC(call []string) {
 	}
 }
 
-func main() {
-	log.SetPrefix("[goxc] ")
+// Set up flags.
+// Note use of empty strings as defaults, with 'actual' defaults .
+// This is done to make merging options from configuration files easier.
+func setupFlags(configName string) *flag.FlagSet {
+	flagSet := flag.NewFlagSet("goxc", flag.ExitOnError)
+	flagSet.StringVar(&configName, "c", "", "config name (default='goxc')")
 	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (linux,darwin,windows,freebsd,openbsd). Compiles all by default")
 	flagSet.StringVar(&settings.Arch, "arch", "", "Specify Arch (386,amd64,arm). Compiles all by default")
-	flagSet.StringVar(&settings.PackageVersion, "pv", DEFAULT_VERSION, "Package version (default='latest')")
-	flagSet.StringVar(&settings.PackageVersion, "av", DEFAULT_VERSION, "Package version (deprecated option name)")
+	flagSet.StringVar(&settings.PackageVersion, "pv", "", "Package version (default='"+config.PACKAGE_VERSION_DEFAULT+"')")
+	flagSet.StringVar(&settings.PackageVersion, "av", "", "Package version (deprecated option name)")
 	flagSet.StringVar(&settings.ArtifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
 	flagSet.StringVar(&settings.Codesign, "codesign", "", "identity to sign darwin binaries with (only when host OS is OS X)")
-	flagSet.StringVar(&settings.IncludeResources, "include", DEFAULT_RESOURCES, "Include resources in zips") //TODO: Add resources to non-zips & downloads.md
-	flagSet.BoolVar(&settings.IsBuildToolchain, "t", false, "Build cross-compiler toolchain(s)")
+	flagSet.StringVar(&settings.Resources.Include, "include", "", "Include resources in zips (default="+config.RESOURCES_INCLUDE_DEFAULT+")") //TODO: Add resources to non-zips & downloads.md
+	flagSet.BoolVar(&settings.IsBuildToolchain, "t", false, "Build cross-compiler toolchain(s)")                                              //TODO: task types clean,xc,toolchain
 	flagSet.BoolVar(&settings.IsHelp, "h", false, "Show this help")
 	flagSet.BoolVar(&settings.IsVersion, "version", false, "version info")
 	flagSet.BoolVar(&settings.Verbose, "v", false, "verbose")
 	flagSet.BoolVar(&settings.ZipArchives, "z", true, "create ZIP archives instead of folders")
+	return flagSet
+}
+
+func main() {
+	log.SetPrefix("[goxc] ")
 	GOXC(os.Args)
 }

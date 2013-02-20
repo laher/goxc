@@ -39,19 +39,20 @@ To build zipped binaries for your app:
 
 See 'goxc -h' for more options.
 
-e.g. To restrict by OS and Architecture:
+ * e.g. To restrict by OS and Architecture:
 
-      goxc -os=windows -arch=amd64 .
+	goxc -os=windows -arch=amd64 .
 
-e.g. To set a destination root folder and artifact version number:
+ * e.g. To set a destination root folder and artifact version number:
 
-      goxc -d=my/jekyll/site/downloads -pv=0.1.1 .
+	goxc -d=my/jekyll/site/downloads -pv=0.1.1 .
 
-e.g. To output non-zipped binaries into folders:
+ * e.g. To output non-zipped binaries into folders:
 
-      goxc -z=false .
+	goxc -z=false .
 
-'Package version' can be automatically parsed from a constant in your source called PKG_VERSION.
+ * 'Package version' can be compiled into your app if you define a VERSION variable in your main package.
+
 
 Outcome
 -------
@@ -72,6 +73,21 @@ e.g.
 If non-zipped, artifacts generated into a folder structure as follows:
 
  (outputfolder)/(version)/(OS)_(ARCH)/(appname)(.exe?)
+
+Settings file
+-------------
+
+As of v0.2.0, goxc has a settings file.
+
+You can specify an alternative config using -c=configname (default is goxc)
+
+ * goxc looks for [configname].local.json and [configname].json.
+ * The .local file takes precedence and by convention this should not be stored in scm (source control e.g. git/hg/svn...)
+ * cli flags take precedence over any local file variables.
+ * **BUG: precedence is currently broken for boolean options. If any flag or .json file contains a non-default value, this will be used.**
+
+Note that the more dots(.) in the filename, the higher its priority.
+This is to make it easier to add scm-ignored files to override your config file.
 
 Limitations
 -----------
@@ -101,29 +117,38 @@ Todo
 
 Contributions welcome via pull requests, thanks. Please use github 'issues' for discussion.
 
- * ~~Done v0.1.6: Use go/parse package to interpret PKG_VERSION variable and such.~~
- * Make PKG_VERSION constant name configurable.
- * Config file for setting up default settings. Preferably json. Support use of local overrides file (my.xxx.json). Similar to Chrome extensions or npm packages? See [issue 3](https://github.com/laher/goxc/issues/3)
+ * *Added but still open v0.2.0*: Config file for setting up default settings. Preferably json. Support use of local overrides file (my.xxx.json). Similar to Chrome extensions or npm packages? See [issue 3](https://github.com/laher/goxc/issues/3)
+ * BranchName + PrereleaseInfo (to become part of version name)
+ * Option to specify precise dir&name for a particular artifact?
+ * take in config filename as argument.
  * Respect +build flags inside file comments (just like 'go build' does)
  * "Copy resources" option for INSTALL, READMEs, LICENSE, configs etc ( ~~Done v0.1.5: for zips.~~ Not done for non-zipped binaries). See [issue 4](https://github.com/laher/goxc/issues/4)
  * Much more error handling and potentially stop-on-error=true flag
  * Refactoring: Utilise/copy from [gotools source](http://golang.org/src/cmd/go/build.go)
- * ~~Done v0.1.6: Refactoring: use a struct for all the options~~
  * Refactoring: Start splitting functionality into separate packages, e.g. zipping, build, build-toolchain, config, ...
  * More Unit Tests!!
  * Run package's unit tests as part of build? (configurable)
  * Configurable 'downloads' page: name, format (e.g. markdown,html,ReST,jekyll-markdown), header/footer?
  * Generate 'downloads overview' page (append each version's page as a relative link) ?
- * Artifact types: ~~Done: zip,~~ tgz, ...
+ * Artifact types: ~~Done: zip~~, tgz, ...
  * Packaging (source deb & .deb, .srpm & .rpm, .pkg? ...).
  * Improve sanity check: automatically build target toolchain if missing? (need to work out detection mechanism)
  * Improve sanity check: 'download golang source' option?
  * Improve sanity check: warn about non-core libraries and binary dependencies?
  * building .so/.dll shared libraries?
- * One day: Build plugins (for OS-specific wizardry and stuff)? Pre- and post-processing scripts?
- * Maybe Someday: Investigate [forking and ?] hooking directly into the [gotools source](http://golang.org/src/cmd/go/build.go), instead of using os.exec. Fork would be required due to non-exported functions.
+ * Maybe someday: Build plugins (for OS-specific wizardry and stuff)? Pre- and post-processing scripts?
+ * Maybe someday: Investigate [forking and ?] hooking directly into the [gotools source](http://golang.org/src/cmd/go/build.go), instead of using os.exec. Fork would be required due to non-exported functions.
  * Maybe someday: Use goroutines to speed up 'goxc -t'
  * Maybe someday: pre- & post-build scripts to run?
+
+Done
+----
+ * v0.1.0: gofmt, zip archives
+ * v0.1.6: Use go/parse package to interpret PKG_VERSION variable and such
+ * v0.1.6: Refactoring: use a struct for all the options
+ * v0.1.7: Make PKG_VERSION constant name configurable.
+ * v0.2.0: Removed PKG_VERSION constant in favour of compiler/linker build flags & main.VERSION variable.
+ * v0.2.0: goxc.json file.
 
 See also
 --------

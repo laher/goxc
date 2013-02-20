@@ -18,34 +18,73 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
+	"io/ioutil"
+	"log"
+	"strings"
 )
 
-//TODO!!
-/*
-type Config struct {
-	Name            string
-	Version         string
-	ManifestVersion string
-	Author          string
-	Description     string
-	Url             string
-	License         string
-	//Platforms       Platforms
+type JsonSettings struct {
+	Settings Settings
+	//Format for goxc.json files
+	FormatVersion string
+	//TODO??: InheritFiles []string
 }
-*/
+
+func LoadJsonCascadingConfig(jsonFile string, verbose bool) (Settings, error) {
+	jsonLocalFile := strings.Replace(jsonFile, ".json", ".local.json", 1)
+	localSettings, err := LoadJsonFile(jsonLocalFile)
+	if err != nil {
+		settings, err := LoadJsonFile(jsonFile)
+		if err != nil {
+			if verbose {
+				log.Printf("Could NOT load %s: %s", jsonFile, err)
+			}
+		}
+		return settings.Settings, err
+	} else {
+		settings, err := LoadJsonFile(jsonFile)
+		if err != nil {
+			if verbose {
+				log.Printf("Could NOT load %s: %s", jsonLocalFile, err)
+			}
+			return localSettings.Settings, nil
+		} else {
+			return Merge(localSettings.Settings, settings.Settings), nil
+		}
+	}
+	//unreachable but required by go compiler
+	return localSettings.Settings, err
+}
+
+// load json file. Glob for goxc
+func LoadJsonFile(jsonFile string) (JsonSettings, error) {
+	var settings JsonSettings
+	file, err := ioutil.ReadFile(jsonFile)
+	if err != nil {
+		log.Printf("File error: %v", err)
+		return settings, err
+	}
+	//TODO: super-verbose option for logging file content? log.Printf("%s\n", string(file))
+	json.Unmarshal(file, &settings)
+	if err != nil {
+		log.Printf("Error: %s", err)
+		return settings, err
+	}
+	//TODO: verbosity here? log.Printf("Results: %v", settings)
+	return settings, nil
+}
 
 //use json
-func ReadSettings(js []byte) (Settings, error) {
-	var settings Settings
+func ReadJson(js []byte) (JsonSettings, error) {
+	var settings JsonSettings
 	err := json.Unmarshal(js, &settings)
 	if err != nil {
-		fmt.Println("error:", err)
+		log.Printf("Error: %v", err)
 	}
-	fmt.Printf("%+v", settings)
+	log.Printf("Settings: %v", settings)
 	return settings, err
 }
 
-func WriteSettings(m Settings) ([]byte, error) {
+func WriteSettings(m JsonSettings) ([]byte, error) {
 	return json.Marshal(m)
 }
