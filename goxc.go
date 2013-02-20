@@ -76,6 +76,12 @@ var PLATFORMS = [][]string{
 // settings for this invocation of goxc
 var (
 	settings config.Settings
+	configName string
+	isVersion bool
+	isHelp bool
+	isBuildToolchain bool
+	isZipArchives bool
+	isVerbose bool
 )
 
 // this function copied from 'https://github.com/laher/mkdo'
@@ -88,7 +94,7 @@ func redirectIO(cmd *exec.Cmd) (*os.File, error) {
 	if err != nil {
 		log.Println(err)
 	}
-	if settings.Verbose {
+	if settings.IsVerbose() {
 		log.Printf("Redirecting output")
 	}
 	go io.Copy(os.Stdout, stdout)
@@ -102,7 +108,7 @@ func sanityCheck(goroot string) error {
 	if goroot == "" {
 		return errors.New("GOROOT environment variable is NOT set.")
 	} else {
-		if settings.Verbose {
+		if settings.IsVerbose() {
 			log.Printf("Found GOROOT=%s", goroot)
 		}
 	}
@@ -145,7 +151,7 @@ func BuildToolchain(goos string, arch string) {
 	goroot := runtime.GOROOT()
 	gohostos := runtime.GOOS
 	gohostarch := runtime.GOARCH
-	if settings.Verbose {
+	if settings.IsVerbose() {
 		log.Printf("Host OS = %s", gohostos)
 	}
 	scriptpath := getMakeScriptPath(goroot)
@@ -169,7 +175,7 @@ func BuildToolchain(goos string, arch string) {
 		// see http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go
 		cmd.Env = append(cmd.Env, "GOARM=5")
 	}
-	if settings.Verbose {
+	if settings.IsVerbose() {
 		log.Printf("'make' env: GOOS=%s CGO_ENABLED=%s GOARCH=%s GOROOT=%s", goos, cgoEnabled, arch, goroot)
 		log.Printf("'make' args: %s", cmd.Args)
 		log.Printf("'make' working directory: %s", cmd.Dir)
@@ -191,7 +197,7 @@ func BuildToolchain(goos string, arch string) {
 		log.Printf("Wait error: %s", err)
 		return
 	}
-	if settings.Verbose {
+	if settings.IsVerbose() {
 		log.Printf("Complete")
 	}
 }
@@ -277,7 +283,7 @@ func parseIncludeResources(basedir string, includeResources string) []string {
 			}
 		}
 	}
-	if settings.Verbose {
+	if settings.IsVerbose() {
 		log.Printf("Resources to include: %v", allMatches)
 	}
 	return allMatches
@@ -358,7 +364,7 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 	}
 
 	cmd.Env = append(os.Environ(), "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
-	if settings.Verbose {
+	if settings.IsVerbose() {
 		log.Printf("'go' env: GOOS=%s CGO_ENABLED=%s GOARCH=%s", goos, cgoEnabled, arch)
 		log.Printf("'go' args: %v", cmd.Args)
 		log.Printf("'go' working directory: %s", cmd.Dir)
@@ -384,7 +390,7 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 				}
 			}
 
-			if settings.ZipArchives {
+			if settings.IsZip() {
 				// Create ZIP archive.
 				zipPath, err := moveBinaryToZIP(
 					filepath.Join(outDestRoot, settings.PackageVersion),
@@ -438,19 +444,19 @@ func printVersion(flagSet *flag.FlagSet) {
 //merge configuration file and parse source
 //TODO honour build flags
 //TODO merge in configuration file
-func mergeConfiguredSettings(dir string, configName string) {
-	if settings.Verbose {
+func mergeConfiguredSettings(dir string) {
+	if settings.IsVerbose() {
 		log.Printf("loading configured settings")
 	}
-	configuredSettings, err := config.LoadJsonCascadingConfig(filepath.Join(dir, "goxc.json"), settings.Verbose)
-	if settings.Verbose {
+	configuredSettings, err := config.LoadJsonCascadingConfig(dir, configName, settings.IsVerbose())
+	if settings.IsVerbose() {
 		log.Printf("Settings from config %s: %v : %v", configName, configuredSettings, err)
 	}
 	if err == nil {
 		settings = config.Merge(settings, configuredSettings)
 	}
 	settings = config.FillDefaults(settings)
-	if settings.Verbose {
+	if settings.IsVerbose() {
 		log.Printf("Final settings %s", settings)
 	}
 	//v2.0.0: Removed PKG_VERSION parsing
@@ -459,18 +465,27 @@ func mergeConfiguredSettings(dir string, configName string) {
 // GOXC is the goxc startpoint, having already declared the flags inside 'main'.
 // In theory you could call this with a directory name or a list of config files.
 func GOXC(call []string) {
-	var configName string
-	flagSet := setupFlags(configName)
+	flagSet := setupFlags()
 	if err := flagSet.Parse(call[1:]); err != nil {
 		log.Printf("Error parsing arguments: %s", err)
 		os.Exit(1)
+	} else {
+		if isVerbose {
+			settings.Verbosity = config.VERBOSITY_VERBOSE
+		}
+		if isBuildToolchain {
+			settings.Tasks= []string{config.TASK_BUILD_TOOLCHAIN}
+		}
+		if isZipArchives {
+			settings.ArtifactTypes= []string{config.ARTIFACT_TYPE_ZIP}
+		}
 	}
-	log.Printf("Settings: %s", settings)
-	if settings.IsHelp {
+	//log.Printf("Settings: %s", settings)
+	if isHelp {
 		printHelp(flagSet)
 		os.Exit(0)
 	}
-	if settings.IsVersion {
+	if isVersion {
 		printVersion(flagSet)
 		os.Exit(0)
 	}
@@ -484,20 +499,20 @@ func GOXC(call []string) {
 
 	remainder := flagSet.Args()
 	workingFolder := "."
-	if !settings.IsBuildToolchain && len(remainder) < 1 {
+	if !settings.IsBuildToolchain() && len(remainder) < 1 {
 		printHelp(flagSet)
 		os.Exit(1)
 	}
 	if len(remainder) > 0 {
 		workingFolder = remainder[0]
 	}
-
-	if !settings.IsBuildToolchain {
+	log.Printf("Config name: %s", configName)
+	if !settings.IsBuildToolchain() {
 		//taken from config plus parsed sources
-		mergeConfiguredSettings(workingFolder, configName)
+		mergeConfiguredSettings(workingFolder)
 	}
 
-	if settings.Verbose {
+	if settings.IsVerbose() {
 		log.Printf("looping through each platform")
 	}
 	destOses := strings.Split(settings.Os, ",")
@@ -509,7 +524,7 @@ func GOXC(call []string) {
 			if dOs == "" || v[0] == dOs {
 				for _, dArch := range destArchs {
 					if dArch == "" || v[1] == dArch {
-						if settings.IsBuildToolchain {
+						if settings.IsBuildToolchain() {
 							BuildToolchain(v[0], v[1])
 						} else {
 							XCPlat(v[0], v[1], remainder, isFirst)
@@ -525,9 +540,9 @@ func GOXC(call []string) {
 // Set up flags.
 // Note use of empty strings as defaults, with 'actual' defaults .
 // This is done to make merging options from configuration files easier.
-func setupFlags(configName string) *flag.FlagSet {
+func setupFlags() *flag.FlagSet {
 	flagSet := flag.NewFlagSet("goxc", flag.ExitOnError)
-	flagSet.StringVar(&configName, "c", "", "config name (default='goxc')")
+	flagSet.StringVar(&configName, "c", config.CONFIG_NAME_DEFAULT, "config name (default='goxc')")
 	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (linux,darwin,windows,freebsd,openbsd). Compiles all by default")
 	flagSet.StringVar(&settings.Arch, "arch", "", "Specify Arch (386,amd64,arm). Compiles all by default")
 	flagSet.StringVar(&settings.PackageVersion, "pv", "", "Package version (default='"+config.PACKAGE_VERSION_DEFAULT+"')")
@@ -535,11 +550,13 @@ func setupFlags(configName string) *flag.FlagSet {
 	flagSet.StringVar(&settings.ArtifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
 	flagSet.StringVar(&settings.Codesign, "codesign", "", "identity to sign darwin binaries with (only when host OS is OS X)")
 	flagSet.StringVar(&settings.Resources.Include, "include", "", "Include resources in zips (default="+config.RESOURCES_INCLUDE_DEFAULT+")") //TODO: Add resources to non-zips & downloads.md
-	flagSet.BoolVar(&settings.IsBuildToolchain, "t", false, "Build cross-compiler toolchain(s)")                                              //TODO: task types clean,xc,toolchain
-	flagSet.BoolVar(&settings.IsHelp, "h", false, "Show this help")
-	flagSet.BoolVar(&settings.IsVersion, "version", false, "version info")
-	flagSet.BoolVar(&settings.Verbose, "v", false, "verbose")
-	flagSet.BoolVar(&settings.ZipArchives, "z", true, "create ZIP archives instead of folders")
+
+//0.2.0 Not easy to 'merge' boolean config items. More flexible to translate them to string options anyway
+	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s)")                                              //TODO: task types clean,xc,toolchain
+	flagSet.BoolVar(&isHelp, "h", false, "Show this help")
+	flagSet.BoolVar(&isVersion, "version", false, "version info")
+	flagSet.BoolVar(&isVerbose, "v", false, "verbose")
+	flagSet.BoolVar(&isZipArchives, "z", true, "create ZIP archives instead of folders")
 	return flagSet
 }
 

@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"strings"
+	"path/filepath"
 )
 
 type JsonSettings struct {
@@ -30,11 +30,12 @@ type JsonSettings struct {
 	//TODO??: InheritFiles []string
 }
 
-func LoadJsonCascadingConfig(jsonFile string, verbose bool) (Settings, error) {
-	jsonLocalFile := strings.Replace(jsonFile, ".json", ".local.json", 1)
-	localSettings, err := LoadJsonFile(jsonLocalFile)
+func LoadJsonCascadingConfig(dir string, configName string, verbose bool) (Settings, error) {
+	jsonFile := filepath.Join(dir, configName + ".json")
+	jsonLocalFile := filepath.Join(dir, configName + ".local.json")
+	localSettings, err := LoadJsonFile(jsonLocalFile, verbose)
 	if err != nil {
-		settings, err := LoadJsonFile(jsonFile)
+		settings, err := LoadJsonFile(jsonFile, verbose)
 		if err != nil {
 			if verbose {
 				log.Printf("Could NOT load %s: %s", jsonFile, err)
@@ -42,7 +43,7 @@ func LoadJsonCascadingConfig(jsonFile string, verbose bool) (Settings, error) {
 		}
 		return settings.Settings, err
 	} else {
-		settings, err := LoadJsonFile(jsonFile)
+		settings, err := LoadJsonFile(jsonFile, verbose)
 		if err != nil {
 			if verbose {
 				log.Printf("Could NOT load %s: %s", jsonLocalFile, err)
@@ -57,24 +58,28 @@ func LoadJsonCascadingConfig(jsonFile string, verbose bool) (Settings, error) {
 }
 
 // load json file. Glob for goxc
-func LoadJsonFile(jsonFile string) (JsonSettings, error) {
+func LoadJsonFile(jsonFile string, verbose bool) (JsonSettings, error) {
 	var settings JsonSettings
 	file, err := ioutil.ReadFile(jsonFile)
 	if err != nil {
-		log.Printf("File error: %v", err)
+		if verbose {
+			log.Printf("File error: %v", err)
+		}
 		return settings, err
 	}
 	//TODO: super-verbose option for logging file content? log.Printf("%s\n", string(file))
 	json.Unmarshal(file, &settings)
 	if err != nil {
-		log.Printf("Error: %s", err)
+		if verbose {
+			log.Printf("Unmarshal error: %s", err)
+		}
 		return settings, err
 	}
 	//TODO: verbosity here? log.Printf("Results: %v", settings)
 	return settings, nil
 }
 
-//use json
+//use json from string
 func ReadJson(js []byte) (JsonSettings, error) {
 	var settings JsonSettings
 	err := json.Unmarshal(js, &settings)

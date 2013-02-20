@@ -1,0 +1,8 @@
+{ "Settings" : {
+	"ArtifactsDest" : "../goxc-pages/dl",
+	"Verbosity" : "v",
+	"artifactVersion" : "0.1.1",
+	"zipArchives" : false,
+	"ArtifactsDest" : "../goxc-pages/",
+	"platforms": "windows/386"
+	} }

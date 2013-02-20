@@ -79,15 +79,15 @@ Settings file
 
 As of v0.2.0, goxc has a settings file.
 
-You can specify an alternative config using -c=configname (default is goxc)
+You can specify an alternative config using -c=configname (default is .goxc)
 
- * goxc looks for [configname].local.json and [configname].json.
- * The .local file takes precedence and by convention this should not be stored in scm (source control e.g. git/hg/svn...)
+ * goxc looks for files called [configname].json and [configname].local.json
+ * The .local file takes precedence
+ * by convention the .local.json file should not be stored in scm (source control e.g. git/hg/svn...)
+ * In particular, the .local.json file should store version information in forked repos.
+ * An example of the format can be found in the [goxc code](https://github.com/laher/goxc/blob/master/goxc.json).
  * cli flags take precedence over any local file variables.
- * **BUG: precedence is currently broken for boolean options. If any flag or .json file contains a non-default value, this will be used.**
 
-Note that the more dots(.) in the filename, the higher its priority.
-This is to make it easier to add scm-ignored files to override your config file.
 
 Limitations
 -----------
