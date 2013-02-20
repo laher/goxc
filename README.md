@@ -85,7 +85,7 @@ You can specify an alternative config using -c=configname (default is .goxc)
  * The .local file takes precedence
  * by convention the .local.json file should not be stored in scm (source control e.g. git/hg/svn...)
  * In particular, the .local.json file should store version information in forked repos.
- * An example of the format can be found in the [goxc code](https://github.com/laher/goxc/blob/master/goxc.json).
+ * An example of the format can be found in the [goxc code](https://github.com/laher/goxc/blob/master/.goxc.json).
  * cli flags take precedence over any local file variables.
 
 
