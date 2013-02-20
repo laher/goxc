@@ -97,7 +97,7 @@ func (settings Settings) GetFullVersionName() string {
 		versionName += settings.PrereleaseInfo
 	}
 	if settings.BuildName != "" {
-		versionName += "+" + settings.BuildName
+		versionName += "+b" + settings.BuildName
 	}
 	return versionName
 }

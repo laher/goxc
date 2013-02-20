@@ -548,7 +548,8 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.PackageVersion, "pv", "", "Package version (usually [major].[minor].[patch]. default='"+config.PACKAGE_VERSION_DEFAULT+"')")
 	flagSet.StringVar(&settings.PackageVersion, "av", "", "Package version (deprecated option name)")
 	flagSet.StringVar(&settings.PrereleaseInfo, "pi", "", "Prerelease info (usually 'alpha', 'snapshot',...)")
-	flagSet.StringVar(&settings.BuildName, "bn", "", "Build name")
+	flagSet.StringVar(&settings.BranchName, "br", "", "Branch name")
+	flagSet.StringVar(&settings.BuildName, "bu", "", "Build name")
 	flagSet.StringVar(&settings.ArtifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
 	flagSet.StringVar(&settings.Codesign, "codesign", "", "identity to sign darwin binaries with (only when host OS is OS X)")
 	flagSet.StringVar(&settings.Resources.Include, "include", "", "Include resources in zips (default="+config.RESOURCES_INCLUDE_DEFAULT+")") //TODO: Add resources to non-zips & downloads.md
