@@ -24,3 +24,4 @@ _testmain.go
 
 " goxc 'ignore' files
 *.local.json
+test.json

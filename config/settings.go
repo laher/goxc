@@ -5,23 +5,23 @@ const (
 	BUILD_CONSTRAINTS_DEFAULT = ""
 	CODESIGN_DEFAULT          = ""
 	// Default resources to include. Comma-separated list of globs.
-	RESOURCES_INCLUDE_DEFAULT       = "INSTALL*,README*,LICENSE*"
-	RESOURCES_EXCLUDE_DEFAULT       = "*.go" //TODO
-	OS_DEFAULT                      = ""
-	ARCH_DEFAULT                    = ""
-	PACKAGE_VERSION_DEFAULT         = "unknown"
-	PRERELEASE_INFO_DEFAULT		= "SNAPSHOT"
-	VERBOSE_DEFAULT                 = false
-	ZIP_ARCHIVES_DEFAULT            = false
-	IS_BUILDTOOLCHAIN_DEFAULT       = false
-	BRANCH_ORIGINAL                 = "original"
+	RESOURCES_INCLUDE_DEFAULT = "INSTALL*,README*,LICENSE*"
+	RESOURCES_EXCLUDE_DEFAULT = "*.go" //TODO
+	OS_DEFAULT                = ""
+	ARCH_DEFAULT              = ""
+	PACKAGE_VERSION_DEFAULT   = "unknown"
+	PRERELEASE_INFO_DEFAULT   = "SNAPSHOT"
+	VERBOSE_DEFAULT           = false
+	ZIP_ARCHIVES_DEFAULT      = false
+	IS_BUILDTOOLCHAIN_DEFAULT = false
+	BRANCH_ORIGINAL           = "original"
 
 	VERBOSITY_QUIET   = "q" //TODO
 	VERBOSITY_DEFAULT = "d"
 	VERBOSITY_VERBOSE = "v"
 
 	TASK_BUILD_TOOLCHAIN = "toolchain"
-	TASK_CROSSCOMPILE    = "xc"
+	TASK_XC              = "xc"
 	TASK_CLEAN           = "clean" //TODO
 
 	ARTIFACT_TYPE_ZIP     = "zip"
@@ -47,7 +47,8 @@ type Settings struct {
 	//TODO: replace Os/Arch with BuildConstraints?
 	Arch             string
 	Os               string
-	BuildConstraints string //TODO similar to build constraints used by Golang
+	//TODO: similar to build constraints used by Golang
+	// BuildConstraints string
 
 	Resources Resources
 
@@ -65,7 +66,16 @@ func (s Settings) IsVerbose() bool {
 	return s.Verbosity == VERBOSITY_VERBOSE
 }
 
-func (s Settings) IsZip() bool {
+func (s Settings) IsBinaryArtifact() bool {
+	for _, t := range s.ArtifactTypes {
+		if t == ARTIFACT_TYPE_DEFAULT {
+			return true
+		}
+	}
+	return false
+}
+
+func (s Settings) IsZipArtifact() bool {
 	for _, t := range s.ArtifactTypes {
 		if t == ARTIFACT_TYPE_ZIP {
 			return true
@@ -77,6 +87,15 @@ func (s Settings) IsZip() bool {
 func (s Settings) IsBuildToolchain() bool {
 	for _, t := range s.Tasks {
 		if t == TASK_BUILD_TOOLCHAIN {
+			return true
+		}
+	}
+	return false
+}
+
+func (s Settings) IsXC() bool {
+	for _, t := range s.Tasks {
+		if t == TASK_XC {
 			return true
 		}
 	}
@@ -108,10 +127,11 @@ func Merge(high Settings, low Settings) Settings {
 	if high.ArtifactsDest == "" {
 		high.ArtifactsDest = low.ArtifactsDest
 	}
+/* TODO
 	if high.BuildConstraints == "" {
 		high.BuildConstraints = low.BuildConstraints
 	}
-
+*/
 	if high.Resources.Exclude == "" {
 		high.Resources.Exclude = low.Resources.Exclude
 	}
@@ -167,7 +187,7 @@ func FillDefaults(settings Settings) Settings {
 	}
 
 	if len(settings.Tasks) == 0 {
-		settings.Tasks = []string{TASK_CROSSCOMPILE}
+		settings.Tasks = []string{TASK_XC}
 	}
 	if len(settings.ArtifactTypes) == 0 {
 		settings.ArtifactTypes = []string{ARTIFACT_TYPE_ZIP}

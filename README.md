@@ -1,7 +1,7 @@
 goxc
 ====
 
-[goxc](http://www.laher.net.nz/goxc) cross-compiles Go programs to (up to) 9 target platforms at once.
+[goxc](http://www.laher.net.nz/goxc) cross-compiles Go programs to (up to) 11 target platforms at once.
 
 goxc is written in Go but uses *os.exec* to call 'go build' with the appropriate flags & env variables for each supported platform.
 
@@ -25,7 +25,7 @@ Basic Usage
 
 ### Run once
 
-To build the toolchains for all 9 platforms:
+To build the toolchains for all 11 platforms:
 
        goxc -t
 
@@ -33,7 +33,12 @@ To build the toolchains for all 9 platforms:
 
 To build zipped binaries for your app:
 
-       goxc path/to/app/folder
+	goxc path/to/app/folder
+
+OR
+
+	cd path/to/app/folder
+	goxc
 
 ### Going further
 
@@ -41,15 +46,15 @@ See 'goxc -h' for more options.
 
  * e.g. To restrict by OS and Architecture:
 
-	goxc -os=windows -arch=amd64 .
+	goxc -os=windows -arch=amd64
 
  * e.g. To set a destination root folder and artifact version number:
 
-	goxc -d=my/jekyll/site/downloads -pv=0.1.1 .
+	goxc -d=my/jekyll/site/downloads -pv=0.1.1
 
  * e.g. To output non-zipped binaries into folders:
 
-	goxc -z=false .
+	goxc -z=false
 
  * 'Package version' can be compiled into your app if you define a VERSION variable in your main package.
 
@@ -59,15 +64,15 @@ Outcome
 
 By default, artifacts are generated and then immediately zipped into (outputfolder).
 
-e.g. /my/outputfolder/latest/myapp_linux_arm.zip
+e.g. /my/outputfolder/0.1.1/myapp_0.1.1_linux_arm.zip
 
-If you specified the version number -av=123 then the filename would be myapp_linux_arm_123.zip.
+If you specified the version number -pv=123 then the filename would be myapp_0.1.1_linux_arm_123.zip.
 
-By default, the output folder is ($GOBIN)/(appname)-xc, and the version is 'latest', but you can specify these.
+By default, the output folder is ($GOBIN)/(appname)-xc, and the version is 'unknown', but you can specify these.
 
 e.g.
 
-      goxc -pv=0.1 -d=/home/me/myapp/ghpages/downloads/ .
+      goxc -pv=0.1.1 -d=/home/me/myapp/ghpages/downloads/
 
 
 If non-zipped, artifacts generated into a folder structure as follows:
@@ -77,19 +82,23 @@ If non-zipped, artifacts generated into a folder structure as follows:
 Settings file
 -------------
 
-As of v0.2.0, goxc has a settings file.
+As of v0.2.0, goxc can use a settings file to save and re-run compilations.
+
+To start using a config just use the -wc (write config) option.
+
+	goxc -d=/blah -os=linux,windows -wc
 
 You can specify an alternative config using -c=configname (default is .goxc)
 
  * goxc looks for files called [configname].json and [configname].local.json
- * The .local file takes precedence
- * by convention the .local.json file should not be stored in scm (source control e.g. git/hg/svn...)
- * In particular, the .local.json file should store version information in forked repos.
- * An example of the format can be found in the [goxc code](https://github.com/laher/goxc/blob/master/.goxc.json).
+ * The .local.json file takes precedence (overrides)
+ * By convention the .local.json file should not be stored in scm (source control e.g. git/hg/svn...)
+ * In particular, the .local.json file should store version information for forked repos and unofficial builds.
+ * The write config option, -wc, can be used in conjunction with the -c=configname option.
+ * A simple example of the format can be found in the [goxc code](https://github.com/laher/goxc/blob/master/.goxc.json).
  * An example of what you might put in the [.local.json file](https://github.com/laher/goxc/blob/master/sample-local.json).
  * Don't forget to put '*.local.json' in your scm ignore file.
  * cli flags take precedence over any json file variables.
-
 
 Limitations
 -----------
@@ -120,10 +129,11 @@ Todo
 
 Contributions welcome via pull requests, thanks. Please use github 'issues' for discussion.
 
- * *Added but still open v0.2.0*: Config file for setting up default settings. Preferably json. Support use of local overrides file (my.xxx.json). Similar to Chrome extensions or npm packages? See [issue 3](https://github.com/laher/goxc/issues/3)
  * Bug: issue with config overriding. Empty strings do not currently override non-empty strings. Would involve more involved use of json and flagSet packages.
  * Doc for json config format
- * Option to specify precise dir&name for a particular artifact?
+ * Option to specify precise dir & name for a particular artifact?
+ * Support BuildConstraints to specify platforms.
+ * Permit unrecognised platforms (as Golang adds more)
  * Respect +build flags inside file comments (just like 'go build' does)
  * "Copy resources" option for INSTALL, READMEs, LICENSE, configs etc ( ~~Done v0.1.5: for zips.~~ Not done for non-zipped binaries). See [issue 4](https://github.com/laher/goxc/issues/4)
  * Much more error handling and potentially stop-on-error=true flag
@@ -155,6 +165,10 @@ Done
  * v0.2.0: goxc.json file.
  * v0.2.0: take in config filename as argument - using -c
  * v0.2.1: BranchName + PrereleaseInfo + BuildName (to become part of version name)
+ * v0.2.2: Removing requirement for <package-folder> argument. Uses current directory if none given.
+ * v0.2.2: filling in support for multiple artifact types & multiple tasks (as supported in json config)
+ * v0.2.0-0.2.2: Config file for setting up default settings. Preferably json. Support use of local overrides file (my.xxx.json). Similar to Chrome extensions or npm packages? See [issue 3](https://github.com/laher/goxc/issues/3)
+ * v0.2.2: write config with -wc
 
 See also
 --------

@@ -31,13 +31,12 @@ import (
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/config"
-
-//	"github.com/laher/goxc/source"
 )
 
 // VERSION is initialised by the linker during compilation if the appropriate flag is specified:
 // e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 // thanks to minux for this advice
+// So, goxc does this automatically during 'go build'
 var VERSION string
 
 const (
@@ -81,6 +80,7 @@ var (
 	isHelp           bool
 	isBuildToolchain bool
 	isZipArchives    bool
+	isWriteConfig    bool
 	isVerbose        bool
 )
 
@@ -202,7 +202,7 @@ func BuildToolchain(goos string, arch string) {
 	}
 }
 
-func moveBinaryToZIP(outDir, binPath, appName string, resources []string) (zipFilename string, err error) {
+func moveBinaryToZIP(outDir, binPath, appName string, resources []string, isRemoveBinary bool) (zipFilename string, err error) {
 	if settings.PackageVersion != "" && settings.PackageVersion != config.PACKAGE_VERSION_DEFAULT {
 		// v0.1.6 using appname_version_platform. See issue 3
 		zipFilename = appName + "_" + settings.PackageVersion + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
@@ -234,14 +234,16 @@ func moveBinaryToZIP(outDir, binPath, appName string, resources []string) (zipFi
 	if err != nil {
 		return
 	}
-	// Remove binary and its directory.
-	err = os.Remove(binPath)
-	if err != nil {
-		return
-	}
-	err = os.Remove(filepath.Dir(binPath))
-	if err != nil {
-		return
+	if isRemoveBinary {
+		// Remove binary and its directory.
+		err = os.Remove(binPath)
+		if err != nil {
+			return
+		}
+		err = os.Remove(filepath.Dir(binPath))
+		if err != nil {
+			return
+		}
 	}
 	return
 }
@@ -390,18 +392,19 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 				}
 			}
 
-			if settings.IsZip() {
+			if settings.IsZipArtifact() {
 				// Create ZIP archive.
 				zipPath, err := moveBinaryToZIP(
 					filepath.Join(outDestRoot, settings.GetFullVersionName()),
-					filepath.Join(outDestRoot, relativeBin), appName, resources)
+					filepath.Join(outDestRoot, relativeBin), appName, resources, settings.IsBinaryArtifact())
 				if err != nil {
 					log.Printf("ZIP error: %s", err)
 				} else {
 					relativeBinForMarkdown = zipPath
 					log.Printf("Artifact zipped OK")
 				}
-			} else {
+			}
+			if settings.IsBinaryArtifact() {
 				//TODO: move resources to folder & add links to downloads.md
 			}
 
@@ -433,31 +436,31 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 
 func printHelp(flagSet *flag.FlagSet) {
 	fmt.Fprint(os.Stderr, "`goxc` [options] <directory_name>\n")
-	fmt.Fprintf(os.Stderr, " Version %s. Options:\n", VERSION)
+	fmt.Fprintf(os.Stderr, " Version '%s'. Options:\n", VERSION)
 	flagSet.PrintDefaults()
 }
 
 func printVersion(flagSet *flag.FlagSet) {
-	fmt.Fprintf(os.Stderr, " goxc version %s\n", VERSION)
+	fmt.Fprintf(os.Stderr, " goxc version: %s\n", VERSION)
 }
 
-//merge configuration file and parse source
+//merge configuration file
+//maybe oneday: parse source
 //TODO honour build flags
-//TODO merge in configuration file
 func mergeConfiguredSettings(dir string) {
 	if settings.IsVerbose() {
 		log.Printf("loading configured settings")
 	}
 	configuredSettings, err := config.LoadJsonCascadingConfig(dir, configName, settings.IsVerbose())
 	if settings.IsVerbose() {
-		log.Printf("Settings from config %s: %v : %v", configName, configuredSettings, err)
+		log.Printf("Settings from config %s: %+v : %v", configName, configuredSettings, err)
 	}
 	if err == nil {
 		settings = config.Merge(settings, configuredSettings)
 	}
 	settings = config.FillDefaults(settings)
 	if settings.IsVerbose() {
-		log.Printf("Final settings %s", settings)
+		log.Printf("Final settings %+v", settings)
 	}
 	//v2.0.0: Removed PKG_VERSION parsing
 }
@@ -465,6 +468,9 @@ func mergeConfiguredSettings(dir string) {
 // GOXC is the goxc startpoint, having already declared the flags inside 'main'.
 // In theory you could call this with a directory name or a list of config files.
 func GOXC(call []string) {
+	if VERSION == "" {
+		VERSION = config.PACKAGE_VERSION_DEFAULT
+	}
 	flagSet := setupFlags()
 	if err := flagSet.Parse(call[1:]); err != nil {
 		log.Printf("Error parsing arguments: %s", err)
@@ -497,19 +503,20 @@ func GOXC(call []string) {
 		os.Exit(1)
 	}
 
-	remainder := flagSet.Args()
-	workingFolder := "."
-	if !settings.IsBuildToolchain() && len(remainder) < 1 {
-		printHelp(flagSet)
-		os.Exit(1)
-	}
-	if len(remainder) > 0 {
-		workingFolder = remainder[0]
+	args := flagSet.Args()
+	if len(args) < 1 {
+		//default to current folder
+		args = []string{"."}
 	}
 	log.Printf("Config name: %s", configName)
-	if !settings.IsBuildToolchain() {
-		//taken from config plus parsed sources
-		mergeConfiguredSettings(workingFolder)
+
+	mergeConfiguredSettings(args[0])
+
+	if isWriteConfig {
+		err := config.WriteJsonConfig(args[0], config.WrapJsonSettings(settings), configName, false)
+		if err != nil {
+			log.Printf("Could not write config file: %v", err)
+		}
 	}
 
 	if settings.IsVerbose() {
@@ -519,15 +526,18 @@ func GOXC(call []string) {
 	destArchs := strings.Split(settings.Arch, ",")
 
 	isFirst := true
-	for _, v := range PLATFORMS {
-		for _, dOs := range destOses {
-			if dOs == "" || v[0] == dOs {
-				for _, dArch := range destArchs {
-					if dArch == "" || v[1] == dArch {
+	for _, supportedPlatformArr := range PLATFORMS {
+		supportedOs := supportedPlatformArr[0]
+		supportedArch := supportedPlatformArr[1]
+		for _, destOs := range destOses {
+			if destOs == "" || supportedOs == destOs {
+				for _, destArch := range destArchs {
+					if destArch == "" || supportedArch == destArch {
 						if settings.IsBuildToolchain() {
-							BuildToolchain(v[0], v[1])
-						} else {
-							XCPlat(v[0], v[1], remainder, isFirst)
+							BuildToolchain(supportedOs, supportedArch)
+						}
+						if settings.IsXC() {
+							XCPlat(supportedOs, supportedArch, args, isFirst)
 						}
 						isFirst = false
 					}
@@ -542,7 +552,7 @@ func GOXC(call []string) {
 // This is done to make merging options from configuration files easier.
 func setupFlags() *flag.FlagSet {
 	flagSet := flag.NewFlagSet("goxc", flag.ExitOnError)
-	flagSet.StringVar(&configName, "c", config.CONFIG_NAME_DEFAULT, "config name (default='goxc')")
+	flagSet.StringVar(&configName, "c", config.CONFIG_NAME_DEFAULT, "config name (default='.goxc')")
 	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (linux,darwin,windows,freebsd,openbsd). Compiles all by default")
 	flagSet.StringVar(&settings.Arch, "arch", "", "Specify Arch (386,amd64,arm). Compiles all by default")
 	flagSet.StringVar(&settings.PackageVersion, "pv", "", "Package version (usually [major].[minor].[patch]. default='"+config.PACKAGE_VERSION_DEFAULT+"')")
@@ -560,6 +570,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.BoolVar(&isVersion, "version", false, "version info")
 	flagSet.BoolVar(&isVerbose, "v", false, "verbose")
 	flagSet.BoolVar(&isZipArchives, "z", true, "create ZIP archives instead of folders")
+	flagSet.BoolVar(&isWriteConfig, "wc", false, "write config (if it doesnt exist. If it does, use another name (with -c option))")
 	return flagSet
 }
 

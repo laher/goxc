@@ -20,9 +20,10 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"path/filepath"
 	"os"
+	"path/filepath"
 )
+const FORMAT_VERSION = "0.2.0"
 
 type JsonSettings struct {
 	Settings Settings
@@ -31,18 +32,24 @@ type JsonSettings struct {
 	//TODO??: InheritFiles []string
 }
 
+func WrapJsonSettings(settings Settings) JsonSettings {
+	return JsonSettings{Settings: settings, FormatVersion: FORMAT_VERSION}
+}
+
 func LoadJsonCascadingConfig(dir string, configName string, verbose bool) (Settings, error) {
 	jsonFile := filepath.Join(dir, configName+".json")
 	jsonLocalFile := filepath.Join(dir, configName+".local.json")
 	localSettings, err := LoadJsonFile(jsonLocalFile, verbose)
 	if err != nil {
+		// no local file.
 		if os.IsNotExist(err) {
 			if verbose {
-					log.Printf("%s not found", jsonLocalFile)
+				log.Printf("%s not found", jsonLocalFile)
 			}
 		} else {
 			log.Printf("Could NOT load %s: %s", jsonLocalFile, err)
 		}
+		//load global file.
 		settings, err := LoadJsonFile(jsonFile, verbose)
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -54,14 +61,14 @@ func LoadJsonCascadingConfig(dir string, configName string, verbose bool) (Setti
 			}
 		} else {
 			if verbose {
-				log.Printf("%s settings: %v", jsonFile, settings.Settings)
+				log.Printf("%s settings: %+v", jsonFile, settings.Settings)
 			}
 		}
 		return settings.Settings, err
 	} else {
 
 		if verbose {
-			log.Printf("%s settings: %v", jsonLocalFile, localSettings.Settings)
+			log.Printf("%s settings: %+v", jsonLocalFile, localSettings.Settings)
 		}
 		settings, err := LoadJsonFile(jsonFile, verbose)
 		if err != nil {
@@ -75,7 +82,7 @@ func LoadJsonCascadingConfig(dir string, configName string, verbose bool) (Setti
 			return localSettings.Settings, nil
 		} else {
 			if verbose {
-				log.Printf("%s settings: %v", jsonFile, settings.Settings)
+				log.Printf("%s settings: %+v", jsonFile, settings.Settings)
 			}
 			return Merge(localSettings.Settings, settings.Settings), nil
 		}
@@ -112,6 +119,25 @@ func LoadJsonFile(jsonFile string, verbose bool) (JsonSettings, error) {
 	return settings, nil
 }
 
+func WriteJsonConfig(dir string, settings JsonSettings, configName string, isLocal bool) error {
+	if isLocal {
+		jsonFile := filepath.Join(dir, configName+".local.json")
+		return WriteJsonFile(settings, jsonFile)
+	}
+	jsonFile := filepath.Join(dir, configName+".json")
+	return WriteJsonFile(settings, jsonFile)
+}
+
+func WriteJsonFile(settings JsonSettings, jsonFile string) error {
+	data, err := json.MarshalIndent(settings, "", "\t")
+	if err != nil {
+		log.Printf("Could NOT marshal json")
+		return err
+	}
+	log.Printf("Writing file %s", jsonFile)
+	return ioutil.WriteFile(jsonFile, data, 0755)
+}
+
 //use json from string
 func ReadJson(js []byte) (JsonSettings, error) {
 	var settings JsonSettings
@@ -119,10 +145,10 @@ func ReadJson(js []byte) (JsonSettings, error) {
 	if err != nil {
 		log.Printf("Error: %v", err)
 	}
-	log.Printf("Settings: %v", settings)
+	log.Printf("Settings: %+v", settings)
 	return settings, err
 }
 
-func WriteSettings(m JsonSettings) ([]byte, error) {
+func WriteJson(m JsonSettings) ([]byte, error) {
 	return json.Marshal(m)
 }
