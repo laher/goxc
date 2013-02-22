@@ -25,6 +25,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -149,26 +150,11 @@ func getMakeScriptPath(goroot string) string {
 // Build toolchain for a given target platform
 func BuildToolchain(goos string, arch string) {
 	goroot := runtime.GOROOT()
-	gohostos := runtime.GOOS
-	gohostarch := runtime.GOARCH
-	if settings.IsVerbose() {
-		log.Printf("Host OS = %s", gohostos)
-	}
 	scriptpath := getMakeScriptPath(goroot)
 	cmd := exec.Command(scriptpath)
 	cmd.Dir = filepath.Join(goroot, "src")
 	cmd.Args = append(cmd.Args, "--no-clean")
-	var cgoEnabled string
-	if goos == gohostos && arch == gohostarch {
-		//note: added conditional in line with Dave Cheney, but this combination is not yet supported.
-		if gohostos == FREEBSD && gohostarch == ARM {
-			cgoEnabled = "0"
-		} else {
-			cgoEnabled = "1"
-		}
-	} else {
-		cgoEnabled = "0"
-	}
+	cgoEnabled := cgoEnabled(goos, arch)
 
 	cmd.Env = append(os.Environ(), "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
 	if goos == LINUX && arch == ARM {
@@ -304,6 +290,24 @@ func signBinary(binPath string) error {
 	return nil
 }
 
+//0.2.4 refactored this out
+func cgoEnabled(goos, arch string) string {
+	gohostos := runtime.GOOS
+	gohostarch := runtime.GOARCH
+	var cgoEnabled string
+	if goos == gohostos && arch == gohostarch {
+		//note: added conditional in line with Dave Cheney, but this combination is not yet supported.
+		if gohostos == FREEBSD && gohostarch == ARM {
+			cgoEnabled = "0"
+		} else {
+			cgoEnabled = "1"
+		}
+	} else {
+		cgoEnabled = "0"
+	}
+	return cgoEnabled
+}
+
 // XCPlat: Cross compile for a particular platform
 // 'call' represents the package or list of configs to cross compile
 // 'isFirst' is used simply to determine whether to start a new downloads.md page
@@ -358,13 +362,7 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 	if f != nil {
 		defer f.Close()
 	}
-	var cgoEnabled string
-	if goos == gohostos {
-		cgoEnabled = "1"
-	} else {
-		cgoEnabled = "0"
-	}
-
+	cgoEnabled := cgoEnabled(goos, arch)
 	cmd.Env = append(os.Environ(), "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
 	if settings.IsVerbose() {
 		log.Printf("'go' env: GOOS=%s CGO_ENABLED=%s GOARCH=%s", goos, cgoEnabled, arch)
@@ -586,6 +584,17 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&isCliZipArchives, "z", "", "create ZIP archives instead of folders (true/false. default=true)")
 	flagSet.BoolVar(&isWriteConfig, "wc", false, "write config (if it doesnt exist. If it does, use another name (with -c option))")
 	return flagSet
+}
+
+//TODO user-level config file.
+func userHomeDir() string {
+	usr, err := user.Current()
+	if err != nil {
+		log.Printf("Could not get home folder: %s", err)
+		return os.Getenv("HOME")
+	}
+	log.Printf("user dir: %s", usr.HomeDir)
+	return usr.HomeDir
 }
 
 func main() {
