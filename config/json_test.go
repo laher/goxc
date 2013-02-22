@@ -5,6 +5,22 @@ import (
 	"testing"
 )
 
+func TestStripEmpties(t *testing.T) {
+	js := []byte(`{ "Settings": {
+	"Verbosity" : "",
+	"artifactVersion" : "0.1.1",
+	"zipArchives" : false,
+	"ArtifactsDest" : "../goxc-pages/",
+	"platforms": ["windows/386"],
+	"blah" : []
+	 } }`)
+
+	outjs, err := StripEmpties(js)
+	if err != nil {
+		t.Fatalf("Error returned from StripEmpties: %v", err)
+	}
+	log.Printf("stripped: %v", string(outjs))
+}
 func TestLoadSettings(t *testing.T) {
 	js := []byte(`{ "Settings" : {
 	"Verbosity" : "v",
@@ -20,7 +36,7 @@ func TestLoadSettings(t *testing.T) {
 	if !settings.Settings.IsVerbose() {
 		t.Fatalf("Verbose flag not set!")
 	}
-	if settings.Settings.IsZip() {
+	if settings.Settings.IsZipArtifact() {
 		t.Fatalf("Zip Archives flag not set!")
 	}
 }

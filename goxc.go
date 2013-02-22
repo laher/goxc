@@ -79,7 +79,7 @@ var (
 	isVersion        bool
 	isHelp           bool
 	isBuildToolchain bool
-	isZipArchives    bool
+	isCliZipArchives string
 	isWriteConfig    bool
 	isVerbose        bool
 )
@@ -458,6 +458,10 @@ func mergeConfiguredSettings(dir string) {
 	if err == nil {
 		settings = config.Merge(settings, configuredSettings)
 	}
+}
+
+//fillDefaults should happen after writing config
+func fillDefaults() {
 	settings = config.FillDefaults(settings)
 	if settings.IsVerbose() {
 		log.Printf("Final settings %+v", settings)
@@ -482,8 +486,15 @@ func GOXC(call []string) {
 		if isBuildToolchain {
 			settings.Tasks = []string{config.TASK_BUILD_TOOLCHAIN}
 		}
-		if isZipArchives {
+		//0.2.3 NOTE this will be superceded soon
+		//using string because that makes it overrideable
+		if isCliZipArchives == "true" || isCliZipArchives == "t" {
 			settings.ArtifactTypes = []string{config.ARTIFACT_TYPE_ZIP}
+		} else if isCliZipArchives == "false" || isCliZipArchives == "f" {
+			settings.ArtifactTypes = []string{config.ARTIFACT_TYPE_BIN}
+		} else {
+			//takes default or takes from config
+			settings.ArtifactTypes = []string{}
 		}
 	}
 	//log.Printf("Settings: %s", settings)
@@ -518,6 +529,9 @@ func GOXC(call []string) {
 			log.Printf("Could not write config file: %v", err)
 		}
 	}
+
+	//0.2.3 fillDefaults should only happen after writing config
+	fillDefaults()
 
 	if settings.IsVerbose() {
 		log.Printf("looping through each platform")
@@ -569,7 +583,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.BoolVar(&isHelp, "h", false, "Show this help")
 	flagSet.BoolVar(&isVersion, "version", false, "version info")
 	flagSet.BoolVar(&isVerbose, "v", false, "verbose")
-	flagSet.BoolVar(&isZipArchives, "z", true, "create ZIP archives instead of folders")
+	flagSet.StringVar(&isCliZipArchives, "z", "", "create ZIP archives instead of folders (true/false. default=true)")
 	flagSet.BoolVar(&isWriteConfig, "wc", false, "write config (if it doesnt exist. If it does, use another name (with -c option))")
 	return flagSet
 }

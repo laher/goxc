@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 )
+
 const FORMAT_VERSION = "0.2.0"
 
 type JsonSettings struct {
@@ -134,8 +135,14 @@ func WriteJsonFile(settings JsonSettings, jsonFile string) error {
 		log.Printf("Could NOT marshal json")
 		return err
 	}
+	stripped, err := StripEmpties(data)
+	if err == nil {
+		data = stripped
+	} else {
+
+	}
 	log.Printf("Writing file %s", jsonFile)
-	return ioutil.WriteFile(jsonFile, data, 0755)
+	return ioutil.WriteFile(jsonFile, data, 0644)
 }
 
 //use json from string
@@ -151,4 +158,54 @@ func ReadJson(js []byte) (JsonSettings, error) {
 
 func WriteJson(m JsonSettings) ([]byte, error) {
 	return json.Marshal(m)
+}
+
+func StripEmpties(rawJson []byte) ([]byte, error) {
+	var f interface{}
+	err := json.Unmarshal(rawJson, &f)
+	if err != nil {
+		log.Printf("Warning: invalid json. returning")
+		return rawJson, err
+	}
+	m := f.(map[string]interface{})
+	ret := make(map[string]interface{})
+	for k, v := range m {
+		switch vv := v.(type) {
+		case string:
+			if v != "" {
+				ret[k] = vv
+			} else {
+				log.Println("Stripping empty string", k)
+			}
+		case []interface{}:
+			if len(vv) > 0 {
+				ret[k] = vv
+			} else {
+				log.Println("Stripping empty array", k)
+			}
+		case map[string]interface{}:
+			bytes, err := json.Marshal(vv)
+			if err != nil {
+				log.Printf("Error marshalling inner map: %v", err)
+				return rawJson, err
+			}
+			strippedInner, err := StripEmpties(bytes)
+			if err != nil {
+				log.Printf("Error stripping inner map: %v", err)
+				return rawJson, err
+			}
+			var innerf interface{}
+			err = json.Unmarshal(strippedInner, &innerf)
+			if err != nil {
+				log.Printf("Error unmarshalling inner map: %v", err)
+				return rawJson, err
+			}
+			ret[k] = innerf
+		case nil:
+			log.Println("Stripping null value", k)
+		default:
+			ret[k] = vv
+		}
+	}
+	return json.MarshalIndent(ret, "", "\t")
 }

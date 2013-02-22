@@ -1,14 +1,13 @@
-{ "Settings" : {
-		"ArtifactsDest" : "../goxc-pages/dl",
-		"ArtifactTypes" : ["zip"],
-		"Tasks" : ["xc"],
-		"Arch" : "",
-		"Os" : "",
-		"Resources" : {
-			"Include" : "README.md"
-		},
-		"PackageVersion" : "0.2.2",
-		"Verbosity" : "v"
-	},
-	"FormatVersion" : "0.2.0"
+{
+	"FormatVersion": "0.2.0",
+	"Settings": {
+		"ArtifactTypes": [
+			"bin"
+		],
+		"ArtifactsDest": "../goxc-pages/dl",
+		"PackageVersion": "0.2.3",
+		"Resources": {
+			"Include": "README.md"
+		}
+	}
 }

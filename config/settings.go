@@ -25,7 +25,7 @@ const (
 	TASK_CLEAN           = "clean" //TODO
 
 	ARTIFACT_TYPE_ZIP     = "zip"
-	ARTIFACT_TYPE_DEFAULT = "bin"
+	ARTIFACT_TYPE_BIN     = "bin"
 
 	CONFIG_NAME_DEFAULT = ".goxc"
 )
@@ -68,7 +68,7 @@ func (s Settings) IsVerbose() bool {
 
 func (s Settings) IsBinaryArtifact() bool {
 	for _, t := range s.ArtifactTypes {
-		if t == ARTIFACT_TYPE_DEFAULT {
+		if t == ARTIFACT_TYPE_BIN {
 			return true
 		}
 	}
@@ -127,11 +127,11 @@ func Merge(high Settings, low Settings) Settings {
 	if high.ArtifactsDest == "" {
 		high.ArtifactsDest = low.ArtifactsDest
 	}
-/* TODO
+	/* TODO - BuildConstraints
 	if high.BuildConstraints == "" {
 		high.BuildConstraints = low.BuildConstraints
 	}
-*/
+	*/
 	if high.Resources.Exclude == "" {
 		high.Resources.Exclude = low.Resources.Exclude
 	}
