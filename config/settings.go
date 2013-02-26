@@ -1,5 +1,9 @@
 package config
 
+import (
+	"log"
+)
+
 const (
 	ARTIFACTS_DEST_DEFAULT    = ""
 	BUILD_CONSTRAINTS_DEFAULT = ""
@@ -69,6 +73,7 @@ func (s Settings) IsVerbose() bool {
 func (s Settings) IsBinaryArtifact() bool {
 	for _, t := range s.ArtifactTypes {
 		if t == ARTIFACT_TYPE_BIN {
+log.Printf("is bin! %v", s.ArtifactTypes)
 			return true
 		}
 	}

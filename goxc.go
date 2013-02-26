@@ -394,7 +394,7 @@ func XCPlat(goos, arch string, workingDirectory string, isFirst bool) string {
 				// Create ZIP archive.
 				zipPath, err := moveBinaryToZIP(
 					filepath.Join(outDestRoot, settings.GetFullVersionName()),
-					filepath.Join(outDestRoot, relativeBin), appName, resources, settings.IsBinaryArtifact())
+					filepath.Join(outDestRoot, relativeBin), appName, resources, !settings.IsBinaryArtifact())
 				if err != nil {
 					log.Printf("ZIP error: %s", err)
 				} else {

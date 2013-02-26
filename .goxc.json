@@ -1,7 +1,6 @@
 {
 	"FormatVersion": "0.2.0",
 	"Settings": {
-		"Arch": "amd64",
 		"ArtifactTypes": [
 			"zip"
 		],
