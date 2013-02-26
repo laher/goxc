@@ -34,11 +34,6 @@ import (
 	"github.com/laher/goxc/config"
 )
 
-// VERSION is initialised by the linker during compilation if the appropriate flag is specified:
-// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
-// thanks to minux for this advice
-// So, goxc does this automatically during 'go build'
-var VERSION string
 
 const (
 	AMD64   = "amd64"
@@ -75,6 +70,11 @@ var PLATFORMS = [][]string{
 
 // settings for this invocation of goxc
 var (
+// VERSION is initialised by the linker during compilation if the appropriate flag is specified:
+// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
+// thanks to minux for this advice
+// So, goxc does this automatically during 'go build'
+	VERSION = config.PACKAGE_VERSION_DEFAULT
 	settings         config.Settings
 	configName       string
 	isVersion        bool
@@ -309,9 +309,9 @@ func cgoEnabled(goos, arch string) string {
 }
 
 // XCPlat: Cross compile for a particular platform
-// 'call' represents the package or list of configs to cross compile
 // 'isFirst' is used simply to determine whether to start a new downloads.md page
-func XCPlat(goos, arch string, call []string, isFirst bool) string {
+// 0.3.0 - breaking change - changed 'call []string' to 'workingDirectory string'.
+func XCPlat(goos, arch string, workingDirectory string, isFirst bool) string {
 	log.Printf("building for platform %s_%s.", goos, arch)
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
@@ -319,7 +319,7 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 		gopath = "."
 	}
 	gohostos := runtime.GOOS
-	appDirname, err := filepath.Abs(call[0])
+	appDirname, err := filepath.Abs(workingDirectory)
 	if err != nil {
 		log.Printf("Error: %v", err)
 	}
@@ -347,14 +347,14 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 	if settings.GetFullVersionName() != "" {
 		cmd.Args = append(cmd.Args, "-ldflags", "-X main.VERSION "+settings.GetFullVersionName()+"")
 	}
-	cmd.Dir = call[0]
+	cmd.Dir = workingDirectory
 	var ending = ""
 	if goos == WINDOWS {
 		ending = ".exe"
 	}
 	relativeBinForMarkdown := filepath.Join(goos+"_"+arch, appName+ending)
 	relativeBin := filepath.Join(relativeDir, appName+ending)
-	cmd.Args = append(cmd.Args, "-o", filepath.Join(outDestRoot, relativeBin), call[0])
+	cmd.Args = append(cmd.Args, "-o", filepath.Join(outDestRoot, relativeBin), workingDirectory)
 	f, err := redirectIO(cmd)
 	if err != nil {
 		log.Printf("Error redirecting IO: %s", err)
@@ -379,7 +379,7 @@ func XCPlat(goos, arch string, call []string, isFirst bool) string {
 		} else {
 			log.Printf("Artifact generated OK")
 
-			resources := parseIncludeResources(call[0], settings.Resources.Include)
+			resources := parseIncludeResources(workingDirectory, settings.Resources.Include)
 
 			// settings.codesign only works on OS X for binaries generated for OS X.
 			if settings.Codesign != "" && gohostos == DARWIN && goos == DARWIN {
@@ -445,11 +445,11 @@ func printVersion(flagSet *flag.FlagSet) {
 //merge configuration file
 //maybe oneday: parse source
 //TODO honour build flags
-func mergeConfiguredSettings(dir string) {
+func mergeConfiguredSettings(dir string, configName string, useLocal bool) {
 	if settings.IsVerbose() {
 		log.Printf("loading configured settings")
 	}
-	configuredSettings, err := config.LoadJsonCascadingConfig(dir, configName, settings.IsVerbose())
+	configuredSettings, err := config.LoadJsonCascadingConfig(dir, configName, useLocal, settings.IsVerbose())
 	if settings.IsVerbose() {
 		log.Printf("Settings from config %s: %+v : %v", configName, configuredSettings, err)
 	}
@@ -470,9 +470,6 @@ func fillDefaults() {
 // GOXC is the goxc startpoint, having already declared the flags inside 'main'.
 // In theory you could call this with a directory name or a list of config files.
 func GOXC(call []string) {
-	if VERSION == "" {
-		VERSION = config.PACKAGE_VERSION_DEFAULT
-	}
 	flagSet := setupFlags()
 	if err := flagSet.Parse(call[1:]); err != nil {
 		log.Printf("Error parsing arguments: %s", err)
@@ -513,45 +510,57 @@ func GOXC(call []string) {
 	}
 
 	args := flagSet.Args()
+	var workingDirectory string
 	if len(args) < 1 {
-		//default to current folder
-		args = []string{"."}
+		if isBuildToolchain {
+			//default to HOME folder
+			log.Printf("Building toolchain, so getting config from HOME directory. To use current folder's config, specify the folder (i.e. goxc -t .)");
+			workingDirectory = userHomeDir()
+		} else {
+			log.Printf("Using config from current folder");
+			//default to current folder
+			workingDirectory = "."
+		}
+	} else {
+		workingDirectory = args[0]
 	}
 	log.Printf("Config name: %s", configName)
 
-	mergeConfiguredSettings(args[0])
+	mergeConfiguredSettings(workingDirectory, configName, !isWriteConfig)
 
 	if isWriteConfig {
-		err := config.WriteJsonConfig(args[0], config.WrapJsonSettings(settings), configName, false)
+		err := config.WriteJsonConfig(workingDirectory, config.WrapJsonSettings(settings), configName, false)
 		if err != nil {
 			log.Printf("Could not write config file: %v", err)
 		}
-	}
+		// 0.2.5 writeConfig now just exits after writing config
+	} else {
 
-	//0.2.3 fillDefaults should only happen after writing config
-	fillDefaults()
+		//0.2.3 fillDefaults should only happen after writing config
+		fillDefaults()
 
-	if settings.IsVerbose() {
-		log.Printf("looping through each platform")
-	}
-	destOses := strings.Split(settings.Os, ",")
-	destArchs := strings.Split(settings.Arch, ",")
+		if settings.IsVerbose() {
+			log.Printf("looping through each platform")
+		}
+		destOses := strings.Split(settings.Os, ",")
+		destArchs := strings.Split(settings.Arch, ",")
 
-	isFirst := true
-	for _, supportedPlatformArr := range PLATFORMS {
-		supportedOs := supportedPlatformArr[0]
-		supportedArch := supportedPlatformArr[1]
-		for _, destOs := range destOses {
-			if destOs == "" || supportedOs == destOs {
-				for _, destArch := range destArchs {
-					if destArch == "" || supportedArch == destArch {
-						if settings.IsBuildToolchain() {
-							BuildToolchain(supportedOs, supportedArch)
+		isFirst := true
+		for _, supportedPlatformArr := range PLATFORMS {
+			supportedOs := supportedPlatformArr[0]
+			supportedArch := supportedPlatformArr[1]
+			for _, destOs := range destOses {
+				if destOs == "" || supportedOs == destOs {
+					for _, destArch := range destArchs {
+						if destArch == "" || supportedArch == destArch {
+							if settings.IsBuildToolchain() {
+								BuildToolchain(supportedOs, supportedArch)
+							}
+							if settings.IsXC() {
+								XCPlat(supportedOs, supportedArch, workingDirectory, isFirst)
+							}
+							isFirst = false
 						}
-						if settings.IsXC() {
-							XCPlat(supportedOs, supportedArch, args, isFirst)
-						}
-						isFirst = false
 					}
 				}
 			}

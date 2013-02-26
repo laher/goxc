@@ -1,11 +1,12 @@
 {
 	"FormatVersion": "0.2.0",
 	"Settings": {
+		"Arch": "amd64",
 		"ArtifactTypes": [
 			"zip"
 		],
 		"ArtifactsDest": "../goxc-pages/dl",
-		"PackageVersion": "0.2.4",
+		"PackageVersion": "0.3.0",
 		"Resources": {
 			"Include": "README.md"
 		}

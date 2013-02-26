@@ -84,17 +84,20 @@ Settings file
 
 As of v0.2.0, goxc can use a settings file to save and re-run compilations.
 
-To start using a config just use the -wc (write config) option.
+To create a config file, just use the -wc (write config) option.
 
-	goxc -d=/blah -os=linux,windows -wc
+	goxc -d=../site/downloads -os=linux,windows -wc
 
 You can specify an alternative config using -c=configname (default is .goxc)
 
+You shouldn't need to understand the specifics of the config file, but here are the full details for anyone who needs to start using it.
+
  * goxc looks for files called [configname].json and [configname].local.json
- * The .local.json file takes precedence (overrides)
+ * If you don't specify a working directory, goxc defaults to current directory, unless you're using -t, when it'll default to your HOME folder. (You can still specify current folder with a simple dot, '.').
+ * The .local.json file takes precedence (overrides) over the non-local file.
  * By convention the .local.json file should not be stored in scm (source control e.g. git/hg/svn...)
  * In particular, the .local.json file should store version information for forked repos and unofficial builds.
- * The write config option, -wc, can be used in conjunction with the -c=configname option.
+ * The 'write config' option, -wc, can be used in conjunction with the -c=configname option. -wc does load the (overridable) current config, but ignores content of .local.json files.
  * A simple example of the format can be found in the [goxc code](https://github.com/laher/goxc/blob/master/.goxc.json).
  * An example of what you might put in the [.local.json file](https://github.com/laher/goxc/blob/master/sample-local.json).
  * Don't forget to put '*.local.json' in your scm ignore file.
@@ -129,6 +132,7 @@ Todo
 
 Contributions welcome via pull requests, thanks. Please use github 'issues' for discussion.
 
+ * Run package's unit tests as part of build? (configurable) gofmt? govet?
  * Bug: issue with config overriding. Empty strings do not currently override non-empty strings. Would involve more involved use of json and flagSet packages.
  * Doc for json config format
  * Option to specify precise dir & name for a particular artifact?
@@ -141,7 +145,6 @@ Contributions welcome via pull requests, thanks. Please use github 'issues' for 
  * Refactoring: Start splitting functionality into separate packages, e.g. zipping, build, build-toolchain, config, ...
  * Meaningful godocs everywhere
  * More Unit Tests!!
- * Run package's unit tests as part of build? (configurable) gofmt? govet?
  * Configurable 'downloads' page: name, format (e.g. markdown,html,ReST,jekyll-markdown), header/footer?
  * Generate 'downloads overview' page (append each version's page as a relative link) ?
  * Artifact types: ~~Done: zip~~, tgz, ...
@@ -169,6 +172,7 @@ Done
  * v0.2.2: filling in support for multiple artifact types & multiple tasks (as supported in json config)
  * v0.2.0-0.2.2: Config file for setting up default settings. Preferably json. Support use of local overrides file (my.xxx.json). Similar to Chrome extensions or npm packages? See [issue 3](https://github.com/laher/goxc/issues/3)
  * v0.2.2: write config with -wc
+ * v0.3.0: default config for '-t' is now $HOME/.goxc.json. See issue 3 again. A few small API changes cause a minor version increase.
 
 See also
 --------
