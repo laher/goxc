@@ -27,11 +27,18 @@ const (
 	TASK_BUILD_TOOLCHAIN = "toolchain"
 	TASK_XC              = "xc"
 	TASK_CLEAN           = "clean" //TODO
+	TASK_TEST            = "test"
+	TASK_VET             = "vet"
+	TASK_INSTALL         = "install"
 
-	ARTIFACT_TYPE_ZIP     = "zip"
-	ARTIFACT_TYPE_BIN     = "bin"
+	ARTIFACT_TYPE_ZIP = "zip"
+	ARTIFACT_TYPE_BIN = "bin"
 
 	CONFIG_NAME_DEFAULT = ".goxc"
+)
+
+var (
+	TASKS_DEFAULT = []string{TASK_CLEAN, TASK_VET, TASK_TEST, TASK_INSTALL, TASK_XC}
 )
 
 type Resources struct {
@@ -49,8 +56,8 @@ type Settings struct {
 	Tasks []string //TODO: clean,xc,toolchain
 
 	//TODO: replace Os/Arch with BuildConstraints?
-	Arch             string
-	Os               string
+	Arch string
+	Os   string
 	//TODO: similar to build constraints used by Golang
 	// BuildConstraints string
 
@@ -73,7 +80,7 @@ func (s Settings) IsVerbose() bool {
 func (s Settings) IsBinaryArtifact() bool {
 	for _, t := range s.ArtifactTypes {
 		if t == ARTIFACT_TYPE_BIN {
-log.Printf("is bin! %v", s.ArtifactTypes)
+			log.Printf("is bin! %v", s.ArtifactTypes)
 			return true
 		}
 	}
@@ -90,17 +97,16 @@ func (s Settings) IsZipArtifact() bool {
 }
 
 func (s Settings) IsBuildToolchain() bool {
-	for _, t := range s.Tasks {
-		if t == TASK_BUILD_TOOLCHAIN {
-			return true
-		}
-	}
-	return false
+	return s.IsTask(TASK_BUILD_TOOLCHAIN)
 }
 
 func (s Settings) IsXC() bool {
+	return s.IsTask(TASK_XC)
+}
+
+func (s Settings) IsTask(taskName string) bool {
 	for _, t := range s.Tasks {
-		if t == TASK_XC {
+		if t == taskName {
 			return true
 		}
 	}
@@ -192,7 +198,7 @@ func FillDefaults(settings Settings) Settings {
 	}
 
 	if len(settings.Tasks) == 0 {
-		settings.Tasks = []string{TASK_XC}
+		settings.Tasks = TASKS_DEFAULT
 	}
 	if len(settings.ArtifactTypes) == 0 {
 		settings.ArtifactTypes = []string{ARTIFACT_TYPE_ZIP}

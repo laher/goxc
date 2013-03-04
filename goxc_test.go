@@ -7,6 +7,13 @@ import (
 	"testing"
 )
 
+//just for test-driving the 'test' task
+/*
+func TestFail(t *testing.T) {
+	t.Fatalf("FAIL")
+}
+*/
+
 func TestSanityCheck(t *testing.T) {
 	//goroot := runtime.GOROOT()
 	err := sanityCheck("")

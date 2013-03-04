@@ -34,7 +34,6 @@ import (
 	"github.com/laher/goxc/config"
 )
 
-
 const (
 	AMD64   = "amd64"
 	X86     = "386"
@@ -70,16 +69,17 @@ var PLATFORMS = [][]string{
 
 // settings for this invocation of goxc
 var (
-// VERSION is initialised by the linker during compilation if the appropriate flag is specified:
-// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
-// thanks to minux for this advice
-// So, goxc does this automatically during 'go build'
-	VERSION = config.PACKAGE_VERSION_DEFAULT
+	// VERSION is initialised by the linker during compilation if the appropriate flag is specified:
+	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
+	// thanks to minux for this advice
+	// So, goxc does this automatically during 'go build'
+	VERSION          = config.PACKAGE_VERSION_DEFAULT
 	settings         config.Settings
 	configName       string
 	isVersion        bool
 	isHelp           bool
 	isBuildToolchain bool
+	tasks            string
 	isCliZipArchives string
 	isWriteConfig    bool
 	isVerbose        bool
@@ -308,6 +308,49 @@ func cgoEnabled(goos, arch string) string {
 	return cgoEnabled
 }
 
+// 0.3.1
+func InvokeGo(workingDirectory string, args []string) error {
+	log.Printf("invoking 'go %v' on '%s'", args, workingDirectory)
+	cmd := exec.Command("go")
+	cmd.Args = append(cmd.Args, args...)
+	if args[0] == config.TASK_INSTALL || args[0] == "build" || args[0] == config.TASK_TEST {
+		addLdFlagVersion(settings, cmd)
+	}
+	cmd.Dir = workingDirectory
+	f, err := redirectIO(cmd)
+	if err != nil {
+		log.Printf("Error redirecting IO: %s", err)
+		return err
+	}
+	if f != nil {
+		defer f.Close()
+	}
+	if settings.IsVerbose() {
+		log.Printf("'go' args: %v", cmd.Args)
+		log.Printf("'go' working directory: %s", cmd.Dir)
+	}
+	err = cmd.Start()
+	if err != nil {
+		log.Printf("Launch error: %s", err)
+		return err
+	} else {
+		err = cmd.Wait()
+		if err != nil {
+			log.Printf("invocation error: %s", err)
+			return err
+		} else {
+			log.Printf("go succeeded")
+		}
+	}
+	return nil
+}
+
+func addLdFlagVersion(settings config.Settings, cmd *exec.Cmd) {
+	if settings.GetFullVersionName() != "" {
+		cmd.Args = append(cmd.Args, "-ldflags", "-X main.VERSION "+settings.GetFullVersionName()+"")
+	}
+}
+
 // XCPlat: Cross compile for a particular platform
 // 'isFirst' is used simply to determine whether to start a new downloads.md page
 // 0.3.0 - breaking change - changed 'call []string' to 'workingDirectory string'.
@@ -479,7 +522,10 @@ func GOXC(call []string) {
 			settings.Verbosity = config.VERBOSITY_VERBOSE
 		}
 		if isBuildToolchain {
-			settings.Tasks = []string{config.TASK_BUILD_TOOLCHAIN}
+			tasks = config.TASK_BUILD_TOOLCHAIN + "," + tasks
+		}
+		if tasks != "" {
+			settings.Tasks = strings.Split(tasks, ",")
 		}
 		//0.2.3 NOTE this will be superceded soon
 		//using string because that makes it overrideable
@@ -514,10 +560,10 @@ func GOXC(call []string) {
 	if len(args) < 1 {
 		if isBuildToolchain {
 			//default to HOME folder
-			log.Printf("Building toolchain, so getting config from HOME directory. To use current folder's config, specify the folder (i.e. goxc -t .)");
+			log.Printf("Building toolchain, so getting config from HOME directory. To use current folder's config, specify the folder (i.e. goxc -t .)")
 			workingDirectory = userHomeDir()
 		} else {
-			log.Printf("Using config from current folder");
+			log.Printf("Using config from current folder")
 			//default to current folder
 			workingDirectory = "."
 		}
@@ -539,12 +585,40 @@ func GOXC(call []string) {
 		//0.2.3 fillDefaults should only happen after writing config
 		fillDefaults()
 
+		// 0.3.1
+		if settings.IsTask(config.TASK_CLEAN) {
+			err := InvokeGo(workingDirectory, []string{config.TASK_CLEAN})
+			if err != nil {
+				log.Printf("Clean failed! %s", err)
+				return
+			}
+		}
+		if settings.IsTask(config.TASK_VET) {
+			err := InvokeGo(workingDirectory, []string{config.TASK_VET})
+			if err != nil {
+				log.Printf("vet failed! %s", err)
+				return
+			}
+		}
+		if settings.IsTask(config.TASK_TEST) {
+			err := InvokeGo(workingDirectory, []string{config.TASK_TEST})
+			if err != nil {
+				log.Printf("Test failed! %s", err)
+				return
+			}
+		}
+		if settings.IsTask(config.TASK_INSTALL) {
+			err := InvokeGo(workingDirectory, []string{config.TASK_INSTALL})
+			if err != nil {
+				log.Printf("Install failed! %s", err)
+				return
+			}
+		}
 		if settings.IsVerbose() {
 			log.Printf("looping through each platform")
 		}
 		destOses := strings.Split(settings.Os, ",")
 		destArchs := strings.Split(settings.Arch, ",")
-
 		isFirst := true
 		for _, supportedPlatformArr := range PLATFORMS {
 			supportedOs := supportedPlatformArr[0]
@@ -586,12 +660,13 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.Resources.Include, "include", "", "Include resources in zips (default="+config.RESOURCES_INCLUDE_DEFAULT+")") //TODO: Add resources to non-zips & downloads.md
 
 	//0.2.0 Not easy to 'merge' boolean config items. More flexible to translate them to string options anyway
-	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s)") //TODO: task types clean,xc,toolchain
 	flagSet.BoolVar(&isHelp, "h", false, "Show this help")
 	flagSet.BoolVar(&isVersion, "version", false, "version info")
 	flagSet.BoolVar(&isVerbose, "v", false, "verbose")
 	flagSet.StringVar(&isCliZipArchives, "z", "", "create ZIP archives instead of folders (true/false. default=true)")
-	flagSet.BoolVar(&isWriteConfig, "wc", false, "write config (if it doesnt exist. If it does, use another name (with -c option))")
+	flagSet.StringVar(&tasks, "tasks", "", "Tasks to run (toolchain,clean,vet,test,install,xc). Default='clean,vet,test,install,xc'")
+	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s). Equivalent to -tasks=toolchain") //TODO: task types clean,xc,toolchain
+	flagSet.BoolVar(&isWriteConfig, "wc", false, "write config (if it doesnt exist). Good to use in conjunction with -c")
 	return flagSet
 }
 
