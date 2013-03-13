@@ -17,11 +17,9 @@ package main
 */
 
 import (
-	"archive/zip"
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -80,30 +78,13 @@ var (
 	isHelp           bool
 	isBuildToolchain bool
 	tasks            string
+	tasksPlus        string
+	tasksMinus       string
 	isCliZipArchives string
 	isWriteConfig    bool
 	isVerbose        bool
 )
 
-// this function copied from 'https://github.com/laher/mkdo'
-func redirectIO(cmd *exec.Cmd) (*os.File, error) {
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		log.Println(err)
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		log.Println(err)
-	}
-	if settings.IsVerbose() {
-		log.Printf("Redirecting output")
-	}
-	go io.Copy(os.Stdout, stdout)
-	go io.Copy(os.Stderr, stderr)
-	//direct. Masked passwords work OK!
-	cmd.Stdin = os.Stdin
-	return nil, err
-}
 
 func sanityCheck(goroot string) error {
 	if goroot == "" {
@@ -136,127 +117,6 @@ func fileExists(path string) (bool, error) {
 	return false, err
 }
 
-func getMakeScriptPath(goroot string) string {
-	gohostos := runtime.GOOS
-	var scriptname string
-	if gohostos == WINDOWS {
-		scriptname = "make.bat"
-	} else {
-		scriptname = "make.bash"
-	}
-	return filepath.Join(goroot, "src", scriptname)
-}
-
-// Build toolchain for a given target platform
-func BuildToolchain(goos string, arch string) {
-	goroot := runtime.GOROOT()
-	scriptpath := getMakeScriptPath(goroot)
-	cmd := exec.Command(scriptpath)
-	cmd.Dir = filepath.Join(goroot, "src")
-	cmd.Args = append(cmd.Args, "--no-clean")
-	cgoEnabled := cgoEnabled(goos, arch)
-
-	cmd.Env = append(os.Environ(), "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
-	if goos == LINUX && arch == ARM {
-		// see http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go
-		cmd.Env = append(cmd.Env, "GOARM=5")
-	}
-	if settings.IsVerbose() {
-		log.Printf("'make' env: GOOS=%s CGO_ENABLED=%s GOARCH=%s GOROOT=%s", goos, cgoEnabled, arch, goroot)
-		log.Printf("'make' args: %s", cmd.Args)
-		log.Printf("'make' working directory: %s", cmd.Dir)
-	}
-	f, err := redirectIO(cmd)
-	if err != nil {
-		log.Printf("Error redirecting IO: %s", err)
-	}
-	if f != nil {
-		defer f.Close()
-	}
-	err = cmd.Start()
-	if err != nil {
-		log.Printf("Launch error: %s", err)
-		return
-	}
-	err = cmd.Wait()
-	if err != nil {
-		log.Printf("Wait error: %s", err)
-		return
-	}
-	if settings.IsVerbose() {
-		log.Printf("Complete")
-	}
-}
-
-func moveBinaryToZIP(outDir, binPath, appName string, resources []string, isRemoveBinary bool) (zipFilename string, err error) {
-	if settings.PackageVersion != "" && settings.PackageVersion != config.PACKAGE_VERSION_DEFAULT {
-		// v0.1.6 using appname_version_platform. See issue 3
-		zipFilename = appName + "_" + settings.PackageVersion + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
-	} else {
-		zipFilename = appName + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
-	}
-	zf, err := os.Create(filepath.Join(outDir, zipFilename))
-	if err != nil {
-		return
-	}
-	defer zf.Close()
-
-	zw := zip.NewWriter(zf)
-
-	addFileToZIP(zw, binPath)
-	if err != nil {
-		zw.Close()
-		return
-	}
-	//resources
-	for _, resource := range resources {
-		addFileToZIP(zw, resource)
-		if err != nil {
-			zw.Close()
-			return
-		}
-	}
-	err = zw.Close()
-	if err != nil {
-		return
-	}
-	if isRemoveBinary {
-		// Remove binary and its directory.
-		err = os.Remove(binPath)
-		if err != nil {
-			return
-		}
-		err = os.Remove(filepath.Dir(binPath))
-		if err != nil {
-			return
-		}
-	}
-	return
-}
-
-func addFileToZIP(zw *zip.Writer, path string) (err error) {
-	binfo, err := os.Stat(path)
-	if err != nil {
-		return
-	}
-	header, err := zip.FileInfoHeader(binfo)
-	if err != nil {
-		return
-	}
-	header.Method = zip.Deflate
-	w, err := zw.CreateHeader(header)
-	if err != nil {
-		zw.Close()
-		return
-	}
-	bf, err := os.Open(path)
-	if err != nil {
-		return
-	}
-	defer bf.Close()
-	_, err = io.Copy(w, bf)
-	return
-}
 
 func parseIncludeResources(basedir string, includeResources string) []string {
 	allMatches := []string{}
@@ -306,43 +166,6 @@ func cgoEnabled(goos, arch string) string {
 		cgoEnabled = "0"
 	}
 	return cgoEnabled
-}
-
-// 0.3.1
-func InvokeGo(workingDirectory string, args []string) error {
-	log.Printf("invoking 'go %v' on '%s'", args, workingDirectory)
-	cmd := exec.Command("go")
-	cmd.Args = append(cmd.Args, args...)
-	if args[0] == config.TASK_INSTALL || args[0] == "build" || args[0] == config.TASK_TEST {
-		addLdFlagVersion(settings, cmd)
-	}
-	cmd.Dir = workingDirectory
-	f, err := redirectIO(cmd)
-	if err != nil {
-		log.Printf("Error redirecting IO: %s", err)
-		return err
-	}
-	if f != nil {
-		defer f.Close()
-	}
-	if settings.IsVerbose() {
-		log.Printf("'go' args: %v", cmd.Args)
-		log.Printf("'go' working directory: %s", cmd.Dir)
-	}
-	err = cmd.Start()
-	if err != nil {
-		log.Printf("Launch error: %s", err)
-		return err
-	} else {
-		err = cmd.Wait()
-		if err != nil {
-			log.Printf("invocation error: %s", err)
-			return err
-		} else {
-			log.Printf("go succeeded")
-		}
-	}
-	return nil
 }
 
 func addLdFlagVersion(settings config.Settings, cmd *exec.Cmd) {
@@ -432,12 +255,13 @@ func XCPlat(goos, arch string, workingDirectory string, isFirst bool) string {
 					log.Printf("Signed with ID: %q", settings.Codesign)
 				}
 			}
-
-			if settings.IsZipArtifact() {
+			//0.4.0 use a new task type instead of artifact type
+			if settings.IsTask(config.TASK_ARCHIVE) {
+			//if settings.IsZipArtifact() {
 				// Create ZIP archive.
 				zipPath, err := moveBinaryToZIP(
 					filepath.Join(outDestRoot, settings.GetFullVersionName()),
-					filepath.Join(outDestRoot, relativeBin), appName, resources, !settings.IsBinaryArtifact())
+					filepath.Join(outDestRoot, relativeBin), appName, resources, settings.IsTask(config.TASK_REMOVE_BIN))
 				if err != nil {
 					log.Printf("ZIP error: %s", err)
 				} else {
@@ -501,17 +325,8 @@ func mergeConfiguredSettings(dir string, configName string, useLocal bool) {
 	}
 }
 
-//fillDefaults should happen after writing config
-func fillDefaults() {
-	settings = config.FillDefaults(settings)
-	if settings.IsVerbose() {
-		log.Printf("Final settings %+v", settings)
-	}
-	//v2.0.0: Removed PKG_VERSION parsing
-}
-
 // GOXC is the goxc startpoint, having already declared the flags inside 'main'.
-// In theory you could call this with a directory name or a list of config files.
+// In theory you could call this with a slice of flags
 func GOXC(call []string) {
 	flagSet := setupFlags()
 	if err := flagSet.Parse(call[1:]); err != nil {
@@ -523,6 +338,9 @@ func GOXC(call []string) {
 		}
 		if isBuildToolchain {
 			tasks = config.TASK_BUILD_TOOLCHAIN + "," + tasks
+		}
+		if tasksPlus != "" {
+			tasks = tasksPlus + "," + tasks
 		}
 		if tasks != "" {
 			settings.Tasks = strings.Split(tasks, ",")
@@ -581,11 +399,23 @@ func GOXC(call []string) {
 		}
 		// 0.2.5 writeConfig now just exits after writing config
 	} else {
-
 		//0.2.3 fillDefaults should only happen after writing config
-		fillDefaults()
+		settings = config.FillDefaults(settings)
+		//remove unwanted tasks here ...
+		if tasksMinus != "" {
+			removeTasks := strings.Split(tasksMinus, ",")
+			for _, val := range removeTasks {
+				settings.Tasks = remove(settings.Tasks, val)
+			}
+		}
+		log.Printf("tasks: %v", settings.Tasks)
 
-		// 0.3.1
+		if settings.IsVerbose() {
+			log.Printf("Final settings %+v", settings)
+		}
+		//v2.0.0: Removed PKG_VERSION parsing
+
+		// 0.3.1 added clean, vet, test, install etc
 		if settings.IsTask(config.TASK_CLEAN) {
 			err := InvokeGo(workingDirectory, []string{config.TASK_CLEAN})
 			if err != nil {
@@ -596,7 +426,7 @@ func GOXC(call []string) {
 		if settings.IsTask(config.TASK_VET) {
 			err := InvokeGo(workingDirectory, []string{config.TASK_VET})
 			if err != nil {
-				log.Printf("vet failed! %s", err)
+				log.Printf("Vet failed! %s", err)
 				return
 			}
 		}
@@ -604,6 +434,13 @@ func GOXC(call []string) {
 			err := InvokeGo(workingDirectory, []string{config.TASK_TEST})
 			if err != nil {
 				log.Printf("Test failed! %s", err)
+				return
+			}
+		}
+		if settings.IsTask(config.TASK_FMT) {
+			err := InvokeGo(workingDirectory, []string{config.TASK_FMT})
+			if err != nil {
+				log.Printf("Fmt failed! %s", err)
 				return
 			}
 		}
@@ -619,7 +456,7 @@ func GOXC(call []string) {
 		}
 		destOses := strings.Split(settings.Os, ",")
 		destArchs := strings.Split(settings.Arch, ",")
-		isFirst := true
+		var destPlatforms [][]string
 		for _, supportedPlatformArr := range PLATFORMS {
 			supportedOs := supportedPlatformArr[0]
 			supportedArch := supportedPlatformArr[1]
@@ -627,6 +464,8 @@ func GOXC(call []string) {
 				if destOs == "" || supportedOs == destOs {
 					for _, destArch := range destArchs {
 						if destArch == "" || supportedArch == destArch {
+							destPlatforms = append(destPlatforms, supportedPlatformArr)
+/*
 							if settings.IsBuildToolchain() {
 								BuildToolchain(supportedOs, supportedArch)
 							}
@@ -634,12 +473,52 @@ func GOXC(call []string) {
 								XCPlat(supportedOs, supportedArch, workingDirectory, isFirst)
 							}
 							isFirst = false
+*/
 						}
 					}
 				}
 			}
 		}
+		if settings.IsBuildToolchain() {
+			runTaskToolchain(destPlatforms)
+		}
+		if settings.IsXC() {
+			runTaskXC(destPlatforms, workingDirectory)
+		}
 	}
+}
+
+func runTaskToolchain(destPlatforms [][]string) {
+	for _, platformArr := range destPlatforms {
+		destOs := platformArr[0]
+		destArch := platformArr[1]
+		BuildToolchain(destOs, destArch)
+	}
+}
+
+func runTaskXC(destPlatforms [][]string, workingDirectory string) {
+	isFirst := true
+	for _, platformArr := range destPlatforms {
+		destOs := platformArr[0]
+		destArch := platformArr[1]
+		XCPlat(destOs, destArch, workingDirectory, isFirst)
+		isFirst = false
+	}
+}
+
+func remove(arr []string, v string) []string {
+    ret := make([]string, len(arr))
+    copy(ret, arr)
+    for i, val := range arr {
+        //fmt.Println(i, val)
+        if val != v {
+            continue
+        }
+
+        //fmt.Println(i, val, v)
+        return append(ret[:i], ret[i+1:]...)
+    }
+    return ret
 }
 
 // Set up flags.
@@ -664,8 +543,10 @@ func setupFlags() *flag.FlagSet {
 	flagSet.BoolVar(&isVersion, "version", false, "version info")
 	flagSet.BoolVar(&isVerbose, "v", false, "verbose")
 	flagSet.StringVar(&isCliZipArchives, "z", "", "create ZIP archives instead of folders (true/false. default=true)")
-	flagSet.StringVar(&tasks, "tasks", "", "Tasks to run (toolchain,clean,vet,test,install,xc). Default='clean,vet,test,install,xc'")
-	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s). Equivalent to -tasks=toolchain") //TODO: task types clean,xc,toolchain
+	flagSet.StringVar(&tasks, "tasks", "", "Tasks to run (toolchain,clean,vet,test,fmt,install,xc,archive,rmbin). Default='clean,vet,test,install,xc,archive,rmbin'")
+	flagSet.StringVar(&tasksPlus, "tasks+", "", "Additional tasks to run")
+	flagSet.StringVar(&tasksMinus, "tasks-", "", "Tasks to exclude")
+	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s). Equivalent to -tasks=toolchain")
 	flagSet.BoolVar(&isWriteConfig, "wc", false, "write config (if it doesnt exist). Good to use in conjunction with -c")
 	return flagSet
 }

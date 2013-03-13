@@ -132,7 +132,10 @@ Todo
 
 Contributions welcome via pull requests, thanks. Please use github 'issues' for discussion.
 
- * Run package's unit tests as part of build? (configurable) gofmt? govet?
+ * Refactor: split each task into a function, building results data for subsequent tasks.
+ * New concept: 'recipes'. A recipe is a sequence of tasks (and sub-recipes), e.g. 'package-full' (validate, xc, archive, downloads-page), 'toolchain'
+ * calculate platform list separate to running tasks.
+ * Remove 'artifact types' in favour of new task names (archive, rmbin).
  * Bug: issue with config overriding. Empty strings do not currently override non-empty strings. Would involve more involved use of json and flagSet packages.
  * Doc for json config format
  * Option to specify precise dir & name for a particular artifact?
@@ -158,8 +161,8 @@ Contributions welcome via pull requests, thanks. Please use github 'issues' for 
  * Maybe someday: Use goroutines to speed up 'goxc -t'
  * Maybe someday: pre- & post-build scripts to run?
 
-Done
-----
+Change log
+----------
  * v0.1.0: gofmt, zip archives
  * v0.1.6: Use go/parse package to interpret PKG_VERSION variable and such
  * v0.1.6: Refactoring: use a struct for all the options
@@ -173,6 +176,7 @@ Done
  * v0.2.0-0.2.2: Config file for setting up default settings. Preferably json. Support use of local overrides file (my.xxx.json). Similar to Chrome extensions or npm packages? See [issue 3](https://github.com/laher/goxc/issues/3)
  * v0.2.2: write config with -wc
  * v0.3.0: default config for '-t' is now $HOME/.goxc.json. See issue 3 again. A few small API changes cause a minor version increase.
+ * v0.3.1: Run package's unit tests as part of build? (configurable) gofmt? govet?
 
 See also
 --------
