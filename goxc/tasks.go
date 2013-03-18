@@ -18,13 +18,14 @@ package goxc
 
 import (
 	"fmt"
-	"log"
-	"os"
-	"os/exec"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/archive"
 	"github.com/laher/goxc/config"
+	"io/ioutil"
+	"log"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -129,17 +130,29 @@ func runTaskZip(destPlatforms [][]string, appName, workingDirectory, outDestRoot
 	}
 }
 
+func runTaskRmBin(destPlatforms [][]string, appName, outDestRoot string, settings config.Settings) {
+	for _, platformArr := range destPlatforms {
+		destOs := platformArr[0]
+		destArch := platformArr[1]
+		rmBinPlat(destOs, destArch, appName, outDestRoot, settings)
+	}
+}
+
+func rmBinPlat(goos, arch, appName, outDestRoot string, settings config.Settings) {
+	relativeBin := getRelativeBin(goos, arch, appName, false, settings)
+	archive.RemoveArchivedBinary(filepath.Join(outDestRoot, relativeBin))
+}
+
 func zipPlat(goos, arch, appName, workingDirectory, outDestRoot string, settings config.Settings) string {
 	resources := parseIncludeResources(workingDirectory, settings.Resources.Include, settings)
 	relativeBinForMarkdown := getRelativeBin(goos, arch, appName, true, settings)
 	//0.4.0 use a new task type instead of artifact type
 	if settings.IsTask(config.TASK_ARCHIVE) {
-	//if settings.IsZipArtifact() {
 		// Create ZIP archive.
 		relativeBin := getRelativeBin(goos, arch, appName, false, settings)
 		zipPath, err := archive.MoveBinaryToZIP(
 			filepath.Join(outDestRoot, settings.GetFullVersionName()),
-			filepath.Join(outDestRoot, relativeBin), appName, resources, settings.IsTask(config.TASK_REMOVE_BIN), settings)
+			filepath.Join(outDestRoot, relativeBin), appName, resources, settings)
 		if err != nil {
 			log.Printf("ZIP error: %s", err)
 		} else {
@@ -153,12 +166,49 @@ func zipPlat(goos, arch, appName, workingDirectory, outDestRoot string, settings
 	return relativeBinForMarkdown
 }
 
-func runTaskDlPage(destPlatforms [][]string, appName, workingDirectory string, outDestRoot string, relativeBins map[string] string, settings config.Settings) {
+func runTaskDlPageNew(destPlatforms [][]string, appName, workingDirectory string, outDestRoot string, settings config.Settings) {
+	reportFilename := filepath.Join(outDestRoot, settings.GetFullVersionName(), "downloads.md")
+	flags := os.O_WRONLY | os.O_TRUNC | os.O_CREATE
+	f, err := os.OpenFile(reportFilename, flags, 0600)
+	if err == nil {
+		defer f.Close()
+		_, err = fmt.Fprintf(f, "%s downloads (%s)\n------------\n\n", appName, settings.GetFullVersionName())
+		versionDir := filepath.Join(outDestRoot, settings.GetFullVersionName())
+		fileInfos, err := ioutil.ReadDir(versionDir)
+		if err == nil {
+			log.Printf("Read directory %s", versionDir)
+			for _, fi := range fileInfos {
+				if fi.IsDir() {
+					folderName := filepath.Join(versionDir, fi.Name())
+					log.Printf("Read directory %s", folderName)
+					fileInfos2, err := ioutil.ReadDir(folderName)
+					if err == nil {
+						for _, fi2 := range fileInfos2 {
+							relativeLink := fi2.Name()
+							_, err = fmt.Fprintf(f, " * [%s](%s)\n", fi.Name(), relativeLink)
+						}
+					}
+				} else {
+					if fi.Name() != "downloads.md" {
+						relativeLink := fi.Name()
+						_, err = fmt.Fprintf(f, " * [%s](%s)\n", relativeLink, relativeLink)
+					}
+					//log.Printf("ignore file %s", fi.Name())
+				}
+			}
+		}
+	}
+	if err != nil {
+		log.Printf("Could not report to '%s': %s", reportFilename, err)
+	}
+}
+
+func runTaskDlPage(destPlatforms [][]string, appName, workingDirectory string, outDestRoot string, settings config.Settings) {
 	isFirst := true
 	for _, platformArr := range destPlatforms {
 		destOs := platformArr[0]
 		destArch := platformArr[1]
-		relativeBinForMarkdown := relativeBins[destOs+"_"+destArch]
+		relativeBinForMarkdown := getRelativeBin(destOs, destArch, appName, true, settings)
 		dlPagePlat(destOs, destArch, appName, workingDirectory, outDestRoot, isFirst, relativeBinForMarkdown, settings)
 		isFirst = false
 	}
@@ -199,75 +249,88 @@ func runTaskToolchain(destPlatforms [][]string, settings config.Settings) {
 
 func RunTasks(workingDirectory string, settings config.Settings) {
 
-		// 0.3.1 added clean, vet, test, install etc
-		if settings.IsTask(config.TASK_CLEAN) {
-			err := InvokeGo(workingDirectory, []string{config.TASK_CLEAN}, settings)
-			if err != nil {
-				log.Printf("Clean failed! %s", err)
-				return
-			}
+	// 0.3.1 added clean, vet, test, install etc
+	if settings.IsTask(config.TASK_CLEAN) {
+		err := InvokeGo(workingDirectory, []string{config.TASK_CLEAN}, settings)
+		if err != nil {
+			log.Printf("Clean failed! %s", err)
+			return
 		}
-		if settings.IsTask(config.TASK_VET) {
-			err := InvokeGo(workingDirectory, []string{config.TASK_VET}, settings)
-			if err != nil {
-				log.Printf("Vet failed! %s", err)
-				return
-			}
+	}
+	if settings.IsTask(config.TASK_VET) {
+		err := InvokeGo(workingDirectory, []string{config.TASK_VET}, settings)
+		if err != nil {
+			log.Printf("Vet failed! %s", err)
+			return
 		}
-		if settings.IsTask(config.TASK_TEST) {
-			err := InvokeGo(workingDirectory, []string{config.TASK_TEST}, settings)
-			if err != nil {
-				log.Printf("Test failed! %s", err)
-				return
-			}
+	}
+	if settings.IsTask(config.TASK_TEST) {
+		err := InvokeGo(workingDirectory, []string{config.TASK_TEST}, settings)
+		if err != nil {
+			log.Printf("Test failed! %s", err)
+			return
 		}
-		if settings.IsTask(config.TASK_FMT) {
-			err := InvokeGo(workingDirectory, []string{config.TASK_FMT}, settings)
-			if err != nil {
-				log.Printf("Fmt failed! %s", err)
-				return
-			}
+	}
+	if settings.IsTask(config.TASK_FMT) {
+		err := InvokeGo(workingDirectory, []string{config.TASK_FMT}, settings)
+		if err != nil {
+			log.Printf("Fmt failed! %s", err)
+			return
 		}
-		if settings.IsTask(config.TASK_INSTALL) {
-			err := InvokeGo(workingDirectory, []string{config.TASK_INSTALL}, settings)
-			if err != nil {
-				log.Printf("Install failed! %s", err)
-				return
-			}
+	}
+	if settings.IsTask(config.TASK_INSTALL) {
+		err := InvokeGo(workingDirectory, []string{config.TASK_INSTALL}, settings)
+		if err != nil {
+			log.Printf("Install failed! %s", err)
+			return
 		}
-		if settings.IsVerbose() {
-			log.Printf("looping through each platform")
-		}
-		destOses := strings.Split(settings.Os, ",")
-		destArchs := strings.Split(settings.Arch, ",")
-		var destPlatforms [][]string
-		for _, supportedPlatformArr := range PLATFORMS {
-			supportedOs := supportedPlatformArr[0]
-			supportedArch := supportedPlatformArr[1]
-			for _, destOs := range destOses {
-				if destOs == "" || supportedOs == destOs {
-					for _, destArch := range destArchs {
-						if destArch == "" || supportedArch == destArch {
-							destPlatforms = append(destPlatforms, supportedPlatformArr)
+	}
+	if settings.IsVerbose() {
+		log.Printf("looping through each platform")
+	}
+	destOses := strings.Split(settings.Os, ",")
+	destArchs := strings.Split(settings.Arch, ",")
+	var destPlatforms [][]string
+	for _, supportedPlatformArr := range PLATFORMS {
+		supportedOs := supportedPlatformArr[0]
+		supportedArch := supportedPlatformArr[1]
+		for _, destOs := range destOses {
+			if destOs == "" || supportedOs == destOs {
+				for _, destArch := range destArchs {
+					if destArch == "" || supportedArch == destArch {
+						destPlatforms = append(destPlatforms, supportedPlatformArr)
 /*
-							if settings.IsBuildToolchain() {
-								BuildToolchain(supportedOs, supportedArch)
-							}
-							if settings.IsXC() {
-								XCPlat(supportedOs, supportedArch, workingDirectory, isFirst)
-							}
-							isFirst = false
-*/
+						if settings.IsBuildToolchain() {
+							BuildToolchain(supportedOs, supportedArch)
 						}
+						if settings.IsXC() {
+							XCPlat(supportedOs, supportedArch, workingDirectory, isFirst)
+						}
+						isFirst = false
+*/
 					}
 				}
 			}
 		}
-		if settings.IsBuildToolchain() {
-			runTaskToolchain(destPlatforms, settings)
-		}
-		if settings.IsXC() {
-			runTaskXC(destPlatforms, workingDirectory, settings)
-		}
+	}
+	if settings.IsBuildToolchain() {
+		runTaskToolchain(destPlatforms, settings)
+	}
+	if settings.IsXC() {
+		runTaskXC(destPlatforms, workingDirectory, settings)
+	}
+
+	appName := getAppName(workingDirectory)
+	outDestRoot := getOutDestRoot(appName, settings)
+
+	if settings.IsTask(config.TASK_ARCHIVE) {
+		runTaskZip(destPlatforms, appName, workingDirectory, outDestRoot, settings)
+	}
+	if settings.IsTask(config.TASK_REMOVE_BIN) {
+		runTaskRmBin(destPlatforms, appName, outDestRoot, settings)
+	}
+	if settings.IsTask(config.TASK_DOWNLOADS_PAGE) {
+		runTaskDlPageNew(destPlatforms, appName, workingDirectory, outDestRoot, settings)
+	}
 }
 

@@ -27,7 +27,7 @@ import (
 )
 
 
-func MoveBinaryToZIP(outDir, binPath, appName string, resources []string, isRemoveBinary bool, settings config.Settings) (zipFilename string, err error) {
+func MoveBinaryToZIP(outDir, binPath, appName string, resources []string, settings config.Settings) (zipFilename string, err error) {
 	if settings.PackageVersion != "" && settings.PackageVersion != config.PACKAGE_VERSION_DEFAULT {
 		// v0.1.6 using appname_version_platform. See issue 3
 		zipFilename = appName + "_" + settings.PackageVersion + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
@@ -59,18 +59,19 @@ func MoveBinaryToZIP(outDir, binPath, appName string, resources []string, isRemo
 	if err != nil {
 		return
 	}
-	if isRemoveBinary {
-		// Remove binary and its directory.
-		err = os.Remove(binPath)
-		if err != nil {
-			return
-		}
-		err = os.Remove(filepath.Dir(binPath))
-		if err != nil {
-			return
-		}
-	}
 	return
+}
+
+func RemoveArchivedBinary(binPath string) {
+	// Remove binary and its directory.
+	err := os.Remove(binPath)
+	if err != nil {
+		return
+	}
+	err = os.Remove(filepath.Dir(binPath))
+	if err != nil {
+		return
+	}
 }
 
 func addFileToZIP(zw *zip.Writer, path string) (err error) {
