@@ -33,6 +33,7 @@ const (
 	TASK_INSTALL         = "install"
 	TASK_ARCHIVE         = "archive" //zip
 	TASK_REMOVE_BIN      = "rmbin" //after zipping
+	TASK_DOWNLOADS_PAGE  = "downloads-page"
 
 	ARTIFACT_TYPE_ZIP = "zip"
 	ARTIFACT_TYPE_BIN = "bin"
@@ -41,7 +42,7 @@ const (
 )
 
 var (
-	TASKS_DEFAULT = []string{TASK_CLEAN, TASK_VET, TASK_TEST, TASK_INSTALL, TASK_XC, TASK_ARCHIVE, TASK_REMOVE_BIN}
+	TASKS_DEFAULT = []string{TASK_CLEAN, TASK_VET, TASK_TEST, TASK_INSTALL, TASK_XC, TASK_ARCHIVE, TASK_REMOVE_BIN, TASK_DOWNLOADS_PAGE}
 )
 
 type Resources struct {

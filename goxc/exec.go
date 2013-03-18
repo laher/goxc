@@ -1,4 +1,4 @@
-package main
+package goxc
 
 /*
    Copyright 2013 Am Laher
@@ -24,12 +24,19 @@ import (
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/config"
-
+	"runtime"
 )
 
 
+func addLdFlagVersion(settings config.Settings, cmd *exec.Cmd) {
+	if settings.GetFullVersionName() != "" {
+		cmd.Args = append(cmd.Args, "-ldflags", "-X main.VERSION "+settings.GetFullVersionName()+"")
+	}
+}
+
+
 // 0.3.1
-func InvokeGo(workingDirectory string, args []string) error {
+func InvokeGo(workingDirectory string, args []string, settings config.Settings) error {
 	log.Printf("invoking 'go %v' on '%s'", args, workingDirectory)
 	cmd := exec.Command("go")
 	cmd.Args = append(cmd.Args, args...)
@@ -37,7 +44,7 @@ func InvokeGo(workingDirectory string, args []string) error {
 		addLdFlagVersion(settings, cmd)
 	}
 	cmd.Dir = workingDirectory
-	f, err := redirectIO(cmd)
+	f, err := RedirectIO(cmd)
 	if err != nil {
 		log.Printf("Error redirecting IO: %s", err)
 		return err
@@ -67,7 +74,7 @@ func InvokeGo(workingDirectory string, args []string) error {
 
 
 // this function copied from 'https://github.com/laher/mkdo'
-func redirectIO(cmd *exec.Cmd) (*os.File, error) {
+func RedirectIO(cmd *exec.Cmd) (*os.File, error) {
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Println(err)
@@ -76,12 +83,29 @@ func redirectIO(cmd *exec.Cmd) (*os.File, error) {
 	if err != nil {
 		log.Println(err)
 	}
-	if settings.IsVerbose() {
+/*	if settings.IsVerbose() {
 		log.Printf("Redirecting output")
-	}
+	}*/
 	go io.Copy(os.Stdout, stdout)
 	go io.Copy(os.Stderr, stderr)
 	//direct. Masked passwords work OK!
 	cmd.Stdin = os.Stdin
 	return nil, err
 }
+
+//0.2.4 refactored this out
+func CgoEnabled(goos, arch string) string {
+	var cgoEnabled string
+	if goos == runtime.GOOS && arch == runtime.GOARCH {
+		//note: added conditional in line with Dave Cheney, but this combination is not yet supported.
+		if runtime.GOOS == FREEBSD && runtime.GOARCH == ARM {
+			cgoEnabled = "0"
+		} else {
+			cgoEnabled = "1"
+		}
+	} else {
+		cgoEnabled = "0"
+	}
+	return cgoEnabled
+}
+

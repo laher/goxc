@@ -1,4 +1,4 @@
-package main
+package archive
 
 /*
    Copyright 2013 Am Laher
@@ -27,7 +27,7 @@ import (
 )
 
 
-func moveBinaryToZIP(outDir, binPath, appName string, resources []string, isRemoveBinary bool) (zipFilename string, err error) {
+func MoveBinaryToZIP(outDir, binPath, appName string, resources []string, isRemoveBinary bool, settings config.Settings) (zipFilename string, err error) {
 	if settings.PackageVersion != "" && settings.PackageVersion != config.PACKAGE_VERSION_DEFAULT {
 		// v0.1.6 using appname_version_platform. See issue 3
 		zipFilename = appName + "_" + settings.PackageVersion + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"

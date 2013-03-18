@@ -1,4 +1,4 @@
-package main
+package goxc
 
 /*
    Copyright 2013 Am Laher
@@ -22,9 +22,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"github.com/laher/goxc/config"
 )
 
-func getMakeScriptPath(goroot string) string {
+func GetMakeScriptPath(goroot string) string {
 	gohostos := runtime.GOOS
 	var scriptname string
 	if gohostos == WINDOWS {
@@ -36,13 +37,13 @@ func getMakeScriptPath(goroot string) string {
 }
 
 // Build toolchain for a given target platform
-func BuildToolchain(goos string, arch string) {
+func BuildToolchain(goos string, arch string, settings config.Settings) {
 	goroot := runtime.GOROOT()
-	scriptpath := getMakeScriptPath(goroot)
+	scriptpath := GetMakeScriptPath(goroot)
 	cmd := exec.Command(scriptpath)
 	cmd.Dir = filepath.Join(goroot, "src")
 	cmd.Args = append(cmd.Args, "--no-clean")
-	cgoEnabled := cgoEnabled(goos, arch)
+	cgoEnabled := CgoEnabled(goos, arch)
 
 	cmd.Env = append(os.Environ(), "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
 	if goos == LINUX && arch == ARM {
@@ -54,7 +55,7 @@ func BuildToolchain(goos string, arch string) {
 		log.Printf("'make' args: %s", cmd.Args)
 		log.Printf("'make' working directory: %s", cmd.Dir)
 	}
-	f, err := redirectIO(cmd)
+	f, err := RedirectIO(cmd)
 	if err != nil {
 		log.Printf("Error redirecting IO: %s", err)
 	}
