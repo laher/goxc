@@ -139,7 +139,11 @@ func interpretSettings(call []string) (string, config.Settings) {
 		}
 
 		if codesignId != "" {
-			settings.TaskSettings["codesign"]["id"]= codesignId
+			if settings.TaskSettings == nil {
+				settings.TaskSettings = make(map[string]map[string]interface{})
+			}
+			settings.TaskSettings["codesign"] = make(map[string]interface{})
+			settings.TaskSettings["codesign"]["id"] = codesignId
 		}
 	}
 	//log.Printf("Settings: %s", settings)

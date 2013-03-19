@@ -1,13 +1,15 @@
 {
-	"FormatVersion": "0.2.0",
+	"FormatVersion": "0.5.0",
 	"Settings": {
-		"xArtifactTypes": [
-			"zip"
-		],
 		"ArtifactsDest": "../goxc-pages/dl",
 		"PackageVersion": "0.4.1",
 		"Resources": {
 			"Include": "README.md"
+		},
+		"TaskSettings": {
+			"codesign": {
+				"id": "123"
+			}
 		}
 	}
 }
