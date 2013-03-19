@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	//"log"
 )
 
 const (
@@ -25,24 +25,25 @@ const (
 	VERBOSITY_VERBOSE = "v"
 
 	TASK_BUILD_TOOLCHAIN = "toolchain"
-	TASK_XC              = "xc"
 	TASK_CLEAN           = "clean"
 	TASK_TEST            = "test"
 	TASK_VET             = "vet"
 	TASK_FMT             = "fmt"
+	TASK_XC              = "xc"
+	TASK_CODESIGN        = "codesign"
 	TASK_INSTALL         = "install"
 	TASK_ARCHIVE         = "archive" //zip
-	TASK_REMOVE_BIN      = "rmbin" //after zipping
+	TASK_REMOVE_BIN      = "rmbin"   //after zipping
 	TASK_DOWNLOADS_PAGE  = "downloads-page"
 
-	ARTIFACT_TYPE_ZIP = "zip"
-	ARTIFACT_TYPE_BIN = "bin"
+	//ARTIFACT_TYPE_ZIP = "zip"
+	//ARTIFACT_TYPE_BIN = "bin"
 
 	CONFIG_NAME_DEFAULT = ".goxc"
 )
 
 var (
-	TASKS_DEFAULT = []string{TASK_CLEAN, TASK_VET, TASK_TEST, TASK_INSTALL, TASK_XC, TASK_ARCHIVE, TASK_REMOVE_BIN, TASK_DOWNLOADS_PAGE}
+	TASKS_DEFAULT = []string{TASK_CLEAN, TASK_VET, TASK_TEST, TASK_INSTALL, TASK_CODESIGN, TASK_XC, TASK_ARCHIVE, TASK_REMOVE_BIN, TASK_DOWNLOADS_PAGE}
 )
 
 type Resources struct {
@@ -53,17 +54,21 @@ type Resources struct {
 type Settings struct {
 	ArtifactsDest string
 	//0.2.0 ArtifactTypes replaces ZipArchives bool
-	ArtifactTypes []string //default = 'zip'. Also 'bin'
-	Codesign      string   //mac signing identity
+	//0.5.0 ArtifactTypes is replaced by tasks
+	//ArtifactTypes []string //default = 'zip'. Also 'bin'
+	//0.5.0 Codesign replaced by codesign task
+	//Codesign      string   //mac signing identity
 
 	//0.2.0 Tasks replaces IsBuildToolChain bool
-	Tasks []string //TODO: clean,xc,toolchain
+	//0.5.0 Tasks is a much longer list.
+	Tasks []string
 
 	//TODO: replace Os/Arch with BuildConstraints?
 	Arch string
 	Os   string
+
 	//TODO: similar to build constraints used by Golang
-	// BuildConstraints string
+	// BuildConstraints []string
 
 	Resources Resources
 
@@ -75,29 +80,12 @@ type Settings struct {
 
 	//0.2.0 Verbosity replaces Verbose bool
 	Verbosity string // none/debug/
+
+	TaskSettings map[string]map[string]interface{}
 }
 
 func (s Settings) IsVerbose() bool {
 	return s.Verbosity == VERBOSITY_VERBOSE
-}
-
-func (s Settings) IsBinaryArtifact() bool {
-	for _, t := range s.ArtifactTypes {
-		if t == ARTIFACT_TYPE_BIN {
-			log.Printf("is bin! %v", s.ArtifactTypes)
-			return true
-		}
-	}
-	return false
-}
-
-func (s Settings) IsZipArtifact() bool {
-	for _, t := range s.ArtifactTypes {
-		if t == ARTIFACT_TYPE_ZIP {
-			return true
-		}
-	}
-	return false
 }
 
 func (s Settings) IsBuildToolchain() bool {
@@ -176,15 +164,19 @@ func Merge(high Settings, low Settings) Settings {
 	if high.Verbosity == "" {
 		high.Verbosity = low.Verbosity
 	}
+	/* 0.5.0 codesign setting is replaced by codesign task
 	if high.Codesign == "" {
 		high.Codesign = low.Codesign
 	}
+	*/
 	if len(high.Tasks) == 0 {
 		high.Tasks = low.Tasks
 	}
+	/* 0.5.0 replaced.
 	if len(high.ArtifactTypes) == 0 {
 		high.ArtifactTypes = low.ArtifactTypes
 	}
+	*/
 
 	return high
 }
@@ -204,8 +196,10 @@ func FillDefaults(settings Settings) Settings {
 	if len(settings.Tasks) == 0 {
 		settings.Tasks = TASKS_DEFAULT
 	}
+	/* 0.5.0 see tasks
 	if len(settings.ArtifactTypes) == 0 {
 		settings.ArtifactTypes = []string{ARTIFACT_TYPE_ZIP}
 	}
+	*/
 	return settings
 }

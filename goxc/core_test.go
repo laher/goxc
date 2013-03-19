@@ -22,14 +22,14 @@ func TestSanityCheck(t *testing.T) {
 	}
 	tmpDir, err := ioutil.TempDir("", "goxc_test_sanityCheck")
 	defer os.RemoveAll(tmpDir)
-	err = goxc.SanityCheck(tmpDir)
+	err = SanityCheck(tmpDir)
 	if err == nil {
 		t.Fatalf("sanity check failed! Expected to notice missing src folder")
 	}
 
 	srcDir := filepath.Join(tmpDir, "src")
 	os.Mkdir(srcDir, 0700)
-	scriptname := toolchain.GetMakeScriptPath(tmpDir)
+	scriptname := GetMakeScriptPath(tmpDir)
 	ioutil.WriteFile(scriptname, []byte("1"), 0111)
 	err = SanityCheck(tmpDir)
 	if err != nil {

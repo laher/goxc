@@ -27,16 +27,14 @@ import (
 	"runtime"
 )
 
-
 func addLdFlagVersion(settings config.Settings, cmd *exec.Cmd) {
 	if settings.GetFullVersionName() != "" {
 		cmd.Args = append(cmd.Args, "-ldflags", "-X main.VERSION "+settings.GetFullVersionName()+"")
 	}
 }
 
-
 // 0.3.1
-func InvokeGo(workingDirectory string, args []string, settings config.Settings) error {
+func invokeGo(workingDirectory string, args []string, settings config.Settings) error {
 	log.Printf("invoking 'go %v' on '%s'", args, workingDirectory)
 	cmd := exec.Command("go")
 	cmd.Args = append(cmd.Args, args...)
@@ -44,7 +42,7 @@ func InvokeGo(workingDirectory string, args []string, settings config.Settings) 
 		addLdFlagVersion(settings, cmd)
 	}
 	cmd.Dir = workingDirectory
-	f, err := RedirectIO(cmd)
+	f, err := redirectIO(cmd)
 	if err != nil {
 		log.Printf("Error redirecting IO: %s", err)
 		return err
@@ -72,9 +70,8 @@ func InvokeGo(workingDirectory string, args []string, settings config.Settings) 
 	return nil
 }
 
-
 // this function copied from 'https://github.com/laher/mkdo'
-func RedirectIO(cmd *exec.Cmd) (*os.File, error) {
+func redirectIO(cmd *exec.Cmd) (*os.File, error) {
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Println(err)
@@ -83,7 +80,7 @@ func RedirectIO(cmd *exec.Cmd) (*os.File, error) {
 	if err != nil {
 		log.Println(err)
 	}
-/*	if settings.IsVerbose() {
+	/*	if settings.IsVerbose() {
 		log.Printf("Redirecting output")
 	}*/
 	go io.Copy(os.Stdout, stdout)
@@ -94,7 +91,7 @@ func RedirectIO(cmd *exec.Cmd) (*os.File, error) {
 }
 
 //0.2.4 refactored this out
-func CgoEnabled(goos, arch string) string {
+func cgoEnabled(goos, arch string) string {
 	var cgoEnabled string
 	if goos == runtime.GOOS && arch == runtime.GOARCH {
 		//note: added conditional in line with Dave Cheney, but this combination is not yet supported.
@@ -108,4 +105,3 @@ func CgoEnabled(goos, arch string) string {
 	}
 	return cgoEnabled
 }
-

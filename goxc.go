@@ -30,8 +30,6 @@ import (
 	"github.com/laher/goxc/goxc"
 )
 
-
-
 // settings for this invocation of goxc
 var (
 	// VERSION is initialised by the linker during compilation if the appropriate flag is specified:
@@ -48,10 +46,10 @@ var (
 	tasksPlus        string
 	tasksMinus       string
 	isCliZipArchives string
+	codesignId       string
 	isWriteConfig    bool
 	isVerbose        bool
 )
-
 
 func printHelp(flagSet *flag.FlagSet) {
 	fmt.Fprint(os.Stderr, "`goxc` [options] <directory_name>\n")
@@ -66,11 +64,11 @@ func printVersion(flagSet *flag.FlagSet) {
 //merge configuration file
 //maybe oneday: parse source
 //TODO honour build flags
-func mergeConfiguredSettings(dir string, configName string, useLocal bool)config.Settings {
+func mergeConfiguredSettings(dir string, configName string, useLocal bool) (config.Settings, error) {
 	if settings.IsVerbose() {
 		log.Printf("loading configured settings")
 	}
-	configuredSettings, err := config.LoadJsonCascadingConfig(dir, configName, useLocal, settings.IsVerbose())
+	configuredSettings, err := config.LoadJsonConfigOverrideable(dir, configName, useLocal, settings.IsVerbose())
 	if settings.IsVerbose() {
 		log.Printf("Settings from config %s: %+v : %v", configName, configuredSettings, err)
 	}
@@ -78,12 +76,12 @@ func mergeConfiguredSettings(dir string, configName string, useLocal bool)config
 	if err == nil {
 		settings = config.Merge(settings, configuredSettings)
 	}
-	return settings
+	return settings, err
 }
 
-// GOXC is the goxc startpoint
+// goXC is the goxc startpoint
 // In theory you could call this with a slice of flags
-func GOXC(call []string) {
+func goXC(call []string) {
 	workingDirectory, settings := interpretSettings(call)
 	if isWriteConfig {
 		err := config.WriteJsonConfig(workingDirectory, config.WrapJsonSettings(settings), configName, false)
@@ -107,7 +105,6 @@ func GOXC(call []string) {
 			log.Printf("Final settings %+v", settings)
 		}
 		//v2.0.0: Removed PKG_VERSION parsing
-
 
 		goxc.RunTasks(workingDirectory, settings)
 	}
@@ -133,13 +130,16 @@ func interpretSettings(call []string) (string, config.Settings) {
 		}
 		//0.2.3 NOTE this will be superceded soon
 		//using string because that makes it overrideable
+		//0.5.0 using Tasks instead of ArtifactTypes
 		if isCliZipArchives == "true" || isCliZipArchives == "t" {
-			settings.ArtifactTypes = []string{config.ARTIFACT_TYPE_ZIP}
+			//settings.ArtifactTypes = []string{config.ARTIFACT_TYPE_ZIP}
+			settings.Tasks = append_if_missing(settings.Tasks, config.TASK_ARCHIVE)
 		} else if isCliZipArchives == "false" || isCliZipArchives == "f" {
-			settings.ArtifactTypes = []string{config.ARTIFACT_TYPE_BIN}
-		} else {
-			//takes default or takes from config
-			settings.ArtifactTypes = []string{}
+			settings.Tasks = remove(settings.Tasks, config.TASK_ARCHIVE)
+		}
+
+		if codesignId != "" {
+			settings.TaskSettings["codesign"]["id"]= codesignId
 		}
 	}
 	//log.Printf("Settings: %s", settings)
@@ -153,7 +153,7 @@ func interpretSettings(call []string) (string, config.Settings) {
 	}
 	//sanity check
 	goroot := runtime.GOROOT()
-	if err := goxc.SanityCheck(goroot, settings); err != nil {
+	if err := goxc.SanityCheck(goroot); err != nil {
 		log.Printf("Error: %s", err)
 		log.Printf(goxc.MSG_INSTALL_GO_FROM_SOURCE)
 		os.Exit(1)
@@ -176,25 +176,40 @@ func interpretSettings(call []string) (string, config.Settings) {
 	}
 	log.Printf("Config name: %s", configName)
 
-	settings := mergeConfiguredSettings(workingDirectory, configName, !isWriteConfig)
+	settings, err := mergeConfiguredSettings(workingDirectory, configName, !isWriteConfig)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			log.Printf("Configuration file error. %s", err.Error())
+			os.Exit(1)
+		}
+	}
 	return workingDirectory, settings
 }
 
-
+func append_if_missing(arr []string, v string) []string {
+	ret := make([]string, len(arr))
+	copy(ret, arr)
+	for _, val := range arr {
+		if val == v { //found. return.
+			return ret
+		}
+	}
+	return append(ret, v)
+}
 
 func remove(arr []string, v string) []string {
-    ret := make([]string, len(arr))
-    copy(ret, arr)
-    for i, val := range arr {
-        //fmt.Println(i, val)
-        if val != v {
-            continue
-        }
+	ret := make([]string, len(arr))
+	copy(ret, arr)
+	for i, val := range arr {
+		//fmt.Println(i, val)
+		if val != v {
+			continue
+		}
 
-        //fmt.Println(i, val, v)
-        return append(ret[:i], ret[i+1:]...)
-    }
-    return ret
+		//fmt.Println(i, val, v)
+		return append(ret[:i], ret[i+1:]...)
+	}
+	return ret
 }
 
 // Set up flags.
@@ -206,19 +221,19 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (linux,darwin,windows,freebsd,openbsd). Compiles all by default")
 	flagSet.StringVar(&settings.Arch, "arch", "", "Specify Arch (386,amd64,arm). Compiles all by default")
 	flagSet.StringVar(&settings.PackageVersion, "pv", "", "Package version (usually [major].[minor].[patch]. default='"+config.PACKAGE_VERSION_DEFAULT+"')")
-	flagSet.StringVar(&settings.PackageVersion, "av", "", "Package version (deprecated option name)")
+	flagSet.StringVar(&settings.PackageVersion, "av", "", "DEPRECATED: Package version (deprecated option name)")
 	flagSet.StringVar(&settings.PrereleaseInfo, "pi", "", "Prerelease info (usually 'alpha', 'snapshot',...)")
 	flagSet.StringVar(&settings.BranchName, "br", "", "Branch name")
 	flagSet.StringVar(&settings.BuildName, "bu", "", "Build name")
 	flagSet.StringVar(&settings.ArtifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
-	flagSet.StringVar(&settings.Codesign, "codesign", "", "identity to sign darwin binaries with (only when host OS is OS X)")
+	flagSet.StringVar(&codesignId, "codesign", "", "identity to sign darwin binaries with (only applied when host OS is 'darwin')")
 	flagSet.StringVar(&settings.Resources.Include, "include", "", "Include resources in zips (default="+config.RESOURCES_INCLUDE_DEFAULT+")") //TODO: Add resources to non-zips & downloads.md
 
 	//0.2.0 Not easy to 'merge' boolean config items. More flexible to translate them to string options anyway
 	flagSet.BoolVar(&isHelp, "h", false, "Show this help")
 	flagSet.BoolVar(&isVersion, "version", false, "version info")
 	flagSet.BoolVar(&isVerbose, "v", false, "verbose")
-	flagSet.StringVar(&isCliZipArchives, "z", "", "create ZIP archives instead of folders (true/false. default=true)")
+	flagSet.StringVar(&isCliZipArchives, "z", "", "DEPRECATED: create ZIP archives instead of folders (true/false. default=true)")
 	flagSet.StringVar(&tasks, "tasks", "", "Tasks to run (toolchain,clean,vet,test,fmt,install,xc,archive,rmbin). Default='clean,vet,test,install,xc,archive,rmbin'")
 	flagSet.StringVar(&tasksPlus, "tasks+", "", "Additional tasks to run")
 	flagSet.StringVar(&tasksMinus, "tasks-", "", "Tasks to exclude")
@@ -240,5 +255,5 @@ func userHomeDir() string {
 
 func main() {
 	log.SetPrefix("[goxc] ")
-	GOXC(os.Args)
+	goXC(os.Args)
 }

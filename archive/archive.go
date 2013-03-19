@@ -26,8 +26,7 @@ import (
 	"github.com/laher/goxc/config"
 )
 
-
-func MoveBinaryToZIP(outDir, binPath, appName string, resources []string, settings config.Settings) (zipFilename string, err error) {
+func ZipBinaryAndResources(outDir, binPath, appName string, resources []string, settings config.Settings) (zipFilename string, err error) {
 	if settings.PackageVersion != "" && settings.PackageVersion != config.PACKAGE_VERSION_DEFAULT {
 		// v0.1.6 using appname_version_platform. See issue 3
 		zipFilename = appName + "_" + settings.PackageVersion + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
@@ -97,4 +96,3 @@ func addFileToZIP(zw *zip.Writer, path string) (err error) {
 	_, err = io.Copy(w, bf)
 	return
 }
-

@@ -18,13 +18,14 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 )
 
-const FORMAT_VERSION = "0.2.0"
+const FORMAT_VERSION = "0.5.0"
 
 type JsonSettings struct {
 	Settings Settings
@@ -37,27 +38,32 @@ func WrapJsonSettings(settings Settings) JsonSettings {
 	return JsonSettings{Settings: settings, FormatVersion: FORMAT_VERSION}
 }
 
-func LoadJsonCascadingConfig(dir string, configName string, useLocal bool, verbose bool) (Settings, error) {
+func LoadJsonConfigOverrideable(dir string, configName string, useLocal bool, verbose bool) (Settings, error) {
 	jsonFile := filepath.Join(dir, configName+".json")
 	jsonLocalFile := filepath.Join(dir, configName+".local.json")
 	var err error
 	if useLocal {
-		localSettings, err := LoadJsonFile(jsonLocalFile, verbose)
+		localSettings, err := loadJsonFile(jsonLocalFile, verbose)
 		if err != nil {
 			//load non-local file only.
-			settings, err := LoadJsonFile(jsonFile, verbose)
+			settings, err := loadJsonFile(jsonFile, verbose)
 			return settings.Settings, err
 		} else {
-			settings, err := LoadJsonFile(jsonFile, verbose)
+			settings, err := loadJsonFile(jsonFile, verbose)
 			if err != nil {
-				return localSettings.Settings, nil
+				if os.IsNotExist(err) {
+					return localSettings.Settings, nil
+				} else {
+					//parse error. Stop right there.
+					return settings.Settings, err
+				}
 			} else {
 				return Merge(localSettings.Settings, settings.Settings), nil
 			}
 		}
 	} else {
 		//load non-local file only.
-		settings, err := LoadJsonFile(jsonFile, verbose)
+		settings, err := loadJsonFile(jsonFile, verbose)
 		return settings.Settings, err
 	}
 	//unreachable but required by go compiler
@@ -65,9 +71,51 @@ func LoadJsonCascadingConfig(dir string, configName string, useLocal bool, verbo
 	return Settings{}, err
 }
 
-// load json file. Glob for goxc
-func LoadJsonFile(jsonFile string, verbose bool) (JsonSettings, error) {
-	var settings JsonSettings
+
+func validateRawJson(rawJson []byte, fileName string) error {
+	var f interface{}
+	err := json.Unmarshal(rawJson, &f)
+	if err != nil {
+		log.Printf("Warning: invalid json. returning")
+		return err
+	}
+	m := f.(map[string]interface{})
+	rejectOldTaskDefinitions := false
+	if formatVersion, keyExists := m["FormatVersion"]; keyExists {
+		if formatVersion != FORMAT_VERSION {
+			log.Printf("WARNING (%s): is an old config file. File version: %s. Expected version %s", fileName, formatVersion, FORMAT_VERSION)
+			rejectOldTaskDefinitions= true
+		}
+	} else {
+		log.Printf("WARNING (%s): format version not specified. Please ensure this file format is up to date.", fileName)
+		rejectOldTaskDefinitions= true
+	}
+	if s, keyExists := m["Settings"]; keyExists {
+		settings := s.(map[string]interface{})
+		if _, keyExists:= settings["ArtifactTypes"]; keyExists {
+			msg := "'ArtifactTypes' setting is deprecated. Please use tasks instead (By default goxc zips the binary ('archive' task) and then deletes the binary ('rmbin' task)."
+			log.Printf("ERROR (%s): %s", fileName, msg)
+			return errors.New(msg)
+		}
+		if _, keyExists:= settings["Codesign"]; keyExists {
+			msg := "'Codesign' setting is deprecated. Please use setting \"Settings\" : { \"TaskSettings\" : { \"codesign\" : { \"id\" : \"blah\" } } }."
+			log.Printf("ERROR (%s): %s", fileName, msg)
+			return errors.New(msg)
+		}
+		if rejectOldTaskDefinitions {
+			if _, keyExists:= settings["Tasks"]; keyExists {
+				msg := "task definitions have changed in version 0.5.0. Please refer to latest docs and update your config file to version 0.5.0 accordingly."
+				log.Printf("ERROR (%s): %s", fileName, msg)
+				return errors.New(msg)
+			}
+		}
+	} else {
+		log.Printf("No settings found. Ignoring file.");
+	}
+	return err
+}
+
+func loadFile(jsonFile string, verbose bool) ([]byte, error) {
 	file, err := ioutil.ReadFile(jsonFile)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -78,14 +126,27 @@ func LoadJsonFile(jsonFile string, verbose bool) (JsonSettings, error) {
 			//always log because it's unexpected
 			log.Printf("File error: %v", err)
 		}
-		return settings, err
 	} else {
 		if verbose {
-			log.Printf("Found %s : %+v", jsonFile, settings.Settings)
+			log.Printf("Found %s", jsonFile)
 		}
 	}
+	return file, err
+}
+
+// load json file. Glob for goxc
+func loadJsonFile(jsonFile string, verbose bool) (JsonSettings, error) {
+	var settings JsonSettings
+	rawJson, err := loadFile(jsonFile, verbose)
+	if err != nil {
+		return settings, err
+	}
+	err = validateRawJson(rawJson, jsonFile)
+	if err != nil {
+		return settings, err
+	}
 	//TODO: super-verbose option for logging file content? log.Printf("%s\n", string(file))
-	json.Unmarshal(file, &settings)
+	json.Unmarshal(rawJson, &settings)
 	if err != nil {
 		log.Printf("Unmarshal error: %s", err)
 		return settings, err
@@ -101,13 +162,13 @@ func LoadJsonFile(jsonFile string, verbose bool) (JsonSettings, error) {
 func WriteJsonConfig(dir string, settings JsonSettings, configName string, isLocal bool) error {
 	if isLocal {
 		jsonFile := filepath.Join(dir, configName+".local.json")
-		return WriteJsonFile(settings, jsonFile)
+		return writeJsonFile(settings, jsonFile)
 	}
 	jsonFile := filepath.Join(dir, configName+".json")
-	return WriteJsonFile(settings, jsonFile)
+	return writeJsonFile(settings, jsonFile)
 }
 
-func WriteJsonFile(settings JsonSettings, jsonFile string) error {
+func writeJsonFile(settings JsonSettings, jsonFile string) error {
 	data, err := json.MarshalIndent(settings, "", "\t")
 	if err != nil {
 		log.Printf("Could NOT marshal json")
@@ -124,7 +185,7 @@ func WriteJsonFile(settings JsonSettings, jsonFile string) error {
 }
 
 //use json from string
-func ReadJson(js []byte) (JsonSettings, error) {
+func readJson(js []byte) (JsonSettings, error) {
 	var settings JsonSettings
 	err := json.Unmarshal(js, &settings)
 	if err != nil {
@@ -134,7 +195,7 @@ func ReadJson(js []byte) (JsonSettings, error) {
 	return settings, err
 }
 
-func WriteJson(m JsonSettings) ([]byte, error) {
+func writeJson(m JsonSettings) ([]byte, error) {
 	return json.Marshal(m)
 }
 

@@ -15,7 +15,7 @@ func TestStripEmpties(t *testing.T) {
 	"blah" : []
 	 } }`)
 
-	outjs, err := StripEmpties(js)
+	outjs, err := StripEmpties(js, true)
 	if err != nil {
 		t.Fatalf("Error returned from StripEmpties: %v", err)
 	}
@@ -29,17 +29,15 @@ func TestLoadSettings(t *testing.T) {
 	"ArtifactsDest" : "../goxc-pages/",
 	"platforms": "windows/386"
 	} }`)
-	settings, err := ReadJson(js)
+	settings, err := readJson(js)
 	if err != nil {
 		t.Fatalf("Err: %v", err)
 	}
 	if !settings.Settings.IsVerbose() {
 		t.Fatalf("Verbose flag not set!")
 	}
-	if settings.Settings.IsZipArtifact() {
-		t.Fatalf("Zip Archives flag not set!")
-	}
 }
+/*
 func TestLoadFile(t *testing.T) {
 	file := "goxc.json"
 	settings, err := LoadJsonFile(file, true)
@@ -59,3 +57,4 @@ func TestLoadParentFile(t *testing.T) {
 		log.Printf("settings: %v", settings)
 	}
 }
+*/

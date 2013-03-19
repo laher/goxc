@@ -17,12 +17,12 @@ package goxc
 */
 
 import (
+	"github.com/laher/goxc/config"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"github.com/laher/goxc/config"
 )
 
 func GetMakeScriptPath(goroot string) string {
@@ -37,13 +37,13 @@ func GetMakeScriptPath(goroot string) string {
 }
 
 // Build toolchain for a given target platform
-func BuildToolchain(goos string, arch string, settings config.Settings) {
+func buildToolchain(goos string, arch string, settings config.Settings) error {
 	goroot := runtime.GOROOT()
 	scriptpath := GetMakeScriptPath(goroot)
 	cmd := exec.Command(scriptpath)
 	cmd.Dir = filepath.Join(goroot, "src")
 	cmd.Args = append(cmd.Args, "--no-clean")
-	cgoEnabled := CgoEnabled(goos, arch)
+	cgoEnabled := cgoEnabled(goos, arch)
 
 	cmd.Env = append(os.Environ(), "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
 	if goos == LINUX && arch == ARM {
@@ -55,7 +55,7 @@ func BuildToolchain(goos string, arch string, settings config.Settings) {
 		log.Printf("'make' args: %s", cmd.Args)
 		log.Printf("'make' working directory: %s", cmd.Dir)
 	}
-	f, err := RedirectIO(cmd)
+	f, err := redirectIO(cmd)
 	if err != nil {
 		log.Printf("Error redirecting IO: %s", err)
 	}
@@ -65,16 +65,15 @@ func BuildToolchain(goos string, arch string, settings config.Settings) {
 	err = cmd.Start()
 	if err != nil {
 		log.Printf("Launch error: %s", err)
-		return
+		return err
 	}
 	err = cmd.Wait()
 	if err != nil {
 		log.Printf("Wait error: %s", err)
-		return
+		return err
 	}
 	if settings.IsVerbose() {
 		log.Printf("Complete")
 	}
+	return err
 }
-
-

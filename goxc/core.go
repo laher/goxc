@@ -27,8 +27,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
 )
+
 const (
 	AMD64   = "amd64"
 	X86     = "386"
@@ -62,14 +62,9 @@ var PLATFORMS = [][]string{
 	{WINDOWS, AMD64},
 }
 
-
-func SanityCheck(goroot string, settings config.Settings) error {
+func SanityCheck(goroot string) error {
 	if goroot == "" {
 		return errors.New("GOROOT environment variable is NOT set.")
-	} else {
-		if settings.IsVerbose() {
-			log.Printf("Found GOROOT=%s", goroot)
-		}
 	}
 	scriptpath := GetMakeScriptPath(goroot)
 	_, err := os.Stat(scriptpath)
@@ -93,7 +88,6 @@ func fileExists(path string) (bool, error) {
 	}
 	return false, err
 }
-
 
 func parseIncludeResources(basedir string, includeResources string, settings config.Settings) []string {
 	allMatches := []string{}
@@ -159,5 +153,3 @@ func getRelativeBin(goos, arch string, appName string, isForMarkdown bool, setti
 	relativeDir := filepath.Join(settings.GetFullVersionName(), goos+"_"+arch)
 	return filepath.Join(relativeDir, appName+ending)
 }
-
-
