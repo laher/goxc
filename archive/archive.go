@@ -29,7 +29,7 @@ import (
 func ZipBinaryAndResources(outDir, binPath, appName string, resources []string, settings config.Settings) (zipFilename string, err error) {
 	if settings.PackageVersion != "" && settings.PackageVersion != config.PACKAGE_VERSION_DEFAULT {
 		// v0.1.6 using appname_version_platform. See issue 3
-		zipFilename = appName + "_" + settings.PackageVersion + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
+		zipFilename = appName + "_" + settings.GetFullVersionName() + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
 	} else {
 		zipFilename = appName + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
 	}

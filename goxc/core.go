@@ -108,6 +108,7 @@ func parseIncludeResources(basedir string, includeResources string, settings con
 	return allMatches
 
 }
+
 func getAppName(workingDirectory string) string {
 	appDirname, err := filepath.Abs(workingDirectory)
 	if err != nil {

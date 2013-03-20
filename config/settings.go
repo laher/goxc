@@ -1,7 +1,7 @@
 package config
 
 import (
-	//"log"
+	"log"
 )
 
 const (
@@ -81,7 +81,8 @@ type Settings struct {
 	//0.2.0 Verbosity replaces Verbose bool
 	Verbosity string // none/debug/
 
-	TaskSettings map[string]map[string]interface{}
+	//TaskSettings map[string]map[string]interface{}
+	TaskSettings map[string]interface{}
 }
 
 func (s Settings) IsVerbose() bool {
@@ -104,6 +105,22 @@ func (s Settings) IsTask(taskName string) bool {
 	}
 	return false
 }
+
+func (s Settings) GetTaskSetting(taskName, settingName string, defaultValue interface{}) interface{} {
+	if value, keyExists := s.TaskSettings[taskName]; keyExists {
+		taskMap := value.(map[string]interface{})
+		if settingValue, keyExists := taskMap[settingName]; keyExists {
+			return settingValue
+		}
+	} else {
+		if s.IsVerbose() {
+			log.Printf("No settings for task '%s'", taskName)
+			log.Printf("All task settings: %+v", s.TaskSettings)
+		}
+	}
+	return defaultValue
+}
+
 
 func (settings Settings) GetFullVersionName() string {
 	versionName := settings.PackageVersion
@@ -164,7 +181,7 @@ func Merge(high Settings, low Settings) Settings {
 	if high.Verbosity == "" {
 		high.Verbosity = low.Verbosity
 	}
-	/* 0.5.0 codesign setting is replaced by codesign task
+	/* 0.5.0 codesign setting is replaced by task setting 'id'
 	if high.Codesign == "" {
 		high.Codesign = low.Codesign
 	}
@@ -177,7 +194,9 @@ func Merge(high Settings, low Settings) Settings {
 		high.ArtifactTypes = low.ArtifactTypes
 	}
 	*/
-
+	if len(high.TaskSettings) == 0 {
+		high.TaskSettings = low.TaskSettings
+	}
 	return high
 }
 

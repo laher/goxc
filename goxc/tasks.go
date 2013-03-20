@@ -103,7 +103,7 @@ func runTaskCodesign(destPlatforms [][]string, outDestRoot string, appName strin
 
 func codesignPlat(goos, arch string, outDestRoot string, relativeBin string, settings config.Settings) {
 	// settings.codesign only works on OS X for binaries generated for OS X.
-	id:= settings.TaskSettings["codesign"]["id"]
+	id:= settings.GetTaskSetting("codesign", "id", "")
 	if id != "" && runtime.GOOS == DARWIN && goos == DARWIN {
 		if err := signBinary(filepath.Join(outDestRoot, relativeBin), settings); err != nil {
 			log.Printf("codesign failed: %s", err)
@@ -115,7 +115,7 @@ func codesignPlat(goos, arch string, outDestRoot string, relativeBin string, set
 
 func signBinary(binPath string, settings config.Settings) error {
 	cmd := exec.Command("codesign")
-	id:= settings.TaskSettings["codesign"]["id"]
+	id:= settings.GetTaskSetting("codesign", "id", "")
 	cmd.Args = append(cmd.Args, "-s", id.(string), binPath)
 	if err := cmd.Start(); err != nil {
 		return err
@@ -130,9 +130,32 @@ func runTaskZip(destPlatforms [][]string, appName, workingDirectory, outDestRoot
 	for _, platformArr := range destPlatforms {
 		destOs := platformArr[0]
 		destArch := platformArr[1]
-		zipPlat(destOs, destArch, appName, workingDirectory, outDestRoot, settings)
+		err := zipPlat(destOs, destArch, appName, workingDirectory, outDestRoot, settings)
+		if err != nil {
+			//TODO - 'force' option
+			//return err
+		}
 	}
-	//TODO return error
+	//TODO return error?
+	return nil
+}
+
+func zipPlat(goos, arch, appName, workingDirectory, outDestRoot string, settings config.Settings) error {
+	resources := parseIncludeResources(workingDirectory, settings.Resources.Include, settings)
+	//0.4.0 use a new task type instead of artifact type
+	if settings.IsTask(config.TASK_ARCHIVE) {
+		// Create ZIP archive.
+		relativeBin := getRelativeBin(goos, arch, appName, false, settings)
+		zipPath, err := archive.ZipBinaryAndResources(
+			filepath.Join(outDestRoot, settings.GetFullVersionName(), goos + "_" + arch),
+			filepath.Join(outDestRoot, relativeBin), appName, resources, settings)
+		if err != nil {
+			log.Printf("ZIP error: %s", err)
+			return err
+		} else {
+			log.Printf("Artifact %s zipped to %s", relativeBin, zipPath)
+		}
+	}
 	return nil
 }
 
@@ -151,50 +174,42 @@ func rmBinPlat(goos, arch, appName, outDestRoot string, settings config.Settings
 	archive.RemoveArchivedBinary(filepath.Join(outDestRoot, relativeBin))
 }
 
-func zipPlat(goos, arch, appName, workingDirectory, outDestRoot string, settings config.Settings) string {
-	resources := parseIncludeResources(workingDirectory, settings.Resources.Include, settings)
-	relativeBinForMarkdown := getRelativeBin(goos, arch, appName, true, settings)
-	//0.4.0 use a new task type instead of artifact type
-	if settings.IsTask(config.TASK_ARCHIVE) {
-		// Create ZIP archive.
-		relativeBin := getRelativeBin(goos, arch, appName, false, settings)
-		zipPath, err := archive.ZipBinaryAndResources(
-			filepath.Join(outDestRoot, settings.GetFullVersionName()),
-			filepath.Join(outDestRoot, relativeBin), appName, resources, settings)
-		if err != nil {
-			log.Printf("ZIP error: %s", err)
-		} else {
-			relativeBinForMarkdown = zipPath
-			log.Printf("Artifact zipped OK")
-		}
-	}
-	return relativeBinForMarkdown
-}
-
-func runTaskDlPageNew(destPlatforms [][]string, appName, workingDirectory string, outDestRoot string, settings config.Settings) error {
-	reportFilename := filepath.Join(outDestRoot, settings.GetFullVersionName(), "downloads.md")
+func runTaskDownloadsPage(destPlatforms [][]string, appName, workingDirectory string, outDestRoot string, settings config.Settings) error {
+	filename := settings.GetTaskSetting(config.TASK_DOWNLOADS_PAGE, "filename", "downloads.md")
+	reportFilename := filepath.Join(outDestRoot, settings.GetFullVersionName(), filename.(string))
 	flags := os.O_WRONLY | os.O_TRUNC | os.O_CREATE
 	f, err := os.OpenFile(reportFilename, flags, 0600)
 	if err == nil {
 		defer f.Close()
-		_, err = fmt.Fprintf(f, "%s downloads (%s)\n------------\n\n", appName, settings.GetFullVersionName())
+		header := settings.GetTaskSetting(config.TASK_DOWNLOADS_PAGE, "header", "")
+		if header != "" {
+			_, err = fmt.Fprintf(f, "%s\n\n", header)
+		}
+		_, err = fmt.Fprintf(f, "%s downloads (%s)\n-------------\n", appName, settings.GetFullVersionName())
 		versionDir := filepath.Join(outDestRoot, settings.GetFullVersionName())
 		fileInfos, err := ioutil.ReadDir(versionDir)
 		if err == nil {
-			log.Printf("Read directory %s", versionDir)
+			if settings.IsVerbose() {
+				log.Printf("Read directory %s", versionDir)
+			}
 			for _, fi := range fileInfos {
 				if fi.IsDir() {
 					folderName := filepath.Join(versionDir, fi.Name())
-					log.Printf("Read directory %s", folderName)
+					if settings.IsVerbose() {
+						log.Printf("Read directory %s", folderName)
+					}
 					fileInfos2, err := ioutil.ReadDir(folderName)
 					if err == nil {
+						platform := strings.Replace(fi.Name(), "_", "/", -1)
+						fmt.Fprintf(f, "\n * %s:", platform)
 						for _, fi2 := range fileInfos2 {
-							relativeLink := fi2.Name()
-							_, err = fmt.Fprintf(f, " * [%s](%s)\n", fi.Name(), relativeLink)
+							relativeLink := fi.Name() + "/" + fi2.Name()
+							text := strings.Replace(fi2.Name(), "_", "\\_", -1)
+							_, err = fmt.Fprintf(f, " [[%s](%s)],", text, relativeLink)
 						}
 					}
 				} else {
-					if fi.Name() != "downloads.md" {
+					if fi.Name() != filename {
 						relativeLink := fi.Name()
 						_, err = fmt.Fprintf(f, " * [%s](%s)\n", relativeLink, relativeLink)
 					}
@@ -207,43 +222,6 @@ func runTaskDlPageNew(destPlatforms [][]string, appName, workingDirectory string
 		log.Printf("Could not report to '%s': %s", reportFilename, err)
 	}
 	return err
-}
-
-//deprecated
-func runTaskDlPage(destPlatforms [][]string, appName, workingDirectory string, outDestRoot string, settings config.Settings) {
-	isFirst := true
-	for _, platformArr := range destPlatforms {
-		destOs := platformArr[0]
-		destArch := platformArr[1]
-		relativeBinForMarkdown := getRelativeBin(destOs, destArch, appName, true, settings)
-		dlPagePlat(destOs, destArch, appName, workingDirectory, outDestRoot, isFirst, relativeBinForMarkdown, settings)
-		isFirst = false
-	}
-}
-
-//deprecated
-func dlPagePlat(goos, arch string, appName, workingDirectory string, outDestRoot string, isFirst bool, relativeBinForMarkdown string, settings config.Settings) {
-	// Output report
-	reportFilename := filepath.Join(outDestRoot, settings.GetFullVersionName(), "downloads.md")
-	var flags int
-	if isFirst {
-		log.Printf("Creating %s", reportFilename)
-		flags = os.O_WRONLY | os.O_TRUNC | os.O_CREATE
-	} else {
-		flags = os.O_APPEND | os.O_WRONLY
-
-	}
-	f, err := os.OpenFile(reportFilename, flags, 0600)
-	if err == nil {
-		defer f.Close()
-		if isFirst {
-			_, err = fmt.Fprintf(f, "%s downloads (%s)\n------------\n\n", appName, settings.GetFullVersionName())
-		}
-		_, err = fmt.Fprintf(f, " * [%s %s](%s)\n", goos, arch, relativeBinForMarkdown)
-	}
-	if err != nil {
-		log.Printf("Could not report to '%s': %s", reportFilename, err)
-	}
 }
 
 func runTaskToolchain(destPlatforms [][]string, settings config.Settings) error {
@@ -319,6 +297,8 @@ func runTask(task string, destPlatforms [][]string, appName, workingDirectory, o
 			log.Printf("Install failed! %s", err)
 		}
 		return err
+	case config.TASK_CODESIGN:
+		return runTaskCodesign(destPlatforms, appName, outDestRoot, settings)
 	case config.TASK_BUILD_TOOLCHAIN:
 		return runTaskToolchain(destPlatforms, settings)
 	case config.TASK_XC:
@@ -328,8 +308,9 @@ func runTask(task string, destPlatforms [][]string, appName, workingDirectory, o
 	case config.TASK_REMOVE_BIN:
 		return runTaskRmBin(destPlatforms, appName, outDestRoot, settings)
 	case config.TASK_DOWNLOADS_PAGE:
-		return runTaskDlPageNew(destPlatforms, appName, workingDirectory, outDestRoot, settings)
+		return runTaskDownloadsPage(destPlatforms, appName, workingDirectory, outDestRoot, settings)
 	}
 	// TODO: custom tasks
+	log.Printf("Unrecognised task '%s'", task)
 	return fmt.Errorf("Unrecognised task '%s'", task)
 }

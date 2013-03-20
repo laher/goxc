@@ -64,7 +64,7 @@ Outcome
 
 By default, artifacts are generated and then immediately zipped into (outputfolder).
 
-e.g. /my/outputfolder/0.1.1/myapp_0.1.1_linux_arm.zip
+e.g. /my/outputfolder/0.1.1/linux_arm/myapp_0.1.1_linux_arm.zip
 
 If you specified the version number -pv=123 then the filename would be myapp_0.1.1_linux_arm_123.zip.
 
@@ -109,6 +109,7 @@ Limitations
  * Tested on Linux, Windows (and Mac during an early version). Please test on Mac and *BSD
  * Currently goxc is only designed to build standalone Go apps without linked libraries. You can try but YMMV
  * Bug: issue with config overriding. Empty strings do not currently override non-empty strings. e.g. -pi="" doesnt override the json setting PackageInfo
+ * The *API* is not considered stable yet, so please don't start embedding goxc method calls in your code yet - unless you 'Contact us' first! Then I can freeze some API details as required.
 
 License
 -------

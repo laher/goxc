@@ -140,10 +140,11 @@ func interpretSettings(call []string) (string, config.Settings) {
 
 		if codesignId != "" {
 			if settings.TaskSettings == nil {
-				settings.TaskSettings = make(map[string]map[string]interface{})
+				settings.TaskSettings = make(map[string]interface{})
 			}
-			settings.TaskSettings["codesign"] = make(map[string]interface{})
-			settings.TaskSettings["codesign"]["id"] = codesignId
+			cod := make(map[string]interface{})
+			cod["id"] = codesignId
+			settings.TaskSettings["codesign"] = cod
 		}
 	}
 	//log.Printf("Settings: %s", settings)
@@ -171,14 +172,16 @@ func interpretSettings(call []string) (string, config.Settings) {
 			log.Printf("Building toolchain, so getting config from HOME directory. To use current folder's config, specify the folder (i.e. goxc -t .)")
 			workingDirectory = userHomeDir()
 		} else {
-			log.Printf("Using config from current folder")
+			if isVerbose {
+				log.Printf("Using config from current folder")
+			}
 			//default to current folder
 			workingDirectory = "."
 		}
 	} else {
 		workingDirectory = args[0]
 	}
-	log.Printf("Config name: %s", configName)
+	log.Printf("Working directory: '%s', Config name: %s", workingDirectory, configName)
 
 	settings, err := mergeConfiguredSettings(workingDirectory, configName, !isWriteConfig)
 	if err != nil {

@@ -19,6 +19,7 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -71,12 +72,33 @@ func LoadJsonConfigOverrideable(dir string, configName string, useLocal bool, ve
 	return Settings{}, err
 }
 
+//beginnings of taskSettings merging
+func getTaskSettings(rawJson []byte, fileName string) (map[string]interface{}, error) {
+	var f interface{}
+	err := json.Unmarshal(rawJson, &f)
+	if err != nil {
+		log.Printf("ERROR (%s): invalid json!", fileName)
+		return nil, err
+	}
+	m := f.(map[string]interface{})
+	if s, keyExists := m["Settings"]; keyExists {
+		settings := s.(map[string]interface{})
+		if taskSettings, keyExists:= settings["TaskSettings"]; keyExists {
+			log.Printf("Found TaskSettings field %+v", taskSettings)
+			return taskSettings.(map[string]interface{}), err
+		} else {
+			log.Printf("No TaskSettings field")
+		}
+	}
+	return nil, fmt.Errorf("No TaskSettings defined")
+}
+
 
 func validateRawJson(rawJson []byte, fileName string) error {
 	var f interface{}
 	err := json.Unmarshal(rawJson, &f)
 	if err != nil {
-		log.Printf("Warning: invalid json. returning")
+		log.Printf("ERROR (%s): invalid json!", fileName)
 		return err
 	}
 	m := f.(map[string]interface{})
@@ -145,12 +167,14 @@ func loadJsonFile(jsonFile string, verbose bool) (JsonSettings, error) {
 	if err != nil {
 		return settings, err
 	}
+
 	//TODO: super-verbose option for logging file content? log.Printf("%s\n", string(file))
 	json.Unmarshal(rawJson, &settings)
 	if err != nil {
 		log.Printf("Unmarshal error: %s", err)
 		return settings, err
 	} else {
+		//settings.Settings.TaskSettings, err= getTaskSettings(rawJson, jsonFile)
 		if verbose {
 			log.Printf("unmarshalled settings OK")
 		}
