@@ -1,4 +1,4 @@
-package goxc
+package core
 
 /*
    Copyright 2013 Am Laher
@@ -22,10 +22,11 @@ import (
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	//"github.com/laher/goxc/archive"
-	"github.com/laher/goxc/config"
+	//"github.com/laher/goxc/config"
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -62,6 +63,17 @@ var PLATFORMS = [][]string{
 	{WINDOWS, AMD64},
 }
 
+func GetMakeScriptPath(goroot string) string {
+	gohostos := runtime.GOOS
+	var scriptname string
+	if gohostos == WINDOWS {
+		scriptname = "make.bat"
+	} else {
+		scriptname = "make.bash"
+	}
+	return filepath.Join(goroot, "src", scriptname)
+}
+
 func SanityCheck(goroot string) error {
 	if goroot == "" {
 		return errors.New("GOROOT environment variable is NOT set.")
@@ -89,7 +101,7 @@ func fileExists(path string) (bool, error) {
 	return false, err
 }
 
-func parseIncludeResources(basedir string, includeResources string, settings config.Settings) []string {
+func ParseIncludeResources(basedir string, includeResources string, isVerbose bool) []string {
 	allMatches := []string{}
 	if includeResources != "" {
 		resourceGlobs := strings.Split(includeResources, ",")
@@ -102,14 +114,14 @@ func parseIncludeResources(basedir string, includeResources string, settings con
 			}
 		}
 	}
-	if settings.IsVerbose() {
+	if isVerbose {
 		log.Printf("Resources to include: %v", allMatches)
 	}
 	return allMatches
 
 }
 
-func getAppName(workingDirectory string) string {
+func GetAppName(workingDirectory string) string {
 	appDirname, err := filepath.Abs(workingDirectory)
 	if err != nil {
 		log.Printf("Error: %v", err)
@@ -118,7 +130,7 @@ func getAppName(workingDirectory string) string {
 	return appName
 }
 
-func getGoPath() string {
+func GetGoPath() string {
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
 		log.Printf("GOPATH env variable not set! Using '.'")
@@ -127,13 +139,13 @@ func getGoPath() string {
 	return gopath
 }
 
-func getOutDestRoot(appName string, settings config.Settings) string {
+func GetOutDestRoot(appName string, artifactsDestSetting string) string {
 	var outDestRoot string
-	if settings.ArtifactsDest != "" {
-		outDestRoot = settings.ArtifactsDest
+	if artifactsDestSetting != "" {
+		outDestRoot = artifactsDestSetting
 	} else {
 		gobin := os.Getenv("GOBIN")
-		gopath := getGoPath()
+		gopath := GetGoPath()
 		if gobin == "" {
 			// follow usual GO rules for making GOBIN
 			gobin = filepath.Join(gopath, "bin")
@@ -143,7 +155,7 @@ func getOutDestRoot(appName string, settings config.Settings) string {
 	return outDestRoot
 }
 
-func getRelativeBin(goos, arch string, appName string, isForMarkdown bool, settings config.Settings) string {
+func GetRelativeBin(goos, arch string, appName string, isForMarkdown bool, fullVersionName string) string {
 	var ending = ""
 	if goos == WINDOWS {
 		ending = ".exe"
@@ -151,6 +163,6 @@ func getRelativeBin(goos, arch string, appName string, isForMarkdown bool, setti
 	if isForMarkdown {
 		return filepath.Join(goos+"_"+arch, appName+ending)
 	}
-	relativeDir := filepath.Join(settings.GetFullVersionName(), goos+"_"+arch)
+	relativeDir := filepath.Join(fullVersionName, goos+"_"+arch)
 	return filepath.Join(relativeDir, appName+ending)
 }

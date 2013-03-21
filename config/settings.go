@@ -25,17 +25,21 @@ const (
 	VERBOSITY_VERBOSE = "v"
 
 	TASK_BUILD_TOOLCHAIN = "toolchain"
-	TASK_CLEAN           = "clean"
-	TASK_TEST            = "test"
-	TASK_VET             = "vet"
-	TASK_FMT             = "fmt"
-	TASK_XC              = "xc"
-	TASK_CODESIGN        = "codesign"
-	TASK_INSTALL         = "install"
-	TASK_ARCHIVE         = "archive" //zip
-	TASK_REMOVE_BIN      = "rmbin"   //after zipping
-	TASK_DOWNLOADS_PAGE  = "downloads-page"
 
+	TASK_GO_CLEAN   = "go-clean"
+	TASK_GO_VET     = "go-vet"
+	TASK_GO_TEST    = "go-test"
+	TASK_GO_FMT     = "go-fmt"
+	TASK_GO_INSTALL = "go-install"
+
+	TASK_XC = "xc"
+
+	TASK_CODESIGN       = "codesign"
+	TASK_ARCHIVE        = "archive" //zip
+	TASK_REMOVE_BIN     = "rmbin"   //after zipping
+	TASK_DOWNLOADS_PAGE = "downloads-page"
+
+	//0.4 removed in favour of associated tasks
 	//ARTIFACT_TYPE_ZIP = "zip"
 	//ARTIFACT_TYPE_BIN = "bin"
 
@@ -43,7 +47,11 @@ const (
 )
 
 var (
-	TASKS_DEFAULT = []string{TASK_CLEAN, TASK_VET, TASK_TEST, TASK_INSTALL, TASK_CODESIGN, TASK_XC, TASK_ARCHIVE, TASK_REMOVE_BIN, TASK_DOWNLOADS_PAGE}
+	TASKS_VALIDATE = []string{TASK_GO_CLEAN, TASK_GO_VET, TASK_GO_TEST, TASK_GO_INSTALL}
+	TASKS_COMPILE  = []string{TASK_XC}
+	TASKS_PACKAGE  = []string{TASK_CODESIGN, TASK_ARCHIVE, TASK_REMOVE_BIN, TASK_DOWNLOADS_PAGE}
+	TASKS_DEFAULT  = append(append(TASKS_VALIDATE, TASKS_COMPILE...), TASKS_PACKAGE...)
+	TASKS_ALL      = append(TASKS_DEFAULT, TASK_GO_FMT, TASK_BUILD_TOOLCHAIN)
 )
 
 type Resources struct {
@@ -121,7 +129,6 @@ func (s Settings) GetTaskSetting(taskName, settingName string, defaultValue inte
 	return defaultValue
 }
 
-
 func (settings Settings) GetFullVersionName() string {
 	versionName := settings.PackageVersion
 	if settings.BranchName != "" {
@@ -196,6 +203,33 @@ func Merge(high Settings, low Settings) Settings {
 	*/
 	if len(high.TaskSettings) == 0 {
 		high.TaskSettings = low.TaskSettings
+	} else {
+		high.TaskSettings = mergeMaps(high.TaskSettings, low.TaskSettings)
+	}
+	return high
+}
+
+func mergeMaps(high, low map[string]interface{}) map[string]interface{} {
+	//log.Printf("Merging %+v with %+v", high, low)
+	if high == nil {
+		return low
+	}
+	for key, lowVal := range low {
+		//log.Printf("Merging key %s", key)
+		if highVal, keyExists := high[key]; keyExists {
+			// NOTE: go deeper for maps.
+			// (Slices and other types should not go deeper)
+			switch highValTyped := highVal.(type) {
+			case map[string]interface{}:
+				switch lowValTyped := lowVal.(type) {
+				case map[string]interface{}:
+					//log.Printf("Go deeper for key '%s'", key)
+					high[key] = mergeMaps(highValTyped, lowValTyped)
+				}
+			}
+		} else {
+			high[key] = lowVal
+		}
 	}
 	return high
 }

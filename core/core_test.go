@@ -1,4 +1,4 @@
-package goxc
+package core
 
 import (
 	"io/ioutil"

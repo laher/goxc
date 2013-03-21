@@ -27,7 +27,8 @@ import (
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/config"
-	"github.com/laher/goxc/goxc"
+	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/tasks"
 )
 
 // settings for this invocation of goxc
@@ -36,13 +37,13 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION          = config.PACKAGE_VERSION_DEFAULT
+	VERSION          = "0.5.x"
 	settings         config.Settings
 	configName       string
 	isVersion        bool
 	isHelp           bool
 	isBuildToolchain bool
-	tasks            string
+	tasksToRun       string
 	tasksPlus        string
 	tasksMinus       string
 	isCliZipArchives string
@@ -106,7 +107,7 @@ func goXC(call []string) {
 		}
 		//v2.0.0: Removed PKG_VERSION parsing
 
-		goxc.RunTasks(workingDirectory, settings)
+		tasks.RunTasks(workingDirectory, settings)
 	}
 }
 
@@ -120,13 +121,13 @@ func interpretSettings(call []string) (string, config.Settings) {
 			settings.Verbosity = config.VERBOSITY_VERBOSE
 		}
 		if isBuildToolchain {
-			tasks = config.TASK_BUILD_TOOLCHAIN + "," + tasks
+			tasksToRun = config.TASK_BUILD_TOOLCHAIN + "," + tasksToRun
 		}
 		if tasksPlus != "" {
-			tasks = tasksPlus + "," + tasks
+			tasksToRun = tasksPlus + "," + tasksToRun
 		}
-		if tasks != "" {
-			settings.Tasks = strings.Split(tasks, ",")
+		if tasksToRun != "" {
+			settings.Tasks = strings.Split(tasksToRun, ",")
 		}
 		//0.2.3 NOTE this will be superceded soon
 		//using string because that makes it overrideable
@@ -158,9 +159,9 @@ func interpretSettings(call []string) (string, config.Settings) {
 	}
 	//sanity check
 	goroot := runtime.GOROOT()
-	if err := goxc.SanityCheck(goroot); err != nil {
+	if err := core.SanityCheck(goroot); err != nil {
 		log.Printf("Error: %s", err)
-		log.Printf(goxc.MSG_INSTALL_GO_FROM_SOURCE)
+		log.Printf(core.MSG_INSTALL_GO_FROM_SOURCE)
 		os.Exit(1)
 	}
 
@@ -228,7 +229,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (linux,darwin,windows,freebsd,openbsd). Compiles all by default")
 	flagSet.StringVar(&settings.Arch, "arch", "", "Specify Arch (386,amd64,arm). Compiles all by default")
 	flagSet.StringVar(&settings.PackageVersion, "pv", "", "Package version (usually [major].[minor].[patch]. default='"+config.PACKAGE_VERSION_DEFAULT+"')")
-	flagSet.StringVar(&settings.PackageVersion, "av", "", "DEPRECATED: Package version (deprecated option name)")
+	//flagSet.StringVar(&settings.PackageVersion, "av", "", "DEPRECATED: Package version (deprecated option name)")
 	flagSet.StringVar(&settings.PrereleaseInfo, "pi", "", "Prerelease info (usually 'alpha', 'snapshot',...)")
 	flagSet.StringVar(&settings.BranchName, "br", "", "Branch name")
 	flagSet.StringVar(&settings.BuildName, "bu", "", "Build name")
@@ -240,8 +241,8 @@ func setupFlags() *flag.FlagSet {
 	flagSet.BoolVar(&isHelp, "h", false, "Show this help")
 	flagSet.BoolVar(&isVersion, "version", false, "version info")
 	flagSet.BoolVar(&isVerbose, "v", false, "verbose")
-	flagSet.StringVar(&isCliZipArchives, "z", "", "DEPRECATED: create ZIP archives instead of folders (true/false. default=true)")
-	flagSet.StringVar(&tasks, "tasks", "", "Tasks to run (toolchain,clean,vet,test,fmt,install,xc,archive,rmbin). Default='clean,vet,test,install,xc,archive,rmbin'")
+	flagSet.StringVar(&isCliZipArchives, "z", "", "DEPRECATED (use archive & rmbin tasks instead): create ZIP archives instead of folders (true/false. default=true)")
+	flagSet.StringVar(&tasksToRun, "tasks", "", fmt.Sprintf("Tasks to run (from %v). Default='%v'", config.TASKS_ALL, config.TASKS_DEFAULT))
 	flagSet.StringVar(&tasksPlus, "tasks+", "", "Additional tasks to run")
 	flagSet.StringVar(&tasksMinus, "tasks-", "", "Tasks to exclude")
 	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s). Equivalent to -tasks=toolchain")

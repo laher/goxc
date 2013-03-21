@@ -37,6 +37,7 @@ func TestLoadSettings(t *testing.T) {
 		t.Fatalf("Verbose flag not set!")
 	}
 }
+
 /*
 func TestLoadFile(t *testing.T) {
 	file := "goxc.json"

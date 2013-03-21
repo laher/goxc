@@ -46,7 +46,7 @@ See 'goxc -h' for more options.
 
  * e.g. To restrict by OS and Architecture:
 
-	goxc -os=windows -arch=amd64
+	goxc -os=linux -arch="amd64 arm"
 
  * e.g. To set a destination root folder and artifact version number:
 
@@ -86,7 +86,20 @@ As of v0.2.0, goxc can use a settings file to save and re-run compilations.
 
 To create a config file, just use the -wc (write config) option.
 
-	goxc -d=../site/downloads -os=linux,windows -wc
+	goxc -d=../site/downloads -os="linux windows" -wc
+
+Settings file format
+--------------------
+
+TODO!!!
+
+The settings file exposes plenty more options which are not available via command line options...
+
+For now, just specify lots of options including -wc to see the output. Use -c=test to produce a test.json file.
+
+
+Settings file override behaviour
+--------------------------------
 
 You can specify an alternative config using -c=configname (default is .goxc)
 

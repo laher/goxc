@@ -1,4 +1,4 @@
-package goxc
+package core
 
 /*
    Copyright 2013 Am Laher
@@ -27,22 +27,23 @@ import (
 	"runtime"
 )
 
-func addLdFlagVersion(settings config.Settings, cmd *exec.Cmd) {
-	if settings.GetFullVersionName() != "" {
-		cmd.Args = append(cmd.Args, "-ldflags", "-X main.VERSION "+settings.GetFullVersionName()+"")
+func addLdFlagVersion(cmd *exec.Cmd, fullVersionName string) {
+	if fullVersionName != "" {
+		cmd.Args = append(cmd.Args, "-ldflags", "-X main.VERSION "+fullVersionName+"")
 	}
 }
 
 // 0.3.1
-func invokeGo(workingDirectory string, args []string, settings config.Settings) error {
+func InvokeGo(workingDirectory string, args []string, settings config.Settings) error {
 	log.Printf("invoking 'go %v' on '%s'", args, workingDirectory)
 	cmd := exec.Command("go")
 	cmd.Args = append(cmd.Args, args...)
-	if args[0] == config.TASK_INSTALL || args[0] == "build" || args[0] == config.TASK_TEST {
-		addLdFlagVersion(settings, cmd)
+	// ldflags relate to any build task ...
+	if args[0] == "install" || args[0] == "build" || args[0] == "test" {
+		addLdFlagVersion(cmd, settings.GetFullVersionName())
 	}
 	cmd.Dir = workingDirectory
-	f, err := redirectIO(cmd)
+	f, err := RedirectIO(cmd)
 	if err != nil {
 		log.Printf("Error redirecting IO: %s", err)
 		return err
@@ -71,7 +72,7 @@ func invokeGo(workingDirectory string, args []string, settings config.Settings) 
 }
 
 // this function copied from 'https://github.com/laher/mkdo'
-func redirectIO(cmd *exec.Cmd) (*os.File, error) {
+func RedirectIO(cmd *exec.Cmd) (*os.File, error) {
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Println(err)
@@ -91,7 +92,7 @@ func redirectIO(cmd *exec.Cmd) (*os.File, error) {
 }
 
 //0.2.4 refactored this out
-func cgoEnabled(goos, arch string) string {
+func CgoEnabled(goos, arch string) string {
 	var cgoEnabled string
 	if goos == runtime.GOOS && arch == runtime.GOARCH {
 		//note: added conditional in line with Dave Cheney, but this combination is not yet supported.

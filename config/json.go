@@ -83,7 +83,7 @@ func getTaskSettings(rawJson []byte, fileName string) (map[string]interface{}, e
 	m := f.(map[string]interface{})
 	if s, keyExists := m["Settings"]; keyExists {
 		settings := s.(map[string]interface{})
-		if taskSettings, keyExists:= settings["TaskSettings"]; keyExists {
+		if taskSettings, keyExists := settings["TaskSettings"]; keyExists {
 			log.Printf("Found TaskSettings field %+v", taskSettings)
 			return taskSettings.(map[string]interface{}), err
 		} else {
@@ -92,7 +92,6 @@ func getTaskSettings(rawJson []byte, fileName string) (map[string]interface{}, e
 	}
 	return nil, fmt.Errorf("No TaskSettings defined")
 }
-
 
 func validateRawJson(rawJson []byte, fileName string) error {
 	var f interface{}
@@ -106,33 +105,33 @@ func validateRawJson(rawJson []byte, fileName string) error {
 	if formatVersion, keyExists := m["FormatVersion"]; keyExists {
 		if formatVersion != FORMAT_VERSION {
 			log.Printf("WARNING (%s): is an old config file. File version: %s. Expected version %s", fileName, formatVersion, FORMAT_VERSION)
-			rejectOldTaskDefinitions= true
+			rejectOldTaskDefinitions = true
 		}
 	} else {
 		log.Printf("WARNING (%s): format version not specified. Please ensure this file format is up to date.", fileName)
-		rejectOldTaskDefinitions= true
+		rejectOldTaskDefinitions = true
 	}
 	if s, keyExists := m["Settings"]; keyExists {
 		settings := s.(map[string]interface{})
-		if _, keyExists:= settings["ArtifactTypes"]; keyExists {
+		if _, keyExists := settings["ArtifactTypes"]; keyExists {
 			msg := "'ArtifactTypes' setting is deprecated. Please use tasks instead (By default goxc zips the binary ('archive' task) and then deletes the binary ('rmbin' task)."
 			log.Printf("ERROR (%s): %s", fileName, msg)
 			return errors.New(msg)
 		}
-		if _, keyExists:= settings["Codesign"]; keyExists {
+		if _, keyExists := settings["Codesign"]; keyExists {
 			msg := "'Codesign' setting is deprecated. Please use setting \"Settings\" : { \"TaskSettings\" : { \"codesign\" : { \"id\" : \"blah\" } } }."
 			log.Printf("ERROR (%s): %s", fileName, msg)
 			return errors.New(msg)
 		}
 		if rejectOldTaskDefinitions {
-			if _, keyExists:= settings["Tasks"]; keyExists {
+			if _, keyExists := settings["Tasks"]; keyExists {
 				msg := "task definitions have changed in version 0.5.0. Please refer to latest docs and update your config file to version 0.5.0 accordingly."
 				log.Printf("ERROR (%s): %s", fileName, msg)
 				return errors.New(msg)
 			}
 		}
 	} else {
-		log.Printf("No settings found. Ignoring file.");
+		log.Printf("No settings found. Ignoring file.")
 	}
 	return err
 }

@@ -1,4 +1,4 @@
-package goxc
+package tasks
 
 /*
    Copyright 2013 Am Laher
@@ -18,6 +18,7 @@ package goxc
 
 import (
 	"github.com/laher/goxc/config"
+	"github.com/laher/goxc/core"
 	"log"
 	"os"
 	"os/exec"
@@ -25,28 +26,28 @@ import (
 	"runtime"
 )
 
-func GetMakeScriptPath(goroot string) string {
-	gohostos := runtime.GOOS
-	var scriptname string
-	if gohostos == WINDOWS {
-		scriptname = "make.bat"
-	} else {
-		scriptname = "make.bash"
+func runTaskToolchain(destPlatforms [][]string, settings config.Settings) error {
+	for _, platformArr := range destPlatforms {
+		destOs := platformArr[0]
+		destArch := platformArr[1]
+		buildToolchain(destOs, destArch, settings)
 	}
-	return filepath.Join(goroot, "src", scriptname)
+	return nil
 }
+
+
 
 // Build toolchain for a given target platform
 func buildToolchain(goos string, arch string, settings config.Settings) error {
 	goroot := runtime.GOROOT()
-	scriptpath := GetMakeScriptPath(goroot)
+	scriptpath := core.GetMakeScriptPath(goroot)
 	cmd := exec.Command(scriptpath)
 	cmd.Dir = filepath.Join(goroot, "src")
 	cmd.Args = append(cmd.Args, "--no-clean")
-	cgoEnabled := cgoEnabled(goos, arch)
+	cgoEnabled := core.CgoEnabled(goos, arch)
 
 	cmd.Env = append(os.Environ(), "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
-	if goos == LINUX && arch == ARM {
+	if goos == core.LINUX && arch == core.ARM {
 		// see http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go
 		cmd.Env = append(cmd.Env, "GOARM=5")
 	}
@@ -55,7 +56,7 @@ func buildToolchain(goos string, arch string, settings config.Settings) error {
 		log.Printf("'make' args: %s", cmd.Args)
 		log.Printf("'make' working directory: %s", cmd.Dir)
 	}
-	f, err := redirectIO(cmd)
+	f, err := core.RedirectIO(cmd)
 	if err != nil {
 		log.Printf("Error redirecting IO: %s", err)
 	}
