@@ -11,7 +11,7 @@
 				"id": "123"
 			},
 			"downloads-page" : {
-				"header" : "---\nlayout: default\ntitle: Download goxc\n---\n\nNote: please use 'go get -u github.com/laher/goxc' instead of these binaries.",
+				"fileheader" : "---\nlayout: default\ntitle: Download goxc\n---\n\nNote: please use 'go get -u github.com/laher/goxc' instead of these binaries.",
 				"filename" : "index.md"
 			}
 		}

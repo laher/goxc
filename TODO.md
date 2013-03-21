@@ -2,6 +2,7 @@ v0.5 TODO!
 
  * documentation for json format. Generate 'defaults' file for wiki.
  * documentation: improve README. Update wiki.
+ * document new task definitions
 
 v0.5 DONE:
 =========
