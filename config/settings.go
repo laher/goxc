@@ -39,6 +39,11 @@ const (
 	TASK_REMOVE_BIN     = "rmbin"   //after zipping
 	TASK_DOWNLOADS_PAGE = "downloads-page"
 
+	TASKALIAS_DEFAULT  = "default"
+	TASKALIAS_VALIDATE = "validate"
+	TASKALIAS_PACKAGE  = "package"
+	TASKALIAS_ALL      = "all"
+
 	//0.4 removed in favour of associated tasks
 	//ARTIFACT_TYPE_ZIP = "zip"
 	//ARTIFACT_TYPE_BIN = "bin"

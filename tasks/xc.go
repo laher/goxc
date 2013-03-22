@@ -30,7 +30,7 @@ import (
 var xcTask = Task{
 	"xc",
 	"Cross compile. Builds executables for other platforms.",
-	runTaskXC }
+	runTaskXC}
 
 //runs automatically
 func init() {
@@ -38,7 +38,7 @@ func init() {
 }
 
 func runTaskXC(tp taskParams) error {
-//func runTaskXC(destPlatforms [][]string, workingDirectory string, settings config.Settings) error {
+	//func runTaskXC(destPlatforms [][]string, workingDirectory string, settings config.Settings) error {
 	for _, platformArr := range tp.destPlatforms {
 		destOs := platformArr[0]
 		destArch := platformArr[1]

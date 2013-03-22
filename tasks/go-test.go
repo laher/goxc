@@ -23,12 +23,13 @@ import (
 	"github.com/laher/goxc/core"
 	"log"
 )
+
 //runs automatically
 func init() {
 	register(Task{
-	config.TASK_GO_TEST,
-	"runs `go test ./..`. Folder is configurable.",
-	runTaskGoTest })
+		config.TASK_GO_TEST,
+		"runs `go test ./..`. Folder is configurable.",
+		runTaskGoTest})
 }
 
 func runTaskGoTest(tp taskParams) error {

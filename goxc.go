@@ -32,10 +32,10 @@ import (
 )
 
 const (
-	MSG_HELP = "goxc [options] <directory_name>\n"
-	MSG_HELP_TOPICS = "goxc -h <topic>\n"
-	MSG_HELP_TOPICS_EG = "try `goxc -h options` or `goxc -h tasks`\n"
-	MSG_HELP_LINK = "Please see https://github.com/laher/goxc/wiki for full details.\n"
+	MSG_HELP               = "goxc [options] <directory_name>\n"
+	MSG_HELP_TOPICS        = "goxc -h <topic>\n"
+	MSG_HELP_TOPICS_EG     = "Ury `goxc -h options` or `goxc -h tasks`\n"
+	MSG_HELP_LINK          = "Please see https://github.com/laher/goxc/wiki for full details.\n"
 	MSG_HELP_UNKNOWN_TOPIC = "Unknown topic '%s'. Try 'options' or 'tasks'\n"
 )
 
@@ -73,10 +73,15 @@ func printHelp(flagSet *flag.FlagSet) {
 			flagSet.PrintDefaults()
 			return
 		case "tasks":
-			fmt.Fprint(os.Stderr, "Available tasks:\n")
-			tasks := tasks.List()
-			for _, task := range tasks {
-				fmt.Fprintf(os.Stderr, "%s\t- %s\n", task.Name, task.Description)
+			fmt.Fprint(os.Stderr, "Use the '-task' options to adjust tasks. e.g. -tasks=default -tasks+=go-fmt -tasks-=rmbin\n")
+			fmt.Fprint(os.Stderr, "\nAvailable tasks:\n")
+			allTasks := tasks.ListTasks()
+			for _, task := range allTasks {
+				fmt.Fprintf(os.Stderr, " %s\t%s\n", task.Name, task.Description)
+			}
+			fmt.Fprint(os.Stderr, "\nTask aliases:\n")
+			for alias, taskNames := range tasks.Aliases {
+				fmt.Fprintf(os.Stderr, " %s\t%v\n", alias, taskNames)
 			}
 			return
 		}
@@ -123,7 +128,7 @@ func goXC(call []string) {
 		settings = config.FillDefaults(settings)
 		//remove unwanted tasks here ...
 		if tasksMinus != "" {
-			removeTasks := strings.Split(tasksMinus, ",")
+			removeTasks := tasks.ResolveAliases(strings.Split(tasksMinus, ","))
 			for _, val := range removeTasks {
 				settings.Tasks = remove(settings.Tasks, val)
 			}
@@ -155,7 +160,7 @@ func interpretSettings(call []string) (string, config.Settings) {
 			tasksToRun = tasksPlus + "," + tasksToRun
 		}
 		if tasksToRun != "" {
-			settings.Tasks = strings.Split(tasksToRun, ",")
+			settings.Tasks = tasks.ResolveAliases(strings.Split(tasksToRun, ","))
 		}
 		//0.2.3 NOTE this will be superceded soon
 		//using string because that makes it overrideable
@@ -262,7 +267,8 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.Resources.Include, "include", "", "Include resources in archives (default="+config.RESOURCES_INCLUDE_DEFAULT+")") //TODO: Add resources to non-zips & downloads.md
 
 	//0.2.0 Not easy to 'merge' boolean config items. More flexible to translate them to string options anyway
-	flagSet.BoolVar(&isHelp, "h", false, "Show this help")
+	flagSet.BoolVar(&isHelp, "h", false, "Show help on a topic, such as tasks, options")
+	flagSet.BoolVar(&isHelp, "help", false, "Show help on a topic, such as tasks, options")
 	flagSet.BoolVar(&isVersion, "version", false, "version info")
 	flagSet.BoolVar(&isVerbose, "v", false, "verbose")
 	flagSet.StringVar(&isCliZipArchives, "z", "", "DEPRECATED (use archive & rmbin tasks instead): create ZIP archives instead of folders (true/false. default=true)")

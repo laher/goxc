@@ -31,7 +31,7 @@ import (
 var dpTask = Task{
 	"downloads-page",
 	"Generate a downloads page. Currently only supports Markdown format.",
-	runTaskDownloadsPage }
+	runTaskDownloadsPage}
 
 //runs automatically
 func init() {
@@ -98,5 +98,3 @@ func runTaskDownloadsPage(tp taskParams) error {
 	}
 	return err
 }
-
-

@@ -17,7 +17,7 @@ func TestFail(t *testing.T) {
 */
 func TestGetGoPath(t *testing.T) {
 	orig := os.Getenv("GOPATH")
-	p1 := path.Join("a","b")
+	p1 := path.Join("a", "b")
 
 	os.Setenv("GOPATH", JoinList(p1, "..", "c"))
 	gopath := GetGoPath(".")

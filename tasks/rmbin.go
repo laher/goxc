@@ -28,7 +28,7 @@ import (
 var rmBinTask = Task{
 	"rmbin",
 	"delete binary. Normally runs after 'archive' task to reduce size of output folder.",
-	runTaskRmBin }
+	runTaskRmBin}
 
 //runs automatically
 func init() {

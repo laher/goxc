@@ -23,12 +23,13 @@ import (
 	"github.com/laher/goxc/core"
 	"log"
 )
+
 //runs automatically
 func init() {
 	register(Task{
-	config.TASK_GO_INSTALL,
-	"runs `go install`. installs a version consistent with goxc-built binaries.",
-	runTaskGoInstall })
+		config.TASK_GO_INSTALL,
+		"runs `go install`. installs a version consistent with goxc-built binaries.",
+		runTaskGoInstall})
 }
 
 func runTaskGoInstall(tp taskParams) error {

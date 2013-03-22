@@ -27,30 +27,47 @@ import (
 )
 
 type taskParams struct {
-	destPlatforms [][]string
-	appName string
+	destPlatforms                 [][]string
+	appName                       string
 	workingDirectory, outDestRoot string
-	settings config.Settings
+	settings                      config.Settings
 }
 
 type Task struct {
-	Name string
+	Name        string
 	Description string
-	f func(taskParams) error
+	f           func(taskParams) error
 }
 
-var(
+var (
 	allTasks = make(map[string]Task)
+	Aliases  = map[string][]string{
+		config.TASKALIAS_DEFAULT:  config.TASKS_DEFAULT,
+		config.TASKALIAS_PACKAGE:  config.TASKS_PACKAGE,
+		config.TASKALIAS_VALIDATE: config.TASKS_VALIDATE,
+		config.TASKALIAS_ALL:      config.TASKS_ALL}
 )
 
 func register(task Task) {
 	allTasks[task.Name] = task
 }
 
-func List() []Task {
+func ResolveAliases(tasks []string) []string {
+	ret := []string{}
+	for _, taskName := range tasks {
+		if aliasTasks, keyExists := Aliases[taskName]; keyExists {
+			ret = append(ret, aliasTasks...)
+		} else {
+			ret = append(ret, taskName)
+		}
+	}
+	return ret
+}
+
+func ListTasks() []Task {
 	tasks := []Task{}
-	for _,t := range allTasks {
-		tasks = append(tasks,t)
+	for _, t := range allTasks {
+		tasks = append(tasks, t)
 	}
 	return tasks
 }
@@ -60,10 +77,14 @@ func RunTasks(workingDirectory string, settings config.Settings) {
 		log.Printf("looping through each platform")
 	}
 	//0.5 add support for space delimiters (more like BuildConstraints)
-	destOses := strings.FieldsFunc(settings.Os, func(r rune) bool { return r==',' || r==' '})
-	destArchs := strings.FieldsFunc(settings.Arch, func(r rune) bool { return r==',' || r==' '})
-	if len(destOses) == 0 { destOses = []string{""} }
-	if len(destArchs) == 0 { destArchs = []string{""} }
+	destOses := strings.FieldsFunc(settings.Os, func(r rune) bool { return r == ',' || r == ' ' })
+	destArchs := strings.FieldsFunc(settings.Arch, func(r rune) bool { return r == ',' || r == ' ' })
+	if len(destOses) == 0 {
+		destOses = []string{""}
+	}
+	if len(destArchs) == 0 {
+		destArchs = []string{""}
+	}
 	var destPlatforms [][]string
 	for _, supportedPlatformArr := range core.PLATFORMS {
 		supportedOs := supportedPlatformArr[0]
@@ -80,10 +101,11 @@ func RunTasks(workingDirectory string, settings config.Settings) {
 	}
 	appName := core.GetAppName(workingDirectory)
 	outDestRoot := core.GetOutDestRoot(appName, settings.ArtifactsDest, workingDirectory)
-	for _, task := range settings.Tasks {
-		err := runTask(task, destPlatforms, appName, workingDirectory, outDestRoot, settings)
+	for _, taskName := range settings.Tasks {
+		err := runTask(taskName, destPlatforms, appName, workingDirectory, outDestRoot, settings)
 		if err != nil {
 			// TODO: implement 'force' option.
+			log.Printf("Stopping after '%s' failed.", taskName)
 			return
 		}
 	}
@@ -94,55 +116,7 @@ func runTask(taskName string, destPlatforms [][]string, appName, workingDirector
 		tp := taskParams{destPlatforms, appName, workingDirectory, outDestRoot, settings}
 		return taskV.f(tp)
 	}
-/*
-	// 0.3.1 added clean, vet, test, install etc
-	switch task {
-	case config.TASK_GO_CLEAN:
-		err := core.InvokeGo(workingDirectory, []string{"clean"}, settings)
-		if err != nil {
-			log.Printf("Clean failed! %s", err)
-		}
-		return err
-	case config.TASK_GO_VET:
-		err := core.InvokeGo(workingDirectory, []string{"vet"}, settings)
-		if err != nil {
-			log.Printf("Vet failed! %s", err)
-		}
-		return err
-	case config.TASK_GO_TEST:
-		dir := settings.GetTaskSetting(config.TASK_GO_TEST, "dir", "./...").(string)
-		err := core.InvokeGo(workingDirectory, []string{"test", dir}, settings)
-		if err != nil {
-			log.Printf("Test failed! %s", err)
-		}
-		return err
-	case config.TASK_GO_FMT:
-		dir := settings.GetTaskSetting(config.TASK_GO_FMT, "dir", "./...").(string)
-		err := core.InvokeGo(workingDirectory, []string{"fmt", dir}, settings)
-		if err != nil {
-			log.Printf("Fmt failed! %s", err)
-		}
-		return err
-	case config.TASK_GO_INSTALL:
-		err := core.InvokeGo(workingDirectory, []string{"install"}, settings)
-		if err != nil {
-			log.Printf("Install failed! %s", err)
-		}
-		return err
-	case config.TASK_CODESIGN:
-		return runTaskCodesign(destPlatforms, appName, outDestRoot, settings)
-	case config.TASK_BUILD_TOOLCHAIN:
-		return runTaskToolchain(destPlatforms, settings)
-	case config.TASK_XC:
-		return runTaskXC(destPlatforms, workingDirectory, settings)
-	case config.TASK_ARCHIVE:
-		return runTaskZip(destPlatforms, appName, workingDirectory, outDestRoot, settings)
-	case config.TASK_REMOVE_BIN:
-		return runTaskRmBin(destPlatforms, appName, outDestRoot, settings)
-	case config.TASK_DOWNLOADS_PAGE:
-		return runTaskDownloadsPage(destPlatforms, appName, workingDirectory, outDestRoot, settings)
-	}
-*/
+
 	// TODO: custom tasks
 	log.Printf("Unrecognised task '%s'", taskName)
 	return fmt.Errorf("Unrecognised task '%s'", taskName)

@@ -23,12 +23,13 @@ import (
 	"github.com/laher/goxc/core"
 	"log"
 )
+
 //runs automatically
 func init() {
 	register(Task{
-	config.TASK_GO_CLEAN,
-	"runs `go clean`.",
-	runTaskGoClean })
+		config.TASK_GO_CLEAN,
+		"runs `go clean`.",
+		runTaskGoClean})
 }
 
 func runTaskGoClean(tp taskParams) error {

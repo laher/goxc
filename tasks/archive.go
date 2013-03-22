@@ -29,7 +29,7 @@ import (
 var archiveTask = Task{
 	"archive",
 	"Create a compressed archive. Currently 'zip' format is used for all platforms",
-	runTaskZip }
+	runTaskZip}
 
 //runs automatically
 func init() {
@@ -68,5 +68,3 @@ func zipPlat(goos, arch, appName, workingDirectory, outDestRoot string, settings
 	}
 	return nil
 }
-
-

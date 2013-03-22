@@ -44,7 +44,7 @@ OR
 More options
 ------------
 
-See 'goxc -h' for more options.
+Use `goxc -h options` to list all options.
 
  * e.g. To restrict by OS and Architecture:
 
@@ -65,7 +65,6 @@ goxc performs a number of operations, defined as tasks. You can specify tasks wi
  * goxc performs several tasks, which can be summarised as follows:
     * validate (several tasks) -> cross-compile (one task called 'xc') -> package (several tasks)
  * For a list of tasks, run `goxc -h tasks`
- * For details about each task, run goxc -h <taskname>
 
 Outcome
 -------

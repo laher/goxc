@@ -23,12 +23,13 @@ import (
 	"github.com/laher/goxc/core"
 	"log"
 )
+
 //runs automatically
 func init() {
 	register(Task{
-	config.TASK_GO_FMT,
-	"runs `go fmt ./..`.",
-	runTaskGoFmt })
+		config.TASK_GO_FMT,
+		"runs `go fmt ./..`.",
+		runTaskGoFmt})
 }
 
 func runTaskGoFmt(tp taskParams) error {

@@ -23,12 +23,13 @@ import (
 	"github.com/laher/goxc/core"
 	"log"
 )
+
 //runs automatically
 func init() {
 	register(Task{
-	config.TASK_GO_VET,
-	"runs `go vet`.",
-	runTaskGoVet })
+		config.TASK_GO_VET,
+		"runs `go vet`.",
+		runTaskGoVet})
 }
 
 func runTaskGoVet(tp taskParams) error {
