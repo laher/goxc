@@ -27,11 +27,22 @@ import (
 	"path/filepath"
 )
 
-func runTaskXC(destPlatforms [][]string, workingDirectory string, settings config.Settings) error {
-	for _, platformArr := range destPlatforms {
+var xcTask = Task{
+	"xc",
+	"Cross compile. Builds executables for other platforms.",
+	runTaskXC }
+
+//runs automatically
+func init() {
+	register(xcTask)
+}
+
+func runTaskXC(tp taskParams) error {
+//func runTaskXC(destPlatforms [][]string, workingDirectory string, settings config.Settings) error {
+	for _, platformArr := range tp.destPlatforms {
 		destOs := platformArr[0]
 		destArch := platformArr[1]
-		xcPlat(destOs, destArch, workingDirectory, settings)
+		xcPlat(destOs, destArch, tp.workingDirectory, tp.settings)
 	}
 	return nil
 }
@@ -45,7 +56,7 @@ func xcPlat(goos, arch string, workingDirectory string, settings config.Settings
 
 	appName := core.GetAppName(workingDirectory)
 
-	outDestRoot := core.GetOutDestRoot(appName, settings.ArtifactsDest)
+	outDestRoot := core.GetOutDestRoot(appName, settings.ArtifactsDest, workingDirectory)
 	outDir := filepath.Join(outDestRoot, relativeDir)
 	os.MkdirAll(outDir, 0755)
 

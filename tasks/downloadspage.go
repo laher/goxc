@@ -28,28 +28,38 @@ import (
 	"strings"
 )
 
-func runTaskDownloadsPage(destPlatforms [][]string, appName, workingDirectory string, outDestRoot string, settings config.Settings) error {
-	filename := settings.GetTaskSetting(config.TASK_DOWNLOADS_PAGE, "filename", "downloads.md")
-	reportFilename := filepath.Join(outDestRoot, settings.GetFullVersionName(), filename.(string))
+var dpTask = Task{
+	"downloads-page",
+	"Generate a downloads page. Currently only supports Markdown format.",
+	runTaskDownloadsPage }
+
+//runs automatically
+func init() {
+	register(dpTask)
+}
+
+func runTaskDownloadsPage(tp taskParams) error {
+	filename := tp.settings.GetTaskSetting(config.TASK_DOWNLOADS_PAGE, "filename", "downloads.md")
+	reportFilename := filepath.Join(tp.outDestRoot, tp.settings.GetFullVersionName(), filename.(string))
 	flags := os.O_WRONLY | os.O_TRUNC | os.O_CREATE
 	f, err := os.OpenFile(reportFilename, flags, 0600)
 	if err == nil {
 		defer f.Close()
-		header := settings.GetTaskSetting(config.TASK_DOWNLOADS_PAGE, "header", "")
+		header := tp.settings.GetTaskSetting(config.TASK_DOWNLOADS_PAGE, "header", "")
 		if header != "" {
 			_, err = fmt.Fprintf(f, "%s\n\n", header)
 		}
-		_, err = fmt.Fprintf(f, "%s downloads (%s)\n-------------\n", appName, settings.GetFullVersionName())
-		versionDir := filepath.Join(outDestRoot, settings.GetFullVersionName())
+		_, err = fmt.Fprintf(f, "%s downloads (%s)\n-------------\n", tp.appName, tp.settings.GetFullVersionName())
+		versionDir := filepath.Join(tp.outDestRoot, tp.settings.GetFullVersionName())
 		fileInfos, err := ioutil.ReadDir(versionDir)
 		if err == nil {
-			if settings.IsVerbose() {
+			if tp.settings.IsVerbose() {
 				log.Printf("Read directory %s", versionDir)
 			}
 			for _, fi := range fileInfos {
 				if fi.IsDir() {
 					folderName := filepath.Join(versionDir, fi.Name())
-					if settings.IsVerbose() {
+					if tp.settings.IsVerbose() {
 						log.Printf("Read directory %s", folderName)
 					}
 					fileInfos2, err := ioutil.ReadDir(folderName)
@@ -62,7 +72,7 @@ func runTaskDownloadsPage(destPlatforms [][]string, appName, workingDirectory st
 							if strings.HasSuffix(fi2.Name(), ".zip") {
 								text = "zip"
 							}
-							if fi2.Name() == appName || fi2.Name() == appName+".exe" {
+							if fi2.Name() == tp.appName || fi2.Name() == tp.appName+".exe" {
 								text = "executable"
 							}
 							_, err = fmt.Fprintf(f, " [[%s](%s)]", text, relativeLink)
@@ -84,7 +94,7 @@ func runTaskDownloadsPage(destPlatforms [][]string, appName, workingDirectory st
 		}
 	}
 	if err != nil {
-		log.Printf("Could not report to '%s': %s", reportFilename, err)
+		log.Printf("Could not generate downloads page '%s': %s", reportFilename, err)
 	}
 	return err
 }

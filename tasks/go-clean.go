@@ -19,33 +19,22 @@ package tasks
 import (
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
-	"github.com/laher/goxc/archive"
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
-	"path/filepath"
+	"log"
 )
-
-var rmBinTask = Task{
-	"rmbin",
-	"delete binary. Normally runs after 'archive' task to reduce size of output folder.",
-	runTaskRmBin }
-
 //runs automatically
 func init() {
-	register(rmBinTask)
+	register(Task{
+	config.TASK_GO_CLEAN,
+	"runs `go clean`.",
+	runTaskGoClean })
 }
 
-func runTaskRmBin(tp taskParams) error {
-	for _, platformArr := range tp.destPlatforms {
-		destOs := platformArr[0]
-		destArch := platformArr[1]
-		rmBinPlat(destOs, destArch, tp.appName, tp.outDestRoot, tp.settings)
+func runTaskGoClean(tp taskParams) error {
+	err := core.InvokeGo(tp.workingDirectory, []string{"clean"}, tp.settings)
+	if err != nil {
+		log.Printf("Clean failed! %s", err)
 	}
-	//TODO return error
-	return nil
-}
-
-func rmBinPlat(goos, arch, appName, outDestRoot string, settings config.Settings) {
-	relativeBin := core.GetRelativeBin(goos, arch, appName, false, settings.GetFullVersionName())
-	archive.RemoveArchivedBinary(filepath.Join(outDestRoot, relativeBin))
+	return err
 }

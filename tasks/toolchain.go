@@ -26,11 +26,21 @@ import (
 	"runtime"
 )
 
-func runTaskToolchain(destPlatforms [][]string, settings config.Settings) error {
-	for _, platformArr := range destPlatforms {
+var toolchainTask = Task{
+	"toolchain",
+	"Build toolchain. Make sure to run this each time you update go source.",
+	runTaskToolchain }
+
+//runs automatically
+func init() {
+	register(toolchainTask)
+}
+
+func runTaskToolchain(tp taskParams) error {
+	for _, platformArr := range tp.destPlatforms {
 		destOs := platformArr[0]
 		destArch := platformArr[1]
-		buildToolchain(destOs, destArch, settings)
+		buildToolchain(destOs, destArch, tp.settings)
 	}
 	return nil
 }

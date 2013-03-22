@@ -31,6 +31,14 @@ import (
 	"github.com/laher/goxc/tasks"
 )
 
+const (
+	MSG_HELP = "goxc [options] <directory_name>\n"
+	MSG_HELP_TOPICS = "goxc -h <topic>\n"
+	MSG_HELP_TOPICS_EG = "try `goxc -h options` or `goxc -h tasks`\n"
+	MSG_HELP_LINK = "Please see https://github.com/laher/goxc/wiki for full details.\n"
+	MSG_HELP_UNKNOWN_TOPIC = "Unknown topic '%s'. Try 'options' or 'tasks'\n"
+)
+
 // settings for this invocation of goxc
 var (
 	// VERSION is initialised by the linker during compilation if the appropriate flag is specified:
@@ -53,9 +61,29 @@ var (
 )
 
 func printHelp(flagSet *flag.FlagSet) {
-	fmt.Fprint(os.Stderr, "`goxc` [options] <directory_name>\n")
-	fmt.Fprintf(os.Stderr, " Version '%s'. Options:\n", VERSION)
-	flagSet.PrintDefaults()
+	args := flagSet.Args()
+	fmt.Fprint(os.Stderr, MSG_HELP)
+	if len(args) < 1 {
+		fmt.Fprintf(os.Stderr, "Version '%s'\n", VERSION)
+		fmt.Fprint(os.Stderr, MSG_HELP_TOPICS)
+		fmt.Fprint(os.Stderr, MSG_HELP_TOPICS_EG)
+	} else {
+		switch args[0] {
+		case "options":
+			flagSet.PrintDefaults()
+			return
+		case "tasks":
+			fmt.Fprint(os.Stderr, "Available tasks:\n")
+			tasks := tasks.List()
+			for _, task := range tasks {
+				fmt.Fprintf(os.Stderr, "%s\t- %s\n", task.Name, task.Description)
+			}
+			return
+		}
+		fmt.Fprintf(os.Stderr, MSG_HELP_UNKNOWN_TOPIC, args[0])
+		fmt.Fprint(os.Stderr, MSG_HELP_TOPICS)
+		fmt.Fprint(os.Stderr, MSG_HELP_TOPICS_EG)
+	}
 }
 
 func printVersion(flagSet *flag.FlagSet) {
@@ -138,18 +166,14 @@ func interpretSettings(call []string) (string, config.Settings) {
 		} else if isCliZipArchives == "false" || isCliZipArchives == "f" {
 			settings.Tasks = remove(settings.Tasks, config.TASK_ARCHIVE)
 		}
-
+		//TODO use Setting
 		if codesignId != "" {
-			if settings.TaskSettings == nil {
-				settings.TaskSettings = make(map[string]interface{})
-			}
-			cod := make(map[string]interface{})
-			cod["id"] = codesignId
-			settings.TaskSettings["codesign"] = cod
+			settings.SetTaskSetting(config.TASK_CODESIGN, "id", codesignId)
 		}
 	}
 	//log.Printf("Settings: %s", settings)
 	if isHelp {
+
 		printHelp(flagSet)
 		os.Exit(0)
 	}
@@ -229,20 +253,20 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (linux,darwin,windows,freebsd,openbsd). Compiles all by default")
 	flagSet.StringVar(&settings.Arch, "arch", "", "Specify Arch (386,amd64,arm). Compiles all by default")
 	flagSet.StringVar(&settings.PackageVersion, "pv", "", "Package version (usually [major].[minor].[patch]. default='"+config.PACKAGE_VERSION_DEFAULT+"')")
-	//flagSet.StringVar(&settings.PackageVersion, "av", "", "DEPRECATED: Package version (deprecated option name)")
+	flagSet.StringVar(&settings.PackageVersion, "av", "", "DEPRECATED: Package version (deprecated option name)")
 	flagSet.StringVar(&settings.PrereleaseInfo, "pi", "", "Prerelease info (usually 'alpha', 'snapshot',...)")
 	flagSet.StringVar(&settings.BranchName, "br", "", "Branch name")
 	flagSet.StringVar(&settings.BuildName, "bu", "", "Build name")
 	flagSet.StringVar(&settings.ArtifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
 	flagSet.StringVar(&codesignId, "codesign", "", "identity to sign darwin binaries with (only applied when host OS is 'darwin')")
-	flagSet.StringVar(&settings.Resources.Include, "include", "", "Include resources in zips (default="+config.RESOURCES_INCLUDE_DEFAULT+")") //TODO: Add resources to non-zips & downloads.md
+	flagSet.StringVar(&settings.Resources.Include, "include", "", "Include resources in archives (default="+config.RESOURCES_INCLUDE_DEFAULT+")") //TODO: Add resources to non-zips & downloads.md
 
 	//0.2.0 Not easy to 'merge' boolean config items. More flexible to translate them to string options anyway
 	flagSet.BoolVar(&isHelp, "h", false, "Show this help")
 	flagSet.BoolVar(&isVersion, "version", false, "version info")
 	flagSet.BoolVar(&isVerbose, "v", false, "verbose")
 	flagSet.StringVar(&isCliZipArchives, "z", "", "DEPRECATED (use archive & rmbin tasks instead): create ZIP archives instead of folders (true/false. default=true)")
-	flagSet.StringVar(&tasksToRun, "tasks", "", fmt.Sprintf("Tasks to run (from %v). Default='%v'", config.TASKS_ALL, config.TASKS_DEFAULT))
+	flagSet.StringVar(&tasksToRun, "tasks", "", "Tasks to run. Use `goxc -h tasks` for more details")
 	flagSet.StringVar(&tasksPlus, "tasks+", "", "Additional tasks to run")
 	flagSet.StringVar(&tasksMinus, "tasks-", "", "Tasks to exclude")
 	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s). Equivalent to -tasks=toolchain")

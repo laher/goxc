@@ -130,22 +130,60 @@ func GetAppName(workingDirectory string) string {
 	return appName
 }
 
-func GetGoPath() string {
-	gopath := os.Getenv("GOPATH")
-	if gopath == "" {
+func GetGoPath(workingDirectory string) string {
+	//build.Import(path, srcDir string, mode ImportMode) (*Package, error)
+	var gopath string
+	gopathVar := os.Getenv("GOPATH")
+	if gopathVar == "" {
 		log.Printf("GOPATH env variable not set! Using '.'")
 		gopath = "."
+	} else {
+		gopaths := filepath.SplitList(gopathVar)
+		validGopaths := []string{}
+		workingDirectoryAbs, err := filepath.Abs(workingDirectory)
+		//log.Printf("workingDirectory %s, (abs) %s", workingDirectory, workingDirectoryAbs)
+		if err != nil {
+			//strange. TODO: investigate
+			workingDirectoryAbs = workingDirectory
+		}
+		//see if you can match the workingDirectory
+		for _, gopathi := range gopaths {
+			//if empty or GOROOT, continue
+			//logic taken from http://tip.golang.org/src/pkg/go/build/build.go
+			if gopathi == "" || gopathi == runtime.GOROOT() || strings.HasPrefix(gopathi, "~") {
+				continue
+			} else {
+				validGopaths = append(validGopaths, gopathi)
+			}
+			gopathAbs, err := filepath.Abs(gopathi)
+			if err != nil {
+				//strange. TODO: investigate
+				gopathAbs = gopathi
+			}
+			//log.Printf("gopath element %s, (abs) %s", gopathi, gopathAbs)
+			//working directory is inside this path element. Use it!
+			if strings.HasPrefix(workingDirectoryAbs, gopathAbs) {
+				return gopathi
+			}
+		}
+		if len(validGopaths) > 0 {
+			gopath = validGopaths[0]
+
+		} else {
+			log.Printf("GOPATH env variable not valid! Using '.'")
+			gopath = "."
+		}
 	}
 	return gopath
 }
 
-func GetOutDestRoot(appName string, artifactsDestSetting string) string {
+func GetOutDestRoot(appName string, artifactsDestSetting string, workingDirectory string) string {
 	var outDestRoot string
 	if artifactsDestSetting != "" {
 		outDestRoot = artifactsDestSetting
 	} else {
 		gobin := os.Getenv("GOBIN")
-		gopath := GetGoPath()
+		gopath := GetGoPath(workingDirectory)
 		if gobin == "" {
 			// follow usual GO rules for making GOBIN
 			gobin = filepath.Join(gopath, "bin")

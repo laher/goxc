@@ -115,6 +115,19 @@ func (s Settings) IsTask(taskName string) bool {
 	return false
 }
 
+func (s Settings) SetTaskSetting(taskName, settingName string, value interface{}) {
+	if s.TaskSettings == nil {
+		s.TaskSettings = make(map[string]interface{})
+	}
+	if value, keyExists := s.TaskSettings[taskName]; keyExists {
+		//ok
+	} else {
+		value = make(map[string]interface{})
+		s.TaskSettings[taskName] = value
+	}
+	value.(map[string]interface{})[settingName] = value
+}
+
 func (s Settings) GetTaskSetting(taskName, settingName string, defaultValue interface{}) interface{} {
 	if value, keyExists := s.TaskSettings[taskName]; keyExists {
 		taskMap := value.(map[string]interface{})

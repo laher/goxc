@@ -26,12 +26,24 @@ import (
 	"path/filepath"
 	"runtime"
 )
-func runTaskCodesign(destPlatforms [][]string, outDestRoot string, appName string, settings config.Settings) error {
-	for _, platformArr := range destPlatforms {
+
+var codesignTask = Task{
+	"codesign",
+	"sign code for Mac. Only Mac hosts are supported for this task.",
+	runTaskCodesign }
+
+//runs automatically
+func init() {
+	register(codesignTask)
+}
+
+func runTaskCodesign(tp taskParams) error {
+//func runTaskCodesign(destPlatforms [][]string, outDestRoot string, appName string, settings config.Settings) error {
+	for _, platformArr := range tp.destPlatforms {
 		destOs := platformArr[0]
 		destArch := platformArr[1]
-		relativeBin := core.GetRelativeBin(destOs, destArch, appName, false, settings.GetFullVersionName())
-		codesignPlat(destOs, destArch, outDestRoot, relativeBin, settings)
+		relativeBin := core.GetRelativeBin(destOs, destArch, tp.appName, false, tp.settings.GetFullVersionName())
+		codesignPlat(destOs, destArch, tp.outDestRoot, relativeBin, tp.settings)
 	}
 	//TODO return error
 	return nil

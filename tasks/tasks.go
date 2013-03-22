@@ -26,6 +26,35 @@ import (
 	"strings"
 )
 
+type taskParams struct {
+	destPlatforms [][]string
+	appName string
+	workingDirectory, outDestRoot string
+	settings config.Settings
+}
+
+type Task struct {
+	Name string
+	Description string
+	f func(taskParams) error
+}
+
+var(
+	allTasks = make(map[string]Task)
+)
+
+func register(task Task) {
+	allTasks[task.Name] = task
+}
+
+func List() []Task {
+	tasks := []Task{}
+	for _,t := range allTasks {
+		tasks = append(tasks,t)
+	}
+	return tasks
+}
+
 func RunTasks(workingDirectory string, settings config.Settings) {
 	if settings.IsVerbose() {
 		log.Printf("looping through each platform")
@@ -50,7 +79,7 @@ func RunTasks(workingDirectory string, settings config.Settings) {
 		}
 	}
 	appName := core.GetAppName(workingDirectory)
-	outDestRoot := core.GetOutDestRoot(appName, settings.ArtifactsDest)
+	outDestRoot := core.GetOutDestRoot(appName, settings.ArtifactsDest, workingDirectory)
 	for _, task := range settings.Tasks {
 		err := runTask(task, destPlatforms, appName, workingDirectory, outDestRoot, settings)
 		if err != nil {
@@ -60,7 +89,12 @@ func RunTasks(workingDirectory string, settings config.Settings) {
 	}
 }
 
-func runTask(task string, destPlatforms [][]string, appName, workingDirectory, outDestRoot string, settings config.Settings) error {
+func runTask(taskName string, destPlatforms [][]string, appName, workingDirectory, outDestRoot string, settings config.Settings) error {
+	if taskV, keyExists := allTasks[taskName]; keyExists {
+		tp := taskParams{destPlatforms, appName, workingDirectory, outDestRoot, settings}
+		return taskV.f(tp)
+	}
+/*
 	// 0.3.1 added clean, vet, test, install etc
 	switch task {
 	case config.TASK_GO_CLEAN:
@@ -108,7 +142,8 @@ func runTask(task string, destPlatforms [][]string, appName, workingDirectory, o
 	case config.TASK_DOWNLOADS_PAGE:
 		return runTaskDownloadsPage(destPlatforms, appName, workingDirectory, outDestRoot, settings)
 	}
+*/
 	// TODO: custom tasks
-	log.Printf("Unrecognised task '%s'", task)
-	return fmt.Errorf("Unrecognised task '%s'", task)
+	log.Printf("Unrecognised task '%s'", taskName)
+	return fmt.Errorf("Unrecognised task '%s'", taskName)
 }

@@ -26,11 +26,21 @@ import (
 	"path/filepath"
 )
 
-func runTaskZip(destPlatforms [][]string, appName, workingDirectory, outDestRoot string, settings config.Settings) error {
-	for _, platformArr := range destPlatforms {
+var archiveTask = Task{
+	"archive",
+	"Create a compressed archive. Currently 'zip' format is used for all platforms",
+	runTaskZip }
+
+//runs automatically
+func init() {
+	register(archiveTask)
+}
+
+func runTaskZip(tp taskParams) error {
+	for _, platformArr := range tp.destPlatforms {
 		destOs := platformArr[0]
 		destArch := platformArr[1]
-		err := zipPlat(destOs, destArch, appName, workingDirectory, outDestRoot, settings)
+		err := zipPlat(destOs, destArch, tp.appName, tp.workingDirectory, tp.outDestRoot, tp.settings)
 		if err != nil {
 			//TODO - 'force' option
 			//return err

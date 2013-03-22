@@ -40,7 +40,9 @@ OR
 	cd path/to/app/folder
 	goxc
 
-### Going further
+
+More options
+------------
 
 See 'goxc -h' for more options.
 
@@ -52,12 +54,18 @@ See 'goxc -h' for more options.
 
 	goxc -d=my/jekyll/site/downloads -pv=0.1.1
 
- * e.g. To output non-zipped binaries into folders:
-
-	goxc -z=false
-
  * 'Package version' can be compiled into your app if you define a VERSION variable in your main package.
 
+"Tasks"
+-------
+
+goxc performs a number of operations, defined as tasks. You can specify tasks with the '-tasks' option.
+
+ * `goxt -t` performs one task called 'toolchain'. It's the equivalent of `gox -tasks=toolchain`
+ * goxc performs several tasks, which can be summarised as follows:
+    * validate (several tasks) -> cross-compile (one task called 'xc') -> package (several tasks)
+ * For a list of tasks, run `goxc -h tasks`
+ * For details about each task, run goxc -h <taskname>
 
 Outcome
 -------

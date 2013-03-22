@@ -3,7 +3,9 @@ package core
 import (
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -13,6 +15,32 @@ func TestFail(t *testing.T) {
 	t.Fatalf("FAIL")
 }
 */
+func TestGetGoPath(t *testing.T) {
+	orig := os.Getenv("GOPATH")
+	p1 := path.Join("a","b")
+
+	os.Setenv("GOPATH", JoinList(p1, "..", "c"))
+	gopath := GetGoPath(".")
+	if gopath != ".." {
+		t.Fatalf("Could not load gopath correctly 1 - %s %s", os.Getenv("GOPATH"), gopath)
+
+	}
+	os.Setenv("GOPATH", p1)
+	gopath = GetGoPath(".")
+	if gopath != p1 {
+		t.Fatalf("Could not load gopath correctly 2 - %s %s", os.Getenv("GOPATH"), gopath)
+	}
+	os.Setenv("GOPATH", orig)
+}
+
+func JoinList(elem ...string) string {
+	for i, e := range elem {
+		if e != "" {
+			return filepath.Clean(strings.Join(elem[i:], string(os.PathListSeparator)))
+		}
+	}
+	return ""
+}
 
 func TestSanityCheck(t *testing.T) {
 	//goroot := runtime.GOROOT()
