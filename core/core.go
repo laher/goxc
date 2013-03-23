@@ -130,7 +130,7 @@ func GetAppName(workingDirectory string) string {
 	return appName
 }
 
-func GetGoPath(workingDirectory string) string {
+func GetGoPathElement(workingDirectory string) string {
 	//build.Import(path, srcDir string, mode ImportMode) (*Package, error)
 	var gopath string
 	gopathVar := os.Getenv("GOPATH")
@@ -239,8 +239,8 @@ func GetOutDestRoot(appName string, artifactsDestSetting string, workingDirector
 		outDestRoot = artifactsDestSetting
 	} else {
 		gobin := os.Getenv("GOBIN")
-		gopath := GetGoPath(workingDirectory)
 		if gobin == "" {
+			gopath := GetGoPathElement(workingDirectory)
 			// follow usual GO rules for making GOBIN
 			gobin = filepath.Join(gopath, "bin")
 		}

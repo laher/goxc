@@ -54,8 +54,8 @@ func buildToolchain(goos string, arch string, settings config.Settings) error {
 	cmd.Dir = filepath.Join(goroot, "src")
 	cmd.Args = append(cmd.Args, "--no-clean")
 	cgoEnabled := core.CgoEnabled(goos, arch)
-
-	cmd.Env = append(os.Environ(), "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
+	cmd.Env = append([]string{}, os.Environ()...)
+	cmd.Env = append(cmd.Env, "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
 	if goos == core.LINUX && arch == core.ARM {
 		// see http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go
 		cmd.Env = append(cmd.Env, "GOARM=5")

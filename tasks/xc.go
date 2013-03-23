@@ -84,9 +84,11 @@ func xcPlat(goos, arch string, workingDirectory string, settings config.Settings
 		defer f.Close()
 	}
 	cgoEnabled := core.CgoEnabled(goos, arch)
-	cmd.Env = append(os.Environ(), "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
+	cmd.Env = append([]string{}, os.Environ()...)
+	cmd.Env = append(cmd.Env, "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
 	if settings.IsVerbose() {
 		log.Printf("'go' env: GOOS=%s CGO_ENABLED=%s GOARCH=%s", goos, cgoEnabled, arch)
+		log.Printf("'go' env: %s", cmd.Env)
 		log.Printf("'go' args: %v", cmd.Args)
 		log.Printf("'go' working directory: %s", cmd.Dir)
 	}

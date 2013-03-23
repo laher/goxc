@@ -1,8 +1,14 @@
 v0.5 TODO!
 =========
 
- * documentation for json format. Generate 'defaults' file for wiki.
- * documentation: improve README. Update wiki.
+ * doc: wiki/config
+ * doc: wiki/todo
+ * doc: improve README.
+ * doc: wiki/changelog
+ * improve json overriding: prefer aliases when writing config.
+ * add task exclusion to config.Settings.
+ * -f force option
+ *
 
 v0.5 DONE:
 ----------

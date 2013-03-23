@@ -20,13 +20,13 @@ func TestGetGoPath(t *testing.T) {
 	p1 := path.Join("a", "b")
 
 	os.Setenv("GOPATH", JoinList(p1, "..", "c"))
-	gopath := GetGoPath(".")
+	gopath := GetGoPathElement(".")
 	if gopath != ".." {
 		t.Fatalf("Could not load gopath correctly 1 - %s %s", os.Getenv("GOPATH"), gopath)
 
 	}
 	os.Setenv("GOPATH", p1)
-	gopath = GetGoPath(".")
+	gopath = GetGoPathElement(".")
 	if gopath != p1 {
 		t.Fatalf("Could not load gopath correctly 2 - %s %s", os.Getenv("GOPATH"), gopath)
 	}

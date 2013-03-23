@@ -302,14 +302,15 @@ func setupFlags() *flag.FlagSet {
 	flagSet := flag.NewFlagSet("goxc", flag.ContinueOnError)
 	flagSet.StringVar(&configName, "c", config.CONFIG_NAME_DEFAULT, "config name (default='.goxc')")
 
-	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (linux,darwin,windows,freebsd,openbsd). Compiles all by default")
-	flagSet.StringVar(&settings.Arch, "arch", "", "Specify Arch (386,amd64,arm). Compiles all by default")
+	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (default is all - \"linux darwin windows freebsd openbsd\")")
+	flagSet.StringVar(&settings.Arch, "arch", "", "Specify Arch (default is all - \"386 amd64 arm\")")
 
 	flagSet.StringVar(&settings.PackageVersion, "pv", "", "Package version (usually [major].[minor].[patch]. default='"+config.PACKAGE_VERSION_DEFAULT+"')")
 	flagSet.StringVar(&settings.PackageVersion, "av", "", "DEPRECATED: Package version (deprecated option name)")
-	flagSet.StringVar(&settings.PrereleaseInfo, "pi", "", "Prerelease info (usually 'alpha', 'snapshot',...)")
-	flagSet.StringVar(&settings.BranchName, "br", "", "Branch name")
-	flagSet.StringVar(&settings.BuildName, "bu", "", "Build name")
+	flagSet.StringVar(&settings.PrereleaseInfo, "pr", "", "Prerelease info (usually 'alpha', 'snapshot' ...)")
+	flagSet.StringVar(&settings.PrereleaseInfo, "pi", "", "DEPRECATED option name. Use -pr instead")
+	flagSet.StringVar(&settings.BranchName, "br", "", "Branch name (use this if you've forked a repo)")
+	flagSet.StringVar(&settings.BuildName, "bu", "", "Build name (use this for pre-release builds)")
 
 	flagSet.StringVar(&settings.ArtifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
 	flagSet.StringVar(&codesignId, "codesign", "", "identity to sign darwin binaries with (only applied when host OS is 'darwin')")
@@ -317,11 +318,11 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.Resources.Include, "include", "", "Include resources in archives (default="+config.RESOURCES_INCLUDE_DEFAULT+")") //TODO: Add resources to non-zips & downloads.md
 
 	//0.2.0 Not easy to 'merge' boolean config items. More flexible to translate them to string options anyway
-	flagSet.BoolVar(&isHelp, "h", false, "Show help on a topic, such as tasks, options")
-	flagSet.BoolVar(&isHelp, "help", false, "Show help on a topic, such as tasks, options")
-	flagSet.BoolVar(&isVersion, "version", false, "version info")
+	flagSet.BoolVar(&isHelp, "h", false, "Help")
+	flagSet.BoolVar(&isHelp, "help", false, "Help")
+	flagSet.BoolVar(&isVersion, "version", false, "Print version")
 
-	flagSet.BoolVar(&isVerbose, "v", false, "verbose")
+	flagSet.BoolVar(&isVerbose, "v", false, "Verbose")
 	flagSet.StringVar(&isCliZipArchives, "z", "", "DEPRECATED (use archive & rmbin tasks instead): create ZIP archives instead of folders (true/false. default=true)")
 	flagSet.StringVar(&tasksToRun, "tasks", "", "Tasks to run. Use `goxc -h tasks` for more details")
 	flagSet.StringVar(&tasksPlus, "tasks+", "", "Additional tasks to run")
