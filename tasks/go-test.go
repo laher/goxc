@@ -21,22 +21,19 @@ import (
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
-	"log"
 )
 
 //runs automatically
 func init() {
 	register(Task{
 		config.TASK_GO_TEST,
-		"runs `go test ./..`. Folder is configurable.",
-		runTaskGoTest})
+		"runs `go test ./...`. (folder is configurable).",
+		runTaskGoTest,
+		map[string]interface{}{"dir": "./..."}})
 }
 
 func runTaskGoTest(tp taskParams) error {
-	dir := tp.settings.GetTaskSetting(config.TASK_GO_TEST, "dir", "./...").(string)
+	dir := tp.settings.GetTaskSetting(config.TASK_GO_TEST, "dir").(string)
 	err := core.InvokeGo(tp.workingDirectory, []string{"test", dir}, tp.settings)
-	if err != nil {
-		log.Printf("test failed! %s", err)
-	}
 	return err
 }

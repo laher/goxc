@@ -23,7 +23,6 @@ import (
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
 	"log"
-	"strings"
 )
 
 type taskParams struct {
@@ -34,14 +33,16 @@ type taskParams struct {
 }
 
 type Task struct {
-	Name        string
-	Description string
-	f           func(taskParams) error
+	Name            string
+	Description     string
+	f               func(taskParams) error
+	DefaultSettings map[string]interface{}
 }
 
 var (
 	allTasks = make(map[string]Task)
 	Aliases  = map[string][]string{
+		config.TASKALIAS_CLEAN:    config.TASKS_CLEAN,
 		config.TASKALIAS_DEFAULT:  config.TASKS_DEFAULT,
 		config.TASKALIAS_PACKAGE:  config.TASKS_PACKAGE,
 		config.TASKALIAS_VALIDATE: config.TASKS_VALIDATE,
@@ -72,40 +73,20 @@ func ListTasks() []Task {
 	return tasks
 }
 
-func RunTasks(workingDirectory string, settings config.Settings) {
+func RunTasks(workingDirectory string, destPlatforms [][]string, settings config.Settings) {
 	if settings.IsVerbose() {
 		log.Printf("looping through each platform")
 	}
-	//0.5 add support for space delimiters (more like BuildConstraints)
-	destOses := strings.FieldsFunc(settings.Os, func(r rune) bool { return r == ',' || r == ' ' })
-	destArchs := strings.FieldsFunc(settings.Arch, func(r rune) bool { return r == ',' || r == ' ' })
-	if len(destOses) == 0 {
-		destOses = []string{""}
-	}
-	if len(destArchs) == 0 {
-		destArchs = []string{""}
-	}
-	var destPlatforms [][]string
-	for _, supportedPlatformArr := range core.PLATFORMS {
-		supportedOs := supportedPlatformArr[0]
-		supportedArch := supportedPlatformArr[1]
-		for _, destOs := range destOses {
-			if destOs == "" || supportedOs == destOs {
-				for _, destArch := range destArchs {
-					if destArch == "" || supportedArch == destArch {
-						destPlatforms = append(destPlatforms, supportedPlatformArr)
-					}
-				}
-			}
-		}
-	}
+
 	appName := core.GetAppName(workingDirectory)
 	outDestRoot := core.GetOutDestRoot(appName, settings.ArtifactsDest, workingDirectory)
+	defer log.SetPrefix("[goxc] ")
 	for _, taskName := range settings.Tasks {
+		log.SetPrefix("[goxc:" + taskName + "] ")
 		err := runTask(taskName, destPlatforms, appName, workingDirectory, outDestRoot, settings)
 		if err != nil {
 			// TODO: implement 'force' option.
-			log.Printf("Stopping after '%s' failed.", taskName)
+			log.Printf("Stopping after '%s' failed with error '%v'", taskName, err)
 			return
 		}
 	}

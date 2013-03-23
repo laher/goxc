@@ -28,9 +28,10 @@ import (
 )
 
 var codesignTask = Task{
-	"codesign",
+	config.TASK_CODESIGN,
 	"sign code for Mac. Only Mac hosts are supported for this task.",
-	runTaskCodesign}
+	runTaskCodesign,
+	map[string]interface{}{"id": ""}}
 
 //runs automatically
 func init() {
@@ -51,9 +52,9 @@ func runTaskCodesign(tp taskParams) error {
 
 func codesignPlat(goos, arch string, outDestRoot string, relativeBin string, settings config.Settings) {
 	// settings.codesign only works on OS X for binaries generated for OS X.
-	id := settings.GetTaskSetting("codesign", "id", "")
+	id := settings.GetTaskSetting("codesign", "id")
 	if id != "" && runtime.GOOS == core.DARWIN && goos == core.DARWIN {
-		if err := signBinary(filepath.Join(outDestRoot, relativeBin), settings); err != nil {
+		if err := signBinary(filepath.Join(outDestRoot, relativeBin), id.(string)); err != nil {
 			log.Printf("codesign failed: %s", err)
 		} else {
 			log.Printf("Signed with ID: %q", id)
@@ -61,10 +62,9 @@ func codesignPlat(goos, arch string, outDestRoot string, relativeBin string, set
 	}
 }
 
-func signBinary(binPath string, settings config.Settings) error {
+func signBinary(binPath string, id string) error {
 	cmd := exec.Command("codesign")
-	id := settings.GetTaskSetting("codesign", "id", "")
-	cmd.Args = append(cmd.Args, "-s", id.(string), binPath)
+	cmd.Args = append(cmd.Args, "-s", id, binPath)
 	if err := cmd.Start(); err != nil {
 		return err
 	}

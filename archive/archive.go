@@ -61,18 +61,6 @@ func ZipBinaryAndResources(outDir, binPath, appName string, resources []string, 
 	return
 }
 
-func RemoveArchivedBinary(binPath string) {
-	// Remove binary and its directory.
-	err := os.Remove(binPath)
-	if err != nil {
-		return
-	}
-	err = os.Remove(filepath.Dir(binPath))
-	if err != nil {
-		return
-	}
-}
-
 func addFileToZIP(zw *zip.Writer, path string) (err error) {
 	binfo, err := os.Stat(path)
 	if err != nil {

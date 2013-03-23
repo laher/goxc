@@ -93,13 +93,14 @@ func getTaskSettings(rawJson []byte, fileName string) (map[string]interface{}, e
 	return nil, fmt.Errorf("No TaskSettings defined")
 }
 
-func validateRawJson(rawJson []byte, fileName string) error {
+func validateRawJson(rawJson []byte, fileName string) []error {
 	var f interface{}
 	err := json.Unmarshal(rawJson, &f)
 	if err != nil {
 		log.Printf("ERROR (%s): invalid json!", fileName)
-		return err
+		return []error{err}
 	}
+	errs := []error{}
 	m := f.(map[string]interface{})
 	rejectOldTaskDefinitions := false
 	if formatVersion, keyExists := m["FormatVersion"]; keyExists {
@@ -116,24 +117,24 @@ func validateRawJson(rawJson []byte, fileName string) error {
 		if _, keyExists := settings["ArtifactTypes"]; keyExists {
 			msg := "'ArtifactTypes' setting is deprecated. Please use tasks instead (By default goxc zips the binary ('archive' task) and then deletes the binary ('rmbin' task)."
 			log.Printf("ERROR (%s): %s", fileName, msg)
-			return errors.New(msg)
+			errs = append(errs, errors.New(msg))
 		}
 		if _, keyExists := settings["Codesign"]; keyExists {
 			msg := "'Codesign' setting is deprecated. Please use setting \"Settings\" : { \"TaskSettings\" : { \"codesign\" : { \"id\" : \"blah\" } } }."
 			log.Printf("ERROR (%s): %s", fileName, msg)
-			return errors.New(msg)
+			errs = append(errs, errors.New(msg))
 		}
 		if rejectOldTaskDefinitions {
 			if _, keyExists := settings["Tasks"]; keyExists {
 				msg := "task definitions have changed in version 0.5.0. Please refer to latest docs and update your config file to version 0.5.0 accordingly."
 				log.Printf("ERROR (%s): %s", fileName, msg)
-				return errors.New(msg)
+				errs = append(errs, errors.New(msg))
 			}
 		}
 	} else {
 		log.Printf("No settings found. Ignoring file.")
 	}
-	return err
+	return errs
 }
 
 func loadFile(jsonFile string, verbose bool) ([]byte, error) {
@@ -162,9 +163,9 @@ func loadJsonFile(jsonFile string, verbose bool) (JsonSettings, error) {
 	if err != nil {
 		return settings, err
 	}
-	err = validateRawJson(rawJson, jsonFile)
-	if err != nil {
-		return settings, err
+	errs := validateRawJson(rawJson, jsonFile)
+	if errs != nil && len(errs) > 0 {
+		return settings, errs[0]
 	}
 
 	//TODO: super-verbose option for logging file content? log.Printf("%s\n", string(file))
@@ -219,7 +220,7 @@ func readJson(js []byte) (JsonSettings, error) {
 }
 
 func writeJson(m JsonSettings) ([]byte, error) {
-	return json.Marshal(m)
+	return json.MarshalIndent(m, "", "\t")
 }
 
 func StripEmpties(rawJson []byte, verbose bool) ([]byte, error) {

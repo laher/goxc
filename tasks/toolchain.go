@@ -29,7 +29,8 @@ import (
 var toolchainTask = Task{
 	"toolchain",
 	"Build toolchain. Make sure to run this each time you update go source.",
-	runTaskToolchain}
+	runTaskToolchain,
+	nil}
 
 //runs automatically
 func init() {

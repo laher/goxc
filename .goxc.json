@@ -10,9 +10,9 @@
 			"codesign": {
 				"id": "123"
 			},
-			"downloads-page" : {
-				"fileheader" : "---\nlayout: default\ntitle: Download goxc\n---\n\nNote: please use 'go get -u github.com/laher/goxc' instead of these binaries.",
-				"filename" : "index.md"
+			"downloads-page": {
+				"fileheader": "---\nlayout: default\ntitle: Download goxc\n---\n\nNote: please use 'go get -u github.com/laher/goxc' instead of these binaries.",
+				"filename": "index.md"
 			}
 		}
 	}

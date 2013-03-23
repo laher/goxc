@@ -26,19 +26,22 @@ const (
 
 	TASK_BUILD_TOOLCHAIN = "toolchain"
 
-	TASK_GO_CLEAN   = "go-clean"
-	TASK_GO_VET     = "go-vet"
-	TASK_GO_TEST    = "go-test"
-	TASK_GO_FMT     = "go-fmt"
+	TASK_CLEAN_DESTINATION = "clean-destination"
+	TASK_GO_CLEAN          = "go-clean"
+
+	TASK_GO_VET  = "go-vet"
+	TASK_GO_TEST = "go-test"
+	TASK_GO_FMT  = "go-fmt"
+
 	TASK_GO_INSTALL = "go-install"
+	TASK_XC         = "xc"
+	TASK_CODESIGN   = "codesign"
 
-	TASK_XC = "xc"
-
-	TASK_CODESIGN       = "codesign"
 	TASK_ARCHIVE        = "archive" //zip
 	TASK_REMOVE_BIN     = "rmbin"   //after zipping
 	TASK_DOWNLOADS_PAGE = "downloads-page"
 
+	TASKALIAS_CLEAN    = "clean"
 	TASKALIAS_DEFAULT  = "default"
 	TASKALIAS_VALIDATE = "validate"
 	TASKALIAS_PACKAGE  = "package"
@@ -52,12 +55,13 @@ const (
 )
 
 var (
-	TASKS_VALIDATE = []string{TASK_GO_CLEAN, TASK_GO_VET, TASK_GO_TEST, TASK_GO_INSTALL}
-	TASKS_COMPILE  = []string{TASK_XC}
-	TASKS_PACKAGE  = []string{TASK_CODESIGN, TASK_ARCHIVE, TASK_REMOVE_BIN, TASK_DOWNLOADS_PAGE}
-	TASKS_DEFAULT  = append(append(TASKS_VALIDATE, TASKS_COMPILE...), TASKS_PACKAGE...)
+	TASKS_CLEAN    = []string{TASK_GO_CLEAN, TASK_CLEAN_DESTINATION}
+	TASKS_VALIDATE = []string{TASK_GO_VET, TASK_GO_TEST, TASK_GO_INSTALL}
+	TASKS_COMPILE  = []string{TASK_GO_INSTALL, TASK_XC, TASK_CODESIGN}
+	TASKS_PACKAGE  = []string{TASK_ARCHIVE, TASK_REMOVE_BIN, TASK_DOWNLOADS_PAGE}
+	TASKS_DEFAULT  = append(append(append([]string{}, TASKS_VALIDATE...), TASKS_COMPILE...), TASKS_PACKAGE...)
 	TASKS_OTHER    = []string{TASK_BUILD_TOOLCHAIN, TASK_GO_FMT}
-	TASKS_ALL      = append(TASKS_OTHER, TASKS_DEFAULT...)
+	TASKS_ALL      = append(append([]string{}, TASKS_OTHER...), TASKS_DEFAULT...)
 )
 
 type Resources struct {
@@ -133,7 +137,7 @@ func (s Settings) SetTaskSetting(taskName, settingName string, value interface{}
 	value.(map[string]interface{})[settingName] = value
 }
 
-func (s Settings) GetTaskSetting(taskName, settingName string, defaultValue interface{}) interface{} {
+func (s Settings) GetTaskSetting(taskName, settingName string) interface{} {
 	if value, keyExists := s.TaskSettings[taskName]; keyExists {
 		taskMap := value.(map[string]interface{})
 		if settingValue, keyExists := taskMap[settingName]; keyExists {
@@ -145,7 +149,7 @@ func (s Settings) GetTaskSetting(taskName, settingName string, defaultValue inte
 			log.Printf("All task settings: %+v", s.TaskSettings)
 		}
 	}
-	return defaultValue
+	return nil
 }
 
 func (settings Settings) GetFullVersionName() string {
@@ -251,27 +255,4 @@ func mergeMaps(high, low map[string]interface{}) map[string]interface{} {
 		}
 	}
 	return high
-}
-
-//TODO fulfil all defaults
-func FillDefaults(settings Settings) Settings {
-	if settings.Resources.Include == "" {
-		settings.Resources.Include = RESOURCES_INCLUDE_DEFAULT
-	}
-	if settings.Resources.Exclude == "" {
-		settings.Resources.Exclude = RESOURCES_EXCLUDE_DEFAULT
-	}
-	if settings.PackageVersion == "" {
-		settings.PackageVersion = PACKAGE_VERSION_DEFAULT
-	}
-
-	if len(settings.Tasks) == 0 {
-		settings.Tasks = TASKS_DEFAULT
-	}
-	/* 0.5.0 see tasks
-	if len(settings.ArtifactTypes) == 0 {
-		settings.ArtifactTypes = []string{ARTIFACT_TYPE_ZIP}
-	}
-	*/
-	return settings
 }

@@ -21,7 +21,6 @@ import (
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
-	"log"
 )
 
 //runs automatically
@@ -29,13 +28,11 @@ func init() {
 	register(Task{
 		config.TASK_GO_VET,
 		"runs `go vet`.",
-		runTaskGoVet})
+		runTaskGoVet,
+		nil})
 }
 
 func runTaskGoVet(tp taskParams) error {
 	err := core.InvokeGo(tp.workingDirectory, []string{"vet"}, tp.settings)
-	if err != nil {
-		log.Printf("Vet failed! %s", err)
-	}
 	return err
 }

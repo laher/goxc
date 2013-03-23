@@ -17,6 +17,7 @@ package tasks
 */
 
 import (
+	"errors"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/config"
@@ -30,7 +31,8 @@ import (
 var xcTask = Task{
 	"xc",
 	"Cross compile. Builds executables for other platforms.",
-	runTaskXC}
+	runTaskXC,
+	nil}
 
 //runs automatically
 func init() {
@@ -39,10 +41,16 @@ func init() {
 
 func runTaskXC(tp taskParams) error {
 	//func runTaskXC(destPlatforms [][]string, workingDirectory string, settings config.Settings) error {
+	if len(tp.destPlatforms) == 0 {
+		return errors.New("No valid platforms specified")
+	}
 	for _, platformArr := range tp.destPlatforms {
 		destOs := platformArr[0]
 		destArch := platformArr[1]
-		xcPlat(destOs, destArch, tp.workingDirectory, tp.settings)
+		err := xcPlat(destOs, destArch, tp.workingDirectory, tp.settings)
+		if err != nil {
+			log.Printf("Error: %v", err)
+		}
 	}
 	return nil
 }
@@ -50,7 +58,7 @@ func runTaskXC(tp taskParams) error {
 // xcPlat: Cross compile for a particular platform
 // 'isFirst' is used simply to determine whether to start a new downloads.md page
 // 0.3.0 - breaking change - changed 'call []string' to 'workingDirectory string'.
-func xcPlat(goos, arch string, workingDirectory string, settings config.Settings) string {
+func xcPlat(goos, arch string, workingDirectory string, settings config.Settings) error {
 	log.Printf("building for platform %s_%s.", goos, arch)
 	relativeDir := filepath.Join(settings.GetFullVersionName(), goos+"_"+arch)
 
@@ -93,5 +101,5 @@ func xcPlat(goos, arch string, workingDirectory string, settings config.Settings
 			log.Printf("Artifact generated OK")
 		}
 	}
-	return relativeBin
+	return err
 }

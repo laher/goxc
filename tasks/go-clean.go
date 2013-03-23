@@ -21,7 +21,6 @@ import (
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
-	"log"
 )
 
 //runs automatically
@@ -29,13 +28,11 @@ func init() {
 	register(Task{
 		config.TASK_GO_CLEAN,
 		"runs `go clean`.",
-		runTaskGoClean})
+		runTaskGoClean,
+		nil})
 }
 
 func runTaskGoClean(tp taskParams) error {
 	err := core.InvokeGo(tp.workingDirectory, []string{"clean"}, tp.settings)
-	if err != nil {
-		log.Printf("Clean failed! %s", err)
-	}
 	return err
 }

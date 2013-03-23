@@ -29,9 +29,11 @@ import (
 )
 
 var dpTask = Task{
-	"downloads-page",
+	config.TASK_DOWNLOADS_PAGE,
 	"Generate a downloads page. Currently only supports Markdown format.",
-	runTaskDownloadsPage}
+	runTaskDownloadsPage,
+	map[string]interface{}{"filename": "downloads.md",
+		"fileheader": "---\nlayout: default\ntitle: Downloads\n---\n\n"}}
 
 //runs automatically
 func init() {
@@ -39,15 +41,15 @@ func init() {
 }
 
 func runTaskDownloadsPage(tp taskParams) error {
-	filename := tp.settings.GetTaskSetting(config.TASK_DOWNLOADS_PAGE, "filename", "downloads.md")
-	reportFilename := filepath.Join(tp.outDestRoot, tp.settings.GetFullVersionName(), filename.(string))
+	filename := tp.settings.GetTaskSetting(config.TASK_DOWNLOADS_PAGE, "filename").(string)
+	reportFilename := filepath.Join(tp.outDestRoot, tp.settings.GetFullVersionName(), filename)
 	flags := os.O_WRONLY | os.O_TRUNC | os.O_CREATE
 	f, err := os.OpenFile(reportFilename, flags, 0600)
 	if err == nil {
 		defer f.Close()
-		header := tp.settings.GetTaskSetting(config.TASK_DOWNLOADS_PAGE, "header", "")
-		if header != "" {
-			_, err = fmt.Fprintf(f, "%s\n\n", header)
+		fileheader := tp.settings.GetTaskSetting(config.TASK_DOWNLOADS_PAGE, "fileheader").(string)
+		if fileheader != "" {
+			_, err = fmt.Fprintf(f, "%s\n\n", fileheader)
 		}
 		_, err = fmt.Fprintf(f, "%s downloads (%s)\n-------------\n", tp.appName, tp.settings.GetFullVersionName())
 		versionDir := filepath.Join(tp.outDestRoot, tp.settings.GetFullVersionName())
