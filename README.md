@@ -3,6 +3,8 @@ goxc
 
 [goxc](http://www.laher.net.nz/goxc) cross-compiles Go programs to (up to) 11 target platforms at once.
 
+By default, goxc zips up the programs and generates a 'downloads page' in markdown (with a Jekyll header).
+
 goxc is written in Go but uses *os.exec* to call 'go build' with the appropriate flags & env variables for each supported platform.
 
 goxc was inspired by Dave Cheney's Bash script [golang-crosscompile](https://github.com/davecheney/golang-crosscompile).
@@ -61,12 +63,42 @@ Use `goxc -h options` to list all options.
 "Tasks"
 -------
 
-goxc performs a number of operations, defined as tasks. You can specify tasks with the '-tasks' option.
+goxc performs a number of operations, defined as tasks. You can specify tasks with the '-tasks=' option.
 
  * `goxc -t` performs one task called 'toolchain'. It's the equivalent of `goxc -tasks=toolchain ~`
- * By default, `goxc` performs several tasks, which can be summarised as follows:
-    * validate -> (cross-)compile -> package
- * For a list of tasks, run `goxc -h tasks`
+ * The *default* task is actually several tasks, which can be summarised as follows:
+    * validate (tests the code) -> compile (cross-compiles code) -> package (zips up the executables and builds a 'downloads' page)
+ * You can specify one or more tasks, such as `goxc -tasks=go-fmt,xc`
+ * You can skip tasks with '-tasks-='. Skip the 'package' stage with `goxc -tasks-=package`
+ * For a list of tasks and 'task aliases', run `goxc -h tasks`
+
+### Available tasks
+
+ * toolchain       Build toolchain. Make sure to run this each time you update go source.
+ * clean-destination  Delete the output folder for this version of the artifact.
+ * go-clean        runs `go clean`.
+ * go-fmt          runs `go fmt ./...`.
+ * go-test         runs `go test ./...`. (folder is configurable).
+ * go-vet          runs `go vet ./...`.
+ * go-install      runs `go install`. installs a version consistent with goxc-built binaries.
+ * xc              Cross compile. Builds executables for other platforms.
+ * codesign        sign code for Mac. Only Mac hosts are supported for this task.
+ * archive         Create a compressed archive. Currently 'zip' format is used for all platforms
+ * rmbin           delete binary. Normally runs after 'archive' task to reduce size of output folder.
+ * downloads-page  Generate a downloads page. Currently only supports Markdown format.
+
+### Task aliases
+
+Task aliases are a name given to a sequence of tasks. You can specify tasks or aliases interchangeably.
+Specify aliases wherever possible.
+
+ * all             [toolchain go-fmt go-vet go-test go-install xc codesign archive rmbin downloads-page]
+ * package         [archive rmbin downloads-page]
+ * default         [go-vet go-test go-install xc codesign archive rmbin downloads-page]
+ * validate        [go-vet go-test]
+ * compile         [go-install xc codesign]
+ * clean           [go-clean clean-destination]
+
 
 Outcome
 -------
