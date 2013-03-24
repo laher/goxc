@@ -10,6 +10,8 @@ BUT, goxc crosscompiles to all platforms at once. The artifacts are saved into a
 
 Thanks to [dchest](https://github.com/dchest) for the tidy-up and adding the zip feature, and [matrixik](https://bitbucket.org/matrixik) for his improvements and input.
 
+**NOTE: Version 0.5.0 (2013-03-24) is a major change. Please follow wiki links, [e.g. upgrading to 0.5](https://github.com/laher/goxc/wiki/upgrading-0.5) for more information!**
+
 Installation
 --------------
 goxc requires the go source and the go toolchain.
@@ -97,15 +99,6 @@ To create a config file, just use the -wc (write config) option.
 
 The configuration file is documented in much more detail in [the wiki](https://github.com/laher/goxc/wiki/config)
 
-Settings file format
---------------------
-
-TODO!!!
-
-The settings file exposes plenty more options which are not available via command line options...
-
-For now, just specify lots of options including -wc to see the output. Use -c=test to produce a test.json file.
-
 Limitations
 -----------
 
@@ -135,4 +128,5 @@ See also
 --------
  * [TODOs](https://github.com/laher/goxc/wiki/todo)
  * [Changelog](https://github.com/laher/goxc/wiki/changelog)
+ * [Upgrading to v0.5](https://github.com/laher/goxc/wiki/upgrading-0.5)
  * See also [my golang-crosscompile fork](https://github.com/laher/golang-crosscompile) for an added 'go-build-all' task similar to goxc.
