@@ -14,7 +14,7 @@ Installation
 --------------
 goxc requires the go source and the go toolchain.
 
- 1. [Install go from source](http://golang.org/doc/install/source). (Requires 'hg' and gcc (or MinGW))
+ 1. [Install go from source](http://golang.org/doc/install/source). (Requires gcc (or MinGW) and 'hg')
 
  2. Install goxc:
 
@@ -86,14 +86,16 @@ If non-zipped, artifacts generated into a folder structure as follows:
 
  (outputfolder)/(version)/(OS)_(ARCH)/(appname)(.exe?)
 
-Settings file
--------------
+Configuration file
+-----------------
 
-As of v0.2.0, goxc can use a settings file to save and re-run compilations.
+For repeatable builds (and some extra options), it is recomended to use goxc can use a configuration file to save and re-run compilations.
 
 To create a config file, just use the -wc (write config) option.
 
 	goxc -d=../site/downloads -os="linux windows" -wc
+
+The configuration file is documented in much more detail in [the wiki](https://github.com/laher/goxc/wiki/config)
 
 Settings file format
 --------------------
@@ -103,25 +105,6 @@ TODO!!!
 The settings file exposes plenty more options which are not available via command line options...
 
 For now, just specify lots of options including -wc to see the output. Use -c=test to produce a test.json file.
-
-
-Settings file override behaviour
---------------------------------
-
-You can specify an alternative config using -c=configname (default is .goxc)
-
-You shouldn't need to understand the specifics of the config file, but here are the full details for anyone who needs to start using it.
-
- * goxc looks for files called [configname].json and [configname].local.json
- * If you don't specify a working directory, goxc defaults to current directory, unless you're using -t, when it'll default to your HOME folder. (You can still specify current folder with a simple dot, '.').
- * The .local.json file takes precedence (overrides) over the non-local file.
- * By convention the .local.json file should not be stored in scm (source control e.g. git/hg/svn...)
- * In particular, the .local.json file should store version information for forked repos and unofficial builds.
- * The 'write config' option, -wc, can be used in conjunction with the -c=configname option. -wc does load the (overridable) current config, but ignores content of .local.json files.
- * A simple example of the format can be found in the [goxc code](https://github.com/laher/goxc/blob/master/.goxc.json).
- * An example of what you might put in the [.local.json file](https://github.com/laher/goxc/blob/master/sample-local.json).
- * Don't forget to put '*.local.json' in your scm ignore file.
- * cli flags take precedence over any json file variables.
 
 Limitations
 -----------

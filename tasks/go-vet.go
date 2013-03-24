@@ -27,12 +27,13 @@ import (
 func init() {
 	register(Task{
 		config.TASK_GO_VET,
-		"runs `go vet`.",
+		"runs `go vet ./...`.",
 		runTaskGoVet,
-		nil})
+		map[string]interface{}{"dir": "./..."}})
 }
 
 func runTaskGoVet(tp taskParams) error {
-	err := core.InvokeGo(tp.workingDirectory, []string{"vet"}, tp.settings)
+	dir := tp.settings.GetTaskSetting(config.TASK_GO_FMT, "dir").(string)
+	err := core.InvokeGo(tp.workingDirectory, []string{"vet", dir}, tp.settings)
 	return err
 }

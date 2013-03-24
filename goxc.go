@@ -34,10 +34,11 @@ import (
 const (
 	MSG_HELP               = "Usage: goxc [options] <directory_name>\n"
 	MSG_HELP_TOPICS        = "goxc -h <topic>\n"
-	MSG_HELP_TOPICS_EG     = "Try:\n\tgoxc -h options\nor\n\tgoxc -h tasks\n"
+	MSG_HELP_TOPICS_EG     = "More help:\n\tgoxc -h options\nor\n\tgoxc -h tasks\n"
 	MSG_HELP_LINK          = "Please see https://github.com/laher/goxc/wiki for full details.\n"
 	MSG_HELP_UNKNOWN_TOPIC = "Unknown topic '%s'. Try 'options' or 'tasks'\n"
-	MSG_HELP_DESC          = "goxc cross-compiles go programs to multiple platforms at once."
+	MSG_HELP_DESC          = "goxc cross-compiles go programs to multiple platforms at once.\n"
+	MSG_HELP_TC            = "NOTE: You need to run `goxc -t` first. See https://github.com/laher/goxc/ for more details!\n"
 )
 
 // settings for this invocation of goxc
@@ -67,7 +68,7 @@ func printHelp(flagSet *flag.FlagSet) {
 		fmt.Fprint(os.Stderr, MSG_HELP)
 		fmt.Fprintf(os.Stderr, "Version '%s'\n", VERSION)
 		fmt.Fprint(os.Stderr, MSG_HELP_DESC)
-		fmt.Fprint(os.Stderr, MSG_HELP_TOPICS)
+		fmt.Fprint(os.Stderr, MSG_HELP_TC)
 		fmt.Fprint(os.Stderr, MSG_HELP_TOPICS_EG)
 	} else {
 		printHelpTopic(flagSet, args[0])
@@ -81,15 +82,26 @@ func printHelpTopic(flagSet *flag.FlagSet, topic string) {
 		printOptions(flagSet)
 		return
 	case "tasks":
-		fmt.Fprint(os.Stderr, "Use the '-tasks=' option to specify tasks, and '-tasks-=' or '-tasks+=' to adjust them.\n\te.g. -tasks=default -tasks+=go-fmt -tasks-=rmbin\n")
+		fmt.Fprint(os.Stderr, "Use the '-tasks=' option to specify tasks, and '-tasks-=' or '-tasks+=' to adjust them.\n\n\te.g. `goxc -tasks=default -tasks+=go-fmt -tasks-=rmbin`\n")
 		fmt.Fprint(os.Stderr, "\nAvailable tasks:\n")
 		allTasks := tasks.ListTasks()
+		var padding string
 		for _, task := range allTasks {
-			fmt.Fprintf(os.Stderr, " %s\t%s\n", task.Name, task.Description)
+			if len(task.Name) < 14 {
+				padding = strings.Repeat(" ", 14-len(task.Name))
+			} else {
+				padding = ""
+			}
+			fmt.Fprintf(os.Stderr, " %s  %s%s\n", task.Name, padding, task.Description)
 		}
-		fmt.Fprint(os.Stderr, "\nTask aliases:\n")
+		fmt.Fprint(os.Stderr, "\nTask aliases (specify aliases where possible):\n")
 		for alias, taskNames := range tasks.Aliases {
-			fmt.Fprintf(os.Stderr, " %s\t%v\n", alias, taskNames)
+			if len(alias) < 14 {
+				padding = strings.Repeat(" ", 14-len(alias))
+			} else {
+				padding = ""
+			}
+			fmt.Fprintf(os.Stderr, " %s  %s%v\n", alias, padding, taskNames)
 		}
 		return
 	}
@@ -172,13 +184,14 @@ func goXC(call []string) {
 	} else {
 		//0.2.3 fillDefaults should only happen after writing config
 		settings = fillDefaults(settings)
-		//remove unwanted tasks here ...
+		/* remove unwanted tasks here ...
 		if tasksMinus != "" {
 			removeTasks := tasks.ResolveAliases(strings.Split(tasksMinus, ","))
 			for _, val := range removeTasks {
 				settings.Tasks = remove(settings.Tasks, val)
 			}
 		}
+		*/
 		log.Printf("tasks: %v", settings.Tasks)
 
 		if settings.IsVerbose() {
@@ -200,22 +213,30 @@ func interpretSettings(call []string) (string, config.Settings) {
 			settings.Verbosity = config.VERBOSITY_VERBOSE
 		}
 		if isBuildToolchain {
-			tasksToRun = config.TASK_BUILD_TOOLCHAIN + "," + tasksToRun
+			if tasksToRun != "" {
+				tasksToRun = config.TASK_BUILD_TOOLCHAIN + "," + tasksToRun
+			} else {
+				tasksToRun = config.TASK_BUILD_TOOLCHAIN
+			}
 		}
 		if tasksPlus != "" {
-			tasksToRun = tasksPlus + "," + tasksToRun
+			settings.TasksAppend = strings.Split(tasksPlus, ",")
 		}
 		if tasksToRun != "" {
-			settings.Tasks = tasks.ResolveAliases(strings.Split(tasksToRun, ","))
+			settings.Tasks = strings.Split(tasksToRun, ",")
+		}
+		if tasksMinus != "" {
+			settings.TasksExclude = strings.Split(tasksMinus, ",")
 		}
 		//0.2.3 NOTE this will be superceded soon
 		//using string because that makes it overrideable
 		//0.5.0 using Tasks instead of ArtifactTypes
 		if isCliZipArchives == "true" || isCliZipArchives == "t" {
 			//settings.ArtifactTypes = []string{config.ARTIFACT_TYPE_ZIP}
-			settings.Tasks = append_if_missing(settings.Tasks, config.TASK_ARCHIVE)
+			settings.Tasks = remove(settings.TasksExclude, config.TASK_ARCHIVE)
+			settings.Tasks = appendIfMissing(settings.Tasks, config.TASK_ARCHIVE)
 		} else if isCliZipArchives == "false" || isCliZipArchives == "f" {
-			settings.Tasks = remove(settings.Tasks, config.TASK_ARCHIVE)
+			settings.TasksExclude = appendIfMissing(settings.TasksExclude, config.TASK_ARCHIVE)
 		}
 		//TODO use Setting
 		if codesignId != "" {
@@ -269,7 +290,7 @@ func interpretSettings(call []string) (string, config.Settings) {
 	return workingDirectory, settings
 }
 
-func append_if_missing(arr []string, v string) []string {
+func appendIfMissing(arr []string, v string) []string {
 	ret := make([]string, len(arr))
 	copy(ret, arr)
 	for _, val := range arr {
@@ -354,70 +375,60 @@ func printOptions(flagSet *flag.FlagSet) {
 	//tasks
 	fmt.Printf("Tasks options:\n")
 	flagSet.VisitAll(func(flag *flag.Flag) {
-		if contains(taskOptions, flag.Name) {
-			printFlag(flag, contains(boolOptions, flag.Name))
+		if core.ContainsString(taskOptions, flag.Name) {
+			printFlag(flag, core.ContainsString(boolOptions, flag.Name))
 		}
 	})
 
 	fmt.Printf("Platform filtering:\n")
 	flagSet.VisitAll(func(flag *flag.Flag) {
-		if contains(platformOptions, flag.Name) {
-			printFlag(flag, contains(boolOptions, flag.Name))
+		if core.ContainsString(platformOptions, flag.Name) {
+			printFlag(flag, core.ContainsString(boolOptions, flag.Name))
 		}
 	})
 
 	fmt.Printf("Config files:\n")
 	flagSet.VisitAll(func(flag *flag.Flag) {
-		if contains(cfOptions, flag.Name) {
-			printFlag(flag, contains(boolOptions, flag.Name))
+		if core.ContainsString(cfOptions, flag.Name) {
+			printFlag(flag, core.ContainsString(boolOptions, flag.Name))
 		}
 	})
 
 	//versioning
 	fmt.Printf("Package versioning:\n")
 	flagSet.VisitAll(func(flag *flag.Flag) {
-		if contains(versioningOptions, flag.Name) {
-			printFlag(flag, contains(boolOptions, flag.Name))
+		if core.ContainsString(versioningOptions, flag.Name) {
+			printFlag(flag, core.ContainsString(boolOptions, flag.Name))
 		}
 	})
 
 	//most
 	fmt.Printf("Other options:\n")
 	flagSet.VisitAll(func(flag *flag.Flag) {
-		if contains(taskOptions, flag.Name) ||
-			contains(versioningOptions, flag.Name) ||
-			contains(platformOptions, flag.Name) ||
-			contains(cfOptions, flag.Name) ||
-			contains(deprecatedOptions, flag.Name) ||
-			contains([]string{"h", "help", "version", "v"}, flag.Name) {
+		if core.ContainsString(taskOptions, flag.Name) ||
+			core.ContainsString(versioningOptions, flag.Name) ||
+			core.ContainsString(platformOptions, flag.Name) ||
+			core.ContainsString(cfOptions, flag.Name) ||
+			core.ContainsString(deprecatedOptions, flag.Name) ||
+			core.ContainsString([]string{"h", "help", "version", "v"}, flag.Name) {
 			return
 		}
-		printFlag(flag, contains(boolOptions, flag.Name))
+		printFlag(flag, core.ContainsString(boolOptions, flag.Name))
 	})
 	for _, _ = range []string{"h", "version"} {
 	}
 }
 
-func contains(h []string, n string) bool {
-	for _, e := range h {
-		if e == n {
-			return true
-		}
-	}
-	return false
-}
-
 func printFlag(flag *flag.Flag, isBool bool) {
-	padding := strings.Repeat(" ", 12-len(flag.Name))
+	var padding string
+	if len(flag.Name) < 12 {
+		padding = strings.Repeat(" ", 12-len(flag.Name))
+	} else {
+		padding = ""
+	}
 	if isBool {
 		format := "  -%s  %s%s\n"
 		fmt.Printf(format, flag.Name, padding, flag.Usage)
-		/*
-			} else if strings.Contains(flag.DefValue, " ") {
-				// put quotes on the value
-				format := "  -%s=%q%s %s\n"
-				fmt.Printf(format, flag.Name, flag.DefValue, padding, flag.Usage)
-		*/
 	} else {
 		format := "  -%s= %s%s\n"
 		fmt.Printf(format, flag.Name, padding, flag.Usage)

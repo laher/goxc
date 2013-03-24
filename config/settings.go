@@ -41,11 +41,14 @@ const (
 	TASK_REMOVE_BIN     = "rmbin"   //after zipping
 	TASK_DOWNLOADS_PAGE = "downloads-page"
 
-	TASKALIAS_CLEAN    = "clean"
-	TASKALIAS_DEFAULT  = "default"
+	TASKALIAS_CLEAN = "clean"
+
 	TASKALIAS_VALIDATE = "validate"
+	TASKALIAS_COMPILE  = "compile"
 	TASKALIAS_PACKAGE  = "package"
-	TASKALIAS_ALL      = "all"
+
+	TASKALIAS_DEFAULT = "default"
+	TASKALIAS_ALL     = "all"
 
 	//0.4 removed in favour of associated tasks
 	//ARTIFACT_TYPE_ZIP = "zip"
@@ -80,6 +83,12 @@ type Settings struct {
 	//0.2.0 Tasks replaces IsBuildToolChain bool
 	//0.5.0 Tasks is a much longer list.
 	Tasks []string
+
+	//0.5.0 adding exclusions. Easier for dealing with aliases. (e.g. Tasks=[default], TasksExclude=[rmbin] is easier than specifying individual tasks)
+	TasksExclude []string
+
+	//0.5.0 adding extra tasks. TODO (maybe) - prepend
+	TasksAppend []string
 
 	//TODO: replace Os/Arch with BuildConstraints?
 	Arch string
@@ -218,6 +227,9 @@ func Merge(high Settings, low Settings) Settings {
 	*/
 	if len(high.Tasks) == 0 {
 		high.Tasks = low.Tasks
+	}
+	if len(high.TasksExclude) == 0 {
+		high.TasksExclude = low.TasksExclude
 	}
 	/* 0.5.0 replaced.
 	if len(high.ArtifactTypes) == 0 {

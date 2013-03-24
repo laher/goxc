@@ -27,7 +27,7 @@ import (
 func init() {
 	register(Task{
 		config.TASK_GO_FMT,
-		"runs `go fmt ./..`.",
+		"runs `go fmt ./...`.",
 		runTaskGoFmt,
 		map[string]interface{}{"dir": "./..."}})
 }

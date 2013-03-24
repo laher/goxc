@@ -26,6 +26,9 @@ import (
 	"path/filepath"
 )
 
+// NOTE: in future this task may produce preferred types of archive for each OS (e.g. .tar.gz for Linux)
+// TaskSettings should dictate this behaviour.
+
 var archiveTask = Task{
 	"archive",
 	"Create a compressed archive. Currently 'zip' format is used for all platforms",

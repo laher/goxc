@@ -43,9 +43,10 @@ var (
 	allTasks = make(map[string]Task)
 	Aliases  = map[string][]string{
 		config.TASKALIAS_CLEAN:    config.TASKS_CLEAN,
-		config.TASKALIAS_DEFAULT:  config.TASKS_DEFAULT,
-		config.TASKALIAS_PACKAGE:  config.TASKS_PACKAGE,
 		config.TASKALIAS_VALIDATE: config.TASKS_VALIDATE,
+		config.TASKALIAS_COMPILE:  config.TASKS_COMPILE,
+		config.TASKALIAS_PACKAGE:  config.TASKS_PACKAGE,
+		config.TASKALIAS_DEFAULT:  config.TASKS_DEFAULT,
 		config.TASKALIAS_ALL:      config.TASKS_ALL}
 )
 
@@ -81,13 +82,19 @@ func RunTasks(workingDirectory string, destPlatforms [][]string, settings config
 	appName := core.GetAppName(workingDirectory)
 	outDestRoot := core.GetOutDestRoot(appName, settings.ArtifactsDest, workingDirectory)
 	defer log.SetPrefix("[goxc] ")
-	for _, taskName := range settings.Tasks {
-		log.SetPrefix("[goxc:" + taskName + "] ")
-		err := runTask(taskName, destPlatforms, appName, workingDirectory, outDestRoot, settings)
-		if err != nil {
-			// TODO: implement 'force' option.
-			log.Printf("Stopping after '%s' failed with error '%v'", taskName, err)
-			return
+	exclusions := ResolveAliases(settings.TasksExclude)
+	appends := ResolveAliases(settings.TasksAppend)
+	tasksToRun := ResolveAliases(settings.Tasks)
+	tasksToRun = append(tasksToRun, appends...)
+	for _, taskName := range tasksToRun {
+		if !core.ContainsString(exclusions, taskName) {
+			log.SetPrefix("[goxc:" + taskName + "] ")
+			err := runTask(taskName, destPlatforms, appName, workingDirectory, outDestRoot, settings)
+			if err != nil {
+				// TODO: implement 'force' option.
+				log.Printf("Stopping after '%s' failed with error '%v'", taskName, err)
+				return
+			}
 		}
 	}
 }

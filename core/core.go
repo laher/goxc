@@ -260,3 +260,12 @@ func GetRelativeBin(goos, arch string, appName string, isForMarkdown bool, fullV
 	relativeDir := filepath.Join(fullVersionName, goos+"_"+arch)
 	return filepath.Join(relativeDir, appName+ending)
 }
+
+func ContainsString(h []string, n string) bool {
+	for _, e := range h {
+		if e == n {
+			return true
+		}
+	}
+	return false
+}

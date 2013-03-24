@@ -87,8 +87,8 @@ func xcPlat(goos, arch string, workingDirectory string, settings config.Settings
 	cmd.Env = append([]string{}, os.Environ()...)
 	cmd.Env = append(cmd.Env, "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
 	if settings.IsVerbose() {
-		log.Printf("'go' env: GOOS=%s CGO_ENABLED=%s GOARCH=%s", goos, cgoEnabled, arch)
-		log.Printf("'go' env: %s", cmd.Env)
+		log.Printf("'go' env vars: GOOS=%s CGO_ENABLED=%s GOARCH=%s", goos, cgoEnabled, arch)
+		log.Printf("env: %s", cmd.Env)
 		log.Printf("'go' args: %v", cmd.Args)
 		log.Printf("'go' working directory: %s", cmd.Dir)
 	}
@@ -100,7 +100,7 @@ func xcPlat(goos, arch string, workingDirectory string, settings config.Settings
 		if err != nil {
 			log.Printf("Compiler error: %s", err)
 		} else {
-			log.Printf("Artifact generated OK")
+			log.Printf("Artifact %s generated OK", relativeBin)
 		}
 	}
 	return err
