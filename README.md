@@ -61,9 +61,9 @@ Use `goxc -h options` to list all options.
 
 goxc performs a number of operations, defined as tasks. You can specify tasks with the '-tasks' option.
 
- * `goxt -t` performs one task called 'toolchain'. It's the equivalent of `gox -tasks=toolchain`
- * goxc performs several tasks, which can be summarised as follows:
-    * validate (several tasks) -> cross-compile (one task called 'xc') -> package (several tasks)
+ * `goxc -t` performs one task called 'toolchain'. It's the equivalent of `goxc -tasks=toolchain ~`
+ * By default, `goxc` performs several tasks, which can be summarised as follows:
+    * validate -> (cross-)compile -> package
  * For a list of tasks, run `goxc -h tasks`
 
 Outcome
