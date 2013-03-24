@@ -184,15 +184,6 @@ func goXC(call []string) {
 	} else {
 		//0.2.3 fillDefaults should only happen after writing config
 		settings = fillDefaults(settings)
-		/* remove unwanted tasks here ...
-		if tasksMinus != "" {
-			removeTasks := tasks.ResolveAliases(strings.Split(tasksMinus, ","))
-			for _, val := range removeTasks {
-				settings.Tasks = remove(settings.Tasks, val)
-			}
-		}
-		*/
-		log.Printf("tasks: %v", settings.Tasks)
 
 		if settings.IsVerbose() {
 			log.Printf("Final settings %+v", settings)

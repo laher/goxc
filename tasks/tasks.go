@@ -84,8 +84,15 @@ func RunTasks(workingDirectory string, destPlatforms [][]string, settings config
 	defer log.SetPrefix("[goxc] ")
 	exclusions := ResolveAliases(settings.TasksExclude)
 	appends := ResolveAliases(settings.TasksAppend)
-	tasksToRun := ResolveAliases(settings.Tasks)
-	tasksToRun = append(tasksToRun, appends...)
+	mains := ResolveAliases(settings.Tasks)
+	mains = append(mains, appends...)
+	tasksToRun := []string{}
+	for _, taskName := range mains {
+		if !core.ContainsString(exclusions, taskName) {
+			tasksToRun = append(tasksToRun, taskName)
+		}
+	}
+	log.Printf("Running tasks: %v", tasksToRun)
 	for _, taskName := range tasksToRun {
 		if !core.ContainsString(exclusions, taskName) {
 			log.SetPrefix("[goxc:" + taskName + "] ")
