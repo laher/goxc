@@ -63,10 +63,14 @@ func TestSanityCheck(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sanity check failed! Did not find src folder: %v", err)
 	}
-	os.Chmod(srcDir, 0600)
-	defer os.Chmod(srcDir, 0700)
-	err = SanityCheck(tmpDir)
-	if err == nil {
-		t.Fatalf("sanity check failed! Expected NOT to be able to open src folder")
+	//chmod doesnt work in Windows.
+	//TODO: verify which OSes support chmod
+	if runtime.GOOS == "linux" {
+		os.Chmod(srcDir, 0600)
+		defer os.Chmod(srcDir, 0700)
+		err = SanityCheck(tmpDir)
+		if err == nil {
+			t.Fatalf("sanity check failed! Expected NOT to be able to open src folder")
+		}
 	}
 }
