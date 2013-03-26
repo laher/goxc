@@ -44,7 +44,7 @@ func runTaskArchive(tp taskParams) error {
 	for _, platformArr := range tp.destPlatforms {
 		destOs := platformArr[0]
 		destArch := platformArr[1]
-		err := zipPlat(destOs, destArch, tp.appName, tp.workingDirectory, tp.outDestRoot, tp.settings)
+		err := archivePlat(destOs, destArch, tp.appName, tp.workingDirectory, tp.outDestRoot, tp.settings)
 		if err != nil {
 			//TODO - 'force' option
 			//return err
@@ -54,21 +54,27 @@ func runTaskArchive(tp taskParams) error {
 	return nil
 }
 
-func zipPlat(goos, arch, appName, workingDirectory, outDestRoot string, settings config.Settings) error {
+func archivePlat(goos, arch, appName, workingDirectory, outDestRoot string, settings config.Settings) error {
 	resources := core.ParseIncludeResources(workingDirectory, settings.Resources.Include, settings.IsVerbose())
-	//0.4.0 use a new task type instead of artifact type
-	if settings.IsTask(config.TASK_ARCHIVE) {
-		// Create ZIP archive.
-		relativeBin := core.GetRelativeBin(goos, arch, appName, false, settings.GetFullVersionName())
-		zipPath, err := archive.ZipBinaryAndResources(
-			filepath.Join(outDestRoot, settings.GetFullVersionName(), goos+"_"+arch),
-			filepath.Join(outDestRoot, relativeBin), appName, resources, settings)
-		if err != nil {
-			log.Printf("ZIP error: %s", err)
-			return err
-		} else {
-			log.Printf("Artifact %s zipped to %s", relativeBin, zipPath)
-		}
+	// Create ZIP archive.
+	relativeBin := core.GetRelativeBin(goos, arch, appName, false, settings.GetFullVersionName())
+	var archiver archive.Archiver
+	var ending string
+	if goos == core.LINUX {
+		archiver = archive.TarGz
+		ending = "tar.gz"
+	} else {
+		archiver = archive.Zip
+		ending = "zip"
+	}
+	archivePath, err := archive.ArchiveBinaryAndResources(
+		filepath.Join(outDestRoot, settings.GetFullVersionName(), goos+"_"+arch),
+		filepath.Join(outDestRoot, relativeBin), appName, resources, settings, archiver, ending)
+	if err != nil {
+		log.Printf("ZIP error: %s", err)
+		return err
+	} else {
+		log.Printf("Artifact %s archived to %s", relativeBin, archivePath)
 	}
 	return nil
 }

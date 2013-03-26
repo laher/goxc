@@ -22,9 +22,9 @@ import (
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/executils"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 )
 
@@ -68,24 +68,32 @@ func xcPlat(goos, arch string, workingDirectory string, settings config.Settings
 	outDir := filepath.Join(outDestRoot, relativeDir)
 	os.MkdirAll(outDir, 0755)
 
-	cmd := exec.Command("go")
-	cmd.Args = append(cmd.Args, "build")
-	if settings.GetFullVersionName() != "" {
+	args := []string{"build"}
+	relativeBin := core.GetRelativeBin(goos, arch, appName, false, settings.GetFullVersionName())
+	args = append(args, executils.GetLdFlagVersionArgs(settings.GetFullVersionName())...)
+	args = append(args, "-o", filepath.Join(outDestRoot, relativeBin), workingDirectory)
+	cgoEnabled := executils.CgoEnabled(goos, arch)
+	envExtra := []string{ "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch }
+	err := executils.InvokeGo(workingDirectory, args, envExtra, settings.IsVerbose())
+	/*
+	cmd := executils.Command("go")
+	cmd.Args = append(cmd.Args, args...)
+	// ldflags relate to any build task ...
+	if (args[0] == "install" || args[0] == "build" || args[0] == "test") && settings.GetFullVersionName() != "" {
 		cmd.Args = append(cmd.Args, "-ldflags", "-X main.VERSION "+settings.GetFullVersionName()+"")
 	}
 	cmd.Dir = workingDirectory
-	relativeBin := core.GetRelativeBin(goos, arch, appName, false, settings.GetFullVersionName())
-	cmd.Args = append(cmd.Args, "-o", filepath.Join(outDestRoot, relativeBin), workingDirectory)
-	f, err := core.RedirectIO(cmd)
+	f, err := executils.RedirectIO(cmd)
 	if err != nil {
 		log.Printf("Error redirecting IO: %s", err)
 	}
 	if f != nil {
 		defer f.Close()
 	}
-	cgoEnabled := core.CgoEnabled(goos, arch)
+
 	cmd.Env = append([]string{}, os.Environ()...)
-	cmd.Env = append(cmd.Env, "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
+	cmd.Env := append(cmd.Env, envExtra...)
+
 	if settings.IsVerbose() {
 		log.Printf("'go' env vars: GOOS=%s CGO_ENABLED=%s GOARCH=%s", goos, cgoEnabled, arch)
 		log.Printf("env: %s", cmd.Env)
@@ -103,5 +111,6 @@ func xcPlat(goos, arch string, workingDirectory string, settings config.Settings
 			log.Printf("Artifact %s generated OK", relativeBin)
 		}
 	}
+	*/
 	return err
 }

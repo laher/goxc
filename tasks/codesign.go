@@ -28,7 +28,7 @@ import (
 )
 
 var codesignTask = Task{
-	config.TASK_CODESIGN,
+	core.TASK_CODESIGN,
 	"sign code for Mac. Only Mac hosts are supported for this task.",
 	runTaskCodesign,
 	map[string]interface{}{"id": ""}}

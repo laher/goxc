@@ -1,4 +1,4 @@
-package core
+package executils
 
 /*
    Copyright 2013 Am Laher
@@ -23,38 +23,39 @@ import (
 	"os/exec"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
-	"github.com/laher/goxc/config"
+	"github.com/laher/goxc/core"
 	"runtime"
+	"strings"
 )
 
-func addLdFlagVersion(cmd *exec.Cmd, fullVersionName string) {
+// ldflags relate to any build task ...
+func GetLdFlagVersionArgs(fullVersionName string) []string {
 	if fullVersionName != "" {
-		cmd.Args = append(cmd.Args, "-ldflags", "-X main.VERSION "+fullVersionName+"")
+		return []string{"-ldflags", "-X main.VERSION "+fullVersionName+""}
 	}
+	return []string{}
 }
 
 // 0.3.1
-func InvokeGo(workingDirectory string, args []string, settings config.Settings) error {
-	log.Printf("invoking 'go %v' on '%s'", args, workingDirectory)
+func InvokeGo(workingDirectory string, args []string, envExtra []string, isVerbose bool) error {
 	cmd := exec.Command("go")
 	cmd.Args = append(cmd.Args, args...)
-	// ldflags relate to any build task ...
-	if args[0] == "install" || args[0] == "build" || args[0] == "test" {
-		addLdFlagVersion(cmd, settings.GetFullVersionName())
-	}
 	cmd.Dir = workingDirectory
 	f, err := RedirectIO(cmd)
 	if err != nil {
 		log.Printf("Error redirecting IO: %s", err)
-		return err
 	}
 	if f != nil {
 		defer f.Close()
 	}
-	if settings.IsVerbose() {
-		log.Printf("'go' args: %v", cmd.Args)
-		log.Printf("'go' working directory: %s", cmd.Dir)
+
+	cmd.Env = append([]string{}, os.Environ()...)
+	cmd.Env = append(cmd.Env, envExtra...)
+
+	if envExtra != nil && len(envExtra) > 0 {
+		log.Printf("'go' extra env vers: %s", envExtra)
 	}
+	log.Printf("invoking 'go %v' from '%s'", printableArgs(args), workingDirectory)
 	err = cmd.Start()
 	if err != nil {
 		log.Printf("Launch error: %s", err)
@@ -62,13 +63,27 @@ func InvokeGo(workingDirectory string, args []string, settings config.Settings) 
 	} else {
 		err = cmd.Wait()
 		if err != nil {
-			log.Printf("invocation error: %s", err)
+			log.Printf("Go returned error: %s", err)
 			return err
 		} else {
-			log.Printf("go succeeded")
+			if isVerbose {
+				log.Printf("go succeeded")
+			}
 		}
 	}
 	return nil
+}
+
+func printableArgs(args []string) string {
+	ret:= ""
+	for _, arg := range args {
+		if strings.Contains(arg, " ") {
+			ret = ret + " \"" + arg + "\""
+		} else {
+			ret = ret + " " + arg
+		}
+	}
+	return ret
 }
 
 // this function copied from 'https://github.com/laher/mkdo'
@@ -81,9 +96,6 @@ func RedirectIO(cmd *exec.Cmd) (*os.File, error) {
 	if err != nil {
 		log.Println(err)
 	}
-	/*	if settings.IsVerbose() {
-		log.Printf("Redirecting output")
-	}*/
 	go io.Copy(os.Stdout, stdout)
 	go io.Copy(os.Stderr, stderr)
 	//direct. Masked passwords work OK!
@@ -96,7 +108,7 @@ func CgoEnabled(goos, arch string) string {
 	var cgoEnabled string
 	if goos == runtime.GOOS && arch == runtime.GOARCH {
 		//note: added conditional in line with Dave Cheney, but this combination is not yet supported.
-		if runtime.GOOS == FREEBSD && runtime.GOARCH == ARM {
+		if runtime.GOOS == core.FREEBSD && runtime.GOARCH == core.ARM {
 			cgoEnabled = "0"
 		} else {
 			cgoEnabled = "1"

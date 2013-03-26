@@ -42,12 +42,12 @@ type Task struct {
 var (
 	allTasks = make(map[string]Task)
 	Aliases  = map[string][]string{
-		config.TASKALIAS_CLEAN:    config.TASKS_CLEAN,
-		config.TASKALIAS_VALIDATE: config.TASKS_VALIDATE,
-		config.TASKALIAS_COMPILE:  config.TASKS_COMPILE,
-		config.TASKALIAS_PACKAGE:  config.TASKS_PACKAGE,
-		config.TASKALIAS_DEFAULT:  config.TASKS_DEFAULT,
-		config.TASKALIAS_ALL:      config.TASKS_ALL}
+		core.TASKALIAS_CLEAN:    core.TASKS_CLEAN,
+		core.TASKALIAS_VALIDATE: core.TASKS_VALIDATE,
+		core.TASKALIAS_COMPILE:  core.TASKS_COMPILE,
+		core.TASKALIAS_PACKAGE:  core.TASKS_PACKAGE,
+		core.TASKALIAS_DEFAULT:  core.TASKS_DEFAULT,
+		core.TASKALIAS_ALL:      core.TASKS_ALL}
 )
 
 func register(task Task) {

@@ -19,20 +19,22 @@ package tasks
 import (
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
-	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/executils"
 )
 
 //runs automatically
 func init() {
 	register(Task{
-		config.TASK_GO_INSTALL,
+		core.TASK_GO_INSTALL,
 		"runs `go install`. installs a version consistent with goxc-built binaries.",
 		runTaskGoInstall,
 		nil})
 }
 
 func runTaskGoInstall(tp taskParams) error {
-	err := core.InvokeGo(tp.workingDirectory, []string{"install"}, tp.settings)
+	args := []string{"install"}
+	args = append(args, executils.GetLdFlagVersionArgs(tp.settings.GetFullVersionName())...)
+	err := executils.InvokeGo(tp.workingDirectory, args, []string{}, tp.settings.IsVerbose())
 	return err
 }

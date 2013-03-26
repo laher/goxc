@@ -17,70 +17,27 @@ package archive
 */
 
 import (
-	"archive/zip"
-	"io"
-	"os"
 	"path/filepath"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/config"
+	"github.com/laher/goxc/core"
 )
 
-func ZipBinaryAndResources(outDir, binPath, appName string, resources []string, settings config.Settings) (zipFilename string, err error) {
-	if settings.PackageVersion != "" && settings.PackageVersion != config.PACKAGE_VERSION_DEFAULT {
+// function definition
+type Archiver func(archiveFilename string, items [][]string) error
+
+func ArchiveBinaryAndResources(outDir, binPath, appName string, resources []string, settings config.Settings, archiver Archiver, ending string) (zipFilename string, err error) {
+	if settings.PackageVersion != "" && settings.PackageVersion != core.PACKAGE_VERSION_DEFAULT {
 		// v0.1.6 using appname_version_platform. See issue 3
-		zipFilename = appName + "_" + settings.GetFullVersionName() + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
+		zipFilename = appName + "_" + settings.GetFullVersionName() + "_" + filepath.Base(filepath.Dir(binPath)) + "." + ending
 	} else {
-		zipFilename = appName + "_" + filepath.Base(filepath.Dir(binPath)) + ".zip"
+		zipFilename = appName + "_" + filepath.Base(filepath.Dir(binPath)) + "." + ending
 	}
-	zf, err := os.Create(filepath.Join(outDir, zipFilename))
-	if err != nil {
-		return
-	}
-	defer zf.Close()
-
-	zw := zip.NewWriter(zf)
-
-	addFileToZIP(zw, binPath)
-	if err != nil {
-		zw.Close()
-		return
-	}
-	//resources
+	toArchive := [][]string{[]string{binPath, filepath.Base(binPath)}}
 	for _, resource := range resources {
-		addFileToZIP(zw, resource)
-		if err != nil {
-			zw.Close()
-			return
-		}
+		toArchive = append(toArchive, []string{resource, resource})
 	}
-	err = zw.Close()
-	if err != nil {
-		return
-	}
-	return
-}
-
-func addFileToZIP(zw *zip.Writer, path string) (err error) {
-	binfo, err := os.Stat(path)
-	if err != nil {
-		return
-	}
-	header, err := zip.FileInfoHeader(binfo)
-	if err != nil {
-		return
-	}
-	header.Method = zip.Deflate
-	w, err := zw.CreateHeader(header)
-	if err != nil {
-		zw.Close()
-		return
-	}
-	bf, err := os.Open(path)
-	if err != nil {
-		return
-	}
-	defer bf.Close()
-	_, err = io.Copy(w, bf)
+	err = archiver(filepath.Join(outDir, zipFilename), toArchive)
 	return
 }

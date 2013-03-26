@@ -30,39 +30,6 @@ import (
 	"strings"
 )
 
-const (
-	AMD64   = "amd64"
-	X86     = "386"
-	ARM     = "arm"
-	DARWIN  = "darwin"
-	LINUX   = "linux"
-	FREEBSD = "freebsd"
-	NETBSD  = "netbsd"
-	OPENBSD = "openbsd"
-	WINDOWS = "windows"
-	// Message to install go from source, incase it is missing
-	MSG_INSTALL_GO_FROM_SOURCE = "goxc requires Go to be installed from Source. Please follow instructions at http://golang.org/doc/install/source"
-)
-
-// Supported platforms
-var PLATFORMS = [][]string{
-	{DARWIN, X86},
-	{DARWIN, AMD64},
-	{LINUX, X86},
-	{LINUX, AMD64},
-	{LINUX, ARM},
-	{FREEBSD, X86},
-	{FREEBSD, AMD64},
-	// {FREEBSD, ARM},
-	// couldnt build toolchain for netbsd using a linux 386 host: 2013-02-19
-	//	{NETBSD, X86},
-	//	{NETBSD, AMD64},
-	{OPENBSD, X86},
-	{OPENBSD, AMD64},
-	{WINDOWS, X86},
-	{WINDOWS, AMD64},
-}
-
 func GetMakeScriptPath(goroot string) string {
 	gohostos := runtime.GOOS
 	var scriptname string

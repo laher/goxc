@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/laher/goxc/core"
 	"io/ioutil"
 	"log"
 	"os"
@@ -127,7 +128,7 @@ func validateRawJson(rawJson []byte, fileName string) []error {
 		if rejectOldTaskDefinitions {
 			if val, keyExists := settings["Tasks"]; keyExists {
 				valArr := val.([]interface{})
-				if len(valArr) == 1 && valArr[0] == TASK_BUILD_TOOLCHAIN {
+				if len(valArr) == 1 && valArr[0] == core.TASK_BUILD_TOOLCHAIN {
 					//build-toolchain hasn't changed. Continue.
 				} else {
 					msg := "task definitions have changed in version 0.5.0. Please refer to latest docs and update your config file to version 0.5.0 accordingly."

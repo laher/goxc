@@ -19,21 +19,22 @@ package tasks
 import (
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
-	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/executils"
 )
 
 //runs automatically
 func init() {
 	register(Task{
-		config.TASK_GO_VET,
+		core.TASK_GO_VET,
 		"runs `go vet ./...`.",
 		runTaskGoVet,
 		map[string]interface{}{"dir": "./..."}})
 }
 
 func runTaskGoVet(tp taskParams) error {
-	dir := tp.settings.GetTaskSetting(config.TASK_GO_FMT, "dir").(string)
-	err := core.InvokeGo(tp.workingDirectory, []string{"vet", dir}, tp.settings)
+	dir := tp.settings.GetTaskSetting(core.TASK_GO_VET, "dir").(string)
+	args := []string{"vet", dir}
+	err := executils.InvokeGo(tp.workingDirectory, args, []string{}, tp.settings.IsVerbose())
 	return err
 }

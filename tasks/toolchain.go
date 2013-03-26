@@ -19,6 +19,7 @@ package tasks
 import (
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/executils"
 	"log"
 	"os"
 	"os/exec"
@@ -53,7 +54,7 @@ func buildToolchain(goos string, arch string, settings config.Settings) error {
 	cmd := exec.Command(scriptpath)
 	cmd.Dir = filepath.Join(goroot, "src")
 	cmd.Args = append(cmd.Args, "--no-clean")
-	cgoEnabled := core.CgoEnabled(goos, arch)
+	cgoEnabled := executils.CgoEnabled(goos, arch)
 	cmd.Env = append([]string{}, os.Environ()...)
 	cmd.Env = append(cmd.Env, "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
 	if goos == core.LINUX && arch == core.ARM {
@@ -65,7 +66,7 @@ func buildToolchain(goos string, arch string, settings config.Settings) error {
 		log.Printf("'make' args: %s", cmd.Args)
 		log.Printf("'make' working directory: %s", cmd.Dir)
 	}
-	f, err := core.RedirectIO(cmd)
+	f, err := executils.RedirectIO(cmd)
 	if err != nil {
 		log.Printf("Error redirecting IO: %s", err)
 	}

@@ -135,17 +135,17 @@ func mergeConfiguredSettings(dir string, configName string, useLocal bool) (conf
 //TODO fulfil all defaults
 func fillDefaults(settings config.Settings) config.Settings {
 	if settings.Resources.Include == "" {
-		settings.Resources.Include = config.RESOURCES_INCLUDE_DEFAULT
+		settings.Resources.Include = core.RESOURCES_INCLUDE_DEFAULT
 	}
 	if settings.Resources.Exclude == "" {
-		settings.Resources.Exclude = config.RESOURCES_EXCLUDE_DEFAULT
+		settings.Resources.Exclude = core.RESOURCES_EXCLUDE_DEFAULT
 	}
 	if settings.PackageVersion == "" {
-		settings.PackageVersion = config.PACKAGE_VERSION_DEFAULT
+		settings.PackageVersion = core.PACKAGE_VERSION_DEFAULT
 	}
 
 	if len(settings.Tasks) == 0 {
-		settings.Tasks = config.TASKS_DEFAULT
+		settings.Tasks = core.TASKS_DEFAULT
 	}
 	if settings.TaskSettings == nil {
 		settings.TaskSettings = make(map[string]interface{})
@@ -201,13 +201,13 @@ func interpretSettings(call []string) (string, config.Settings) {
 		os.Exit(1)
 	} else {
 		if isVerbose {
-			settings.Verbosity = config.VERBOSITY_VERBOSE
+			settings.Verbosity = core.VERBOSITY_VERBOSE
 		}
 		if isBuildToolchain {
 			if tasksToRun != "" {
-				tasksToRun = config.TASK_BUILD_TOOLCHAIN + "," + tasksToRun
+				tasksToRun = core.TASK_BUILD_TOOLCHAIN + "," + tasksToRun
 			} else {
-				tasksToRun = config.TASK_BUILD_TOOLCHAIN
+				tasksToRun = core.TASK_BUILD_TOOLCHAIN
 			}
 		}
 		if tasksPlus != "" {
@@ -223,15 +223,15 @@ func interpretSettings(call []string) (string, config.Settings) {
 		//using string because that makes it overrideable
 		//0.5.0 using Tasks instead of ArtifactTypes
 		if isCliZipArchives == "true" || isCliZipArchives == "t" {
-			//settings.ArtifactTypes = []string{config.ARTIFACT_TYPE_ZIP}
-			settings.Tasks = remove(settings.TasksExclude, config.TASK_ARCHIVE)
-			settings.Tasks = appendIfMissing(settings.Tasks, config.TASK_ARCHIVE)
+			//settings.ArtifactTypes = []string{core.ARTIFACT_TYPE_ZIP}
+			settings.Tasks = remove(settings.TasksExclude, core.TASK_ARCHIVE)
+			settings.Tasks = appendIfMissing(settings.Tasks, core.TASK_ARCHIVE)
 		} else if isCliZipArchives == "false" || isCliZipArchives == "f" {
-			settings.TasksExclude = appendIfMissing(settings.TasksExclude, config.TASK_ARCHIVE)
+			settings.TasksExclude = appendIfMissing(settings.TasksExclude, core.TASK_ARCHIVE)
 		}
 		//TODO use Setting
 		if codesignId != "" {
-			settings.SetTaskSetting(config.TASK_CODESIGN, "id", codesignId)
+			settings.SetTaskSetting(core.TASK_CODESIGN, "id", codesignId)
 		}
 	}
 	//log.Printf("Settings: %s", settings)
@@ -312,12 +312,12 @@ func remove(arr []string, v string) []string {
 // This is done to make merging options from configuration files easier.
 func setupFlags() *flag.FlagSet {
 	flagSet := flag.NewFlagSet("goxc", flag.ContinueOnError)
-	flagSet.StringVar(&configName, "c", config.CONFIG_NAME_DEFAULT, "config name (default='.goxc')")
+	flagSet.StringVar(&configName, "c", core.CONFIG_NAME_DEFAULT, "config name (default='.goxc')")
 
 	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (default is all - \"linux darwin windows freebsd openbsd\")")
 	flagSet.StringVar(&settings.Arch, "arch", "", "Specify Arch (default is all - \"386 amd64 arm\")")
 
-	flagSet.StringVar(&settings.PackageVersion, "pv", "", "Package version (usually [major].[minor].[patch]. default='"+config.PACKAGE_VERSION_DEFAULT+"')")
+	flagSet.StringVar(&settings.PackageVersion, "pv", "", "Package version (usually [major].[minor].[patch]. default='"+core.PACKAGE_VERSION_DEFAULT+"')")
 	flagSet.StringVar(&settings.PackageVersion, "av", "", "DEPRECATED: Package version (deprecated option name)")
 	flagSet.StringVar(&settings.PrereleaseInfo, "pr", "", "Prerelease info (usually 'alpha', 'snapshot' ...)")
 	flagSet.StringVar(&settings.PrereleaseInfo, "pi", "", "DEPRECATED option name. Use -pr instead")
@@ -327,7 +327,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.ArtifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
 	flagSet.StringVar(&codesignId, "codesign", "", "identity to sign darwin binaries with (only applied when host OS is 'darwin')")
 
-	flagSet.StringVar(&settings.Resources.Include, "include", "", "Include resources in archives (default="+config.RESOURCES_INCLUDE_DEFAULT+")") //TODO: Add resources to non-zips & downloads.md
+	flagSet.StringVar(&settings.Resources.Include, "include", "", "Include resources in archives (default="+core.RESOURCES_INCLUDE_DEFAULT+")") //TODO: Add resources to non-zips & downloads.md
 
 	//0.2.0 Not easy to 'merge' boolean config items. More flexible to translate them to string options anyway
 	flagSet.BoolVar(&isHelp, "h", false, "Help")

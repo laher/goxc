@@ -1,70 +1,24 @@
 package config
 
+/*
+   Copyright 2013 Am Laher
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
 import (
+	"github.com/laher/goxc/core"
 	"log"
-)
-
-const (
-	ARTIFACTS_DEST_DEFAULT    = ""
-	BUILD_CONSTRAINTS_DEFAULT = ""
-	CODESIGN_DEFAULT          = ""
-	// Default resources to include. Comma-separated list of globs.
-	RESOURCES_INCLUDE_DEFAULT = "INSTALL*,README*,LICENSE*"
-	RESOURCES_EXCLUDE_DEFAULT = "*.go" //TODO
-	OS_DEFAULT                = ""
-	ARCH_DEFAULT              = ""
-	PACKAGE_VERSION_DEFAULT   = "unknown"
-	PRERELEASE_INFO_DEFAULT   = "SNAPSHOT"
-	VERBOSE_DEFAULT           = false
-	ZIP_ARCHIVES_DEFAULT      = false
-	IS_BUILDTOOLCHAIN_DEFAULT = false
-	BRANCH_ORIGINAL           = "original"
-
-	VERBOSITY_QUIET   = "q" //TODO
-	VERBOSITY_DEFAULT = "d"
-	VERBOSITY_VERBOSE = "v"
-
-	TASK_BUILD_TOOLCHAIN = "toolchain"
-
-	TASK_CLEAN_DESTINATION = "clean-destination"
-	TASK_GO_CLEAN          = "go-clean"
-
-	TASK_GO_VET  = "go-vet"
-	TASK_GO_TEST = "go-test"
-	TASK_GO_FMT  = "go-fmt"
-
-	TASK_GO_INSTALL = "go-install"
-	TASK_XC         = "xc"
-	TASK_CODESIGN   = "codesign"
-
-	TASK_ARCHIVE        = "archive" //zip
-	TASK_REMOVE_BIN     = "rmbin"   //after zipping
-	TASK_DOWNLOADS_PAGE = "downloads-page"
-
-	TASKALIAS_CLEAN = "clean"
-
-	TASKALIAS_VALIDATE = "validate"
-	TASKALIAS_COMPILE  = "compile"
-	TASKALIAS_PACKAGE  = "package"
-
-	TASKALIAS_DEFAULT = "default"
-	TASKALIAS_ALL     = "all"
-
-	//0.4 removed in favour of associated tasks
-	//ARTIFACT_TYPE_ZIP = "zip"
-	//ARTIFACT_TYPE_BIN = "bin"
-
-	CONFIG_NAME_DEFAULT = ".goxc"
-)
-
-var (
-	TASKS_CLEAN    = []string{TASK_GO_CLEAN, TASK_CLEAN_DESTINATION}
-	TASKS_VALIDATE = []string{TASK_GO_VET, TASK_GO_TEST}
-	TASKS_COMPILE  = []string{TASK_GO_INSTALL, TASK_XC, TASK_CODESIGN}
-	TASKS_PACKAGE  = []string{TASK_ARCHIVE, TASK_REMOVE_BIN, TASK_DOWNLOADS_PAGE}
-	TASKS_DEFAULT  = append(append(append([]string{}, TASKS_VALIDATE...), TASKS_COMPILE...), TASKS_PACKAGE...)
-	TASKS_OTHER    = []string{TASK_BUILD_TOOLCHAIN, TASK_GO_FMT}
-	TASKS_ALL      = append(append([]string{}, TASKS_OTHER...), TASKS_DEFAULT...)
 )
 
 type Resources struct {
@@ -113,15 +67,7 @@ type Settings struct {
 }
 
 func (s Settings) IsVerbose() bool {
-	return s.Verbosity == VERBOSITY_VERBOSE
-}
-
-func (s Settings) IsBuildToolchain() bool {
-	return s.IsTask(TASK_BUILD_TOOLCHAIN)
-}
-
-func (s Settings) IsXC() bool {
-	return s.IsTask(TASK_XC)
+	return s.Verbosity == core.VERBOSITY_VERBOSE
 }
 
 func (s Settings) IsTask(taskName string) bool {
