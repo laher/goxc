@@ -153,8 +153,8 @@ Limitations
 
  * Tested on Linux, Windows (and Mac during an early version). Please test on Mac and *BSD
  * Currently goxc is only designed to build standalone Go apps without linked libraries. You can try but YMMV
- * Bug: issue with config overriding. Empty strings do not currently override non-empty strings. e.g. -pi="" doesnt override the json setting PackageInfo
  * The *API* is not considered stable yet, so please don't start embedding goxc method calls in your code yet - unless you 'Contact us' first! Then I can freeze some API details as required.
+ * Bug: issue with config overriding. Empty strings do not currently override non-empty strings. e.g. -pi="" doesnt override the json setting PackageInfo
 
 License
 -------
@@ -177,5 +177,6 @@ See also
 --------
  * [TODOs](https://github.com/laher/goxc/wiki/todo)
  * [Changelog](https://github.com/laher/goxc/wiki/changelog)
+ * [Package Versioning](https://github.com/laher/goxc/wiki/versioning)
  * [Upgrading to v0.5](https://github.com/laher/goxc/wiki/upgrading-0.5)
  * See also [my golang-crosscompile fork](https://github.com/laher/golang-crosscompile) for an added 'go-build-all' task similar to goxc.
