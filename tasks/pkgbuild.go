@@ -53,9 +53,11 @@ func runTaskPkgBuild(tp taskParams) (err error) {
 
 func pkgBuildPlat(destOs, destArch string, tp taskParams) (err error) {
 	if destOs == core.LINUX {
-		//TODO rpm!
+		//TODO rpm?
+		//TODO sdeb
 		return debBuild(destOs, destArch, tp)
 	}
+	// TODO ports?
 	return nil
 }
 
@@ -89,13 +91,19 @@ func getDebArch(destArch string) string {
 }
 
 func debBuild(destOs, destArch string, tp taskParams) (err error) {
-	log.Printf("Deb support is still incomplete. Please don't use it just yet!!!!")
+	log.Printf("Deb support is still very nascent. Please test your debs before distributing them!!!!")
 	metadata := tp.settings.GetTaskSetting(core.TASK_PKG_BUILD, "metadata").(map[string]interface{})
 	metadataDeb := tp.settings.GetTaskSetting(core.TASK_PKG_BUILD, "metadata-deb").(map[string]interface{})
-	//TODO different folder
-	tmpDir := filepath.Join(tp.workingDirectory, ".goxc-temp")
+	relativeBin := core.GetRelativeBin(destOs, destArch, tp.appName, false, tp.settings.GetFullVersionName())
+	appPath := filepath.Join(tp.outDestRoot, relativeBin)
+	debDir := filepath.Dir(appPath)
+	tmpDir := filepath.Join(debDir, ".goxc-temp")
+	defer os.RemoveAll(tmpDir)
 	os.MkdirAll(tmpDir, 0755)
-	ioutil.WriteFile(filepath.Join(tmpDir, "debian-binary"), []byte("2.0\n"), 0644)
+	err = ioutil.WriteFile(filepath.Join(tmpDir, "debian-binary"), []byte("2.0\n"), 0644)
+	if err != nil {
+		return err
+	}
 	description := "?"
 	if desc, keyExists := metadata["description"]; keyExists {
 		description = desc.(string)
@@ -105,15 +113,23 @@ func debBuild(destOs, destArch string, tp taskParams) (err error) {
 		maintainer = maint.(string)
 	}
 	controlContent := getDebControlFileContent(tp.appName, maintainer, tp.settings.GetFullVersionName(), destArch, description, metadataDeb)
-	log.Printf("Control file:\n%s", string(controlContent))
-	ioutil.WriteFile(filepath.Join(tmpDir,"control"), controlContent, 0644)
-	archive.TarGz(filepath.Join(tmpDir,"control.tar.gz"), [][]string{[]string{ filepath.Join(tmpDir,"control"), "control"} })
+	if tp.settings.IsVerbose() {
+		log.Printf("Control file:\n%s", string(controlContent))
+	}
+	err = ioutil.WriteFile(filepath.Join(tmpDir,"control"), controlContent, 0644)
+	if err != nil {
+		return err
+	}
+	err = archive.TarGz(filepath.Join(tmpDir,"control.tar.gz"), [][]string{[]string{ filepath.Join(tmpDir,"control"), "control"} })
+	if err != nil {
+		return err
+	}
 	//build
-	relativeBin := core.GetRelativeBin(destOs, destArch, tp.appName, false, tp.settings.GetFullVersionName())
-	appPath := filepath.Join(tp.outDestRoot, relativeBin)
-	debDir := filepath.Dir(appPath)
 	//TODO add resources to /usr/share
-	archive.TarGz(filepath.Join(tmpDir,"data.tar.gz"), [][]string{[]string{ appPath, "/usr/bin/"+tp.appName} })
+	err = archive.TarGz(filepath.Join(tmpDir,"data.tar.gz"), [][]string{[]string{ appPath, "/usr/bin/"+tp.appName} })
+	if err != nil {
+		return err
+	}
 	targetFile := filepath.Join(debDir, fmt.Sprintf("%s_%s_%s.deb", tp.appName, tp.settings.GetFullVersionName(), getDebArch(destArch) )) //goxc_0.5.2_i386.deb")
 	inputs := [][]string{
 	 []string{filepath.Join(tmpDir,"debian-binary"),"debian-binary"},

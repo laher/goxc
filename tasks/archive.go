@@ -31,7 +31,7 @@ import (
 
 var archiveTask = Task{
 	"archive",
-	"Create a compressed archive. Currently 'zip' format is used for all platforms",
+	"Create a compressed archive. Currently 'zip' format is used for all platforms except Linux (tar.gz)",
 	runTaskArchive,
 
 	map[string]interface{}{"os": map[string]interface{}{core.LINUX: "TarGz"}}}

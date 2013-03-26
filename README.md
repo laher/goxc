@@ -3,7 +3,7 @@ goxc
 
 [goxc](http://www.laher.net.nz/goxc) cross-compiles Go programs to (up to) 11 target platforms at once.
 
-By default, goxc zips up the programs and generates a 'downloads page' in markdown (with a Jekyll header).
+By default, goxc [g]zips up the programs and generates a 'downloads page' in markdown (with a Jekyll header).
 
 goxc is written in Go but uses *os.exec* to call 'go build' with the appropriate flags & env variables for each supported platform.
 
@@ -12,7 +12,7 @@ BUT, goxc crosscompiles to all platforms at once. The artifacts are saved into a
 
 Thanks to [dchest](https://github.com/dchest) for the tidy-up and adding the zip feature, and [matrixik](https://bitbucket.org/matrixik) for his improvements and input.
 
-**NOTE: Version 0.5.0 (2013-03-24) is a major change. Please follow wiki links, [e.g. upgrading to 0.5](https://github.com/laher/goxc/wiki/upgrading-0.5) for more information!**
+**NOTE: Version 0.5.0 (2013-03-24) is a major change. If you are using config files, please [read about the changes](https://github.com/laher/goxc/wiki/upgrading-0.5) for more information!**
 
 Installation
 --------------
@@ -35,7 +35,7 @@ To build the toolchains for all 11 platforms:
 
 ### Now build your artifacts
 
-To build zipped binaries for your app:
+To build [g]zipped binaries for your app:
 
 	goxc path/to/app/folder
 
@@ -67,7 +67,7 @@ goxc performs a number of operations, defined as tasks. You can specify tasks wi
 
  * `goxc -t` performs one task called 'toolchain'. It's the equivalent of `goxc -tasks=toolchain ~`
  * The *default* task is actually several tasks, which can be summarised as follows:
-    * validate (tests the code) -> compile (cross-compiles code) -> package (zips up the executables and builds a 'downloads' page)
+    * validate (tests the code) -> compile (cross-compiles code) -> package ([g]zips up the executables and builds a 'downloads' page)
  * You can specify one or more tasks, such as `goxc -tasks=go-fmt,xc`
  * You can skip tasks with '-tasks-='. Skip the 'package' stage with `goxc -tasks-=package`
  * For a list of tasks and 'task aliases', run `goxc -h tasks`
@@ -83,7 +83,7 @@ goxc performs a number of operations, defined as tasks. You can specify tasks wi
  * go-install      runs `go install`. installs a version consistent with goxc-built binaries.
  * xc              Cross compile. Builds executables for other platforms.
  * codesign        sign code for Mac. Only Mac hosts are supported for this task.
- * archive         Create a compressed archive. Currently 'zip' format is used for all platforms
+ * archive         Create a compressed archive. Currently 'zip' format is used for all platforms except Linux (tar.gz)
  * rmbin           delete binary. Normally runs after 'archive' task to reduce size of output folder.
  * downloads-page  Generate a downloads page. Currently only supports Markdown format.
 
@@ -99,15 +99,32 @@ Specify aliases wherever possible.
  * compile         [go-install xc codesign]
  * clean           [go-clean clean-destination]
 
+### NEW TASK in 0.5.3
+
+There's a new task to generate .debs (Debian/Ubuntu installers).
+
+This is very nascent so I expect bugs to crop up.
+
+Eventually this will be included into the default workflow.
+
+For now, to generate debs, please use the following tasks list:
+
+	goxc -tasks=validate,compile,pkg-build,package
+
+Alternatively, run your normal tasks excluding 'rmbin', then call pkg-build individually.
+
+	goxc -tasks-=rmbin
+	goxc -tasks=pkg-build
 
 Outcome
 -------
 
-By default, artifacts are generated and then immediately zipped into (outputfolder).
+By default, artifacts are generated and then immediately archived into (outputfolder).
 
-e.g. /my/outputfolder/0.1.1/linux_arm/myapp_0.1.1_linux_arm.zip
+e.g.1 /my/outputfolder/0.1.1/linux_arm/myapp_0.1.1_linux_arm.tar.gz
+e.g.2 /my/outputfolder/0.1.1/windows_386/myapp_0.1.1_windows_386.zip
 
-If you specified the version number -pv=123 then the filename would be myapp_0.1.1_linux_arm_123.zip.
+If you specified the version number -pv=123 then the filename would be myapp_0.1.1_linux_arm_123.tar.gz.
 
 By default, the output folder is ($GOBIN)/(appname)-xc, and the version is 'unknown', but you can specify these.
 
@@ -116,7 +133,7 @@ e.g.
       goxc -pv=0.1.1 -d=/home/me/myapp/ghpages/downloads/
 
 
-If non-zipped, artifacts generated into a folder structure as follows:
+If non-archived, artifacts generated into a folder structure as follows:
 
  (outputfolder)/(version)/(OS)_(ARCH)/(appname)(.exe?)
 
