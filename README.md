@@ -103,11 +103,11 @@ Specify aliases wherever possible.
 
 There's a new task to generate .debs (Debian/Ubuntu installers).
 
-This is very nascent so I expect bugs to crop up.
+This is very nascent so I expect bugs to crop up, and config variables to change in the near future.
 
 Eventually this will be included into the default workflow.
 
-For now, to generate debs, please use the following tasks list:
+For now, to generate debs, please check [goxc's own config file](https://github.com/laher/goxc/blob/master/.goxc.json) for config parameters, then use the following tasks list:
 
 	goxc -tasks=validate,compile,pkg-build,package
 
