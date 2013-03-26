@@ -75,42 +75,5 @@ func xcPlat(goos, arch string, workingDirectory string, settings config.Settings
 	cgoEnabled := executils.CgoEnabled(goos, arch)
 	envExtra := []string{ "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch }
 	err := executils.InvokeGo(workingDirectory, args, envExtra, settings.IsVerbose())
-	/*
-	cmd := executils.Command("go")
-	cmd.Args = append(cmd.Args, args...)
-	// ldflags relate to any build task ...
-	if (args[0] == "install" || args[0] == "build" || args[0] == "test") && settings.GetFullVersionName() != "" {
-		cmd.Args = append(cmd.Args, "-ldflags", "-X main.VERSION "+settings.GetFullVersionName()+"")
-	}
-	cmd.Dir = workingDirectory
-	f, err := executils.RedirectIO(cmd)
-	if err != nil {
-		log.Printf("Error redirecting IO: %s", err)
-	}
-	if f != nil {
-		defer f.Close()
-	}
-
-	cmd.Env = append([]string{}, os.Environ()...)
-	cmd.Env := append(cmd.Env, envExtra...)
-
-	if settings.IsVerbose() {
-		log.Printf("'go' env vars: GOOS=%s CGO_ENABLED=%s GOARCH=%s", goos, cgoEnabled, arch)
-		log.Printf("env: %s", cmd.Env)
-		log.Printf("'go' args: %v", cmd.Args)
-		log.Printf("'go' working directory: %s", cmd.Dir)
-	}
-	err = cmd.Start()
-	if err != nil {
-		log.Printf("Launch error: %s", err)
-	} else {
-		err = cmd.Wait()
-		if err != nil {
-			log.Printf("Compiler error: %s", err)
-		} else {
-			log.Printf("Artifact %s generated OK", relativeBin)
-		}
-	}
-	*/
 	return err
 }

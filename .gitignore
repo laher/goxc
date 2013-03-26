@@ -24,6 +24,8 @@ _testmain.go
 
 *.swp
 
+
 " goxc 'ignore' files
+.goxc-temp
 *.local.json
 test.json

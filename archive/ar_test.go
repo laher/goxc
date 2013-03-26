@@ -17,6 +17,7 @@ package archive
 */
 
 
+/*
 import (
 	"io/ioutil"
 	"path/filepath"
@@ -24,7 +25,6 @@ import (
 )
 //TODO: this is commented out because it's an unfinished proof-of-concept.
 func TestArForDeb(t *testing.T) {
-/*
 	ioutil.WriteFile(filepath.Join("test_data","debian-binary"), []byte("2.0\n"), 0644)
 	ioutil.WriteFile(filepath.Join("test_data","control"), []byte(`Package: goxc
 Priority: extra
@@ -46,5 +46,5 @@ Description: Cross-compiler utility for Go
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-*/
 }
+*/

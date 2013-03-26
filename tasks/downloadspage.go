@@ -73,8 +73,11 @@ func runTaskDownloadsPage(tp taskParams) error {
 							text := strings.Replace(fi2.Name(), "_", "\\_", -1)
 							if strings.HasSuffix(fi2.Name(), ".zip") {
 								text = "zip"
-							}
-							if fi2.Name() == tp.appName || fi2.Name() == tp.appName+".exe" {
+							} else if strings.HasSuffix(fi2.Name(), ".deb") {
+								text = "deb"
+							} else if strings.HasSuffix(fi2.Name(), ".tar.gz") {
+								text = "tar.gz"
+							} else if fi2.Name() == tp.appName || fi2.Name() == tp.appName+".exe" {
 								text = "executable"
 							}
 							_, err = fmt.Fprintf(f, " [[%s](%s)]", text, relativeLink)

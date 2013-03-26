@@ -33,7 +33,8 @@ var archiveTask = Task{
 	"archive",
 	"Create a compressed archive. Currently 'zip' format is used for all platforms",
 	runTaskArchive,
-	nil}
+
+	map[string]interface{}{"os": map[string]interface{}{core.LINUX: "TarGz"}}}
 
 //runs automatically
 func init() {
@@ -56,17 +57,28 @@ func runTaskArchive(tp taskParams) error {
 
 func archivePlat(goos, arch, appName, workingDirectory, outDestRoot string, settings config.Settings) error {
 	resources := core.ParseIncludeResources(workingDirectory, settings.Resources.Include, settings.IsVerbose())
+
 	// Create ZIP archive.
 	relativeBin := core.GetRelativeBin(goos, arch, appName, false, settings.GetFullVersionName())
+
 	var archiver archive.Archiver
 	var ending string
-	if goos == core.LINUX {
-		archiver = archive.TarGz
-		ending = "tar.gz"
+	osOptions := settings.GetTaskSetting(core.TASK_ARCHIVE, "os").(map[string]interface{})
+
+	if osOption, keyExists := osOptions[goos]; keyExists {
+		if osOption == "TarGz" {
+		//if goos == core.LINUX {
+			ending = "tar.gz"
+			archiver = archive.TarGz
+		} else {
+			ending = "zip"
+			archiver = archive.Zip
+		}
 	} else {
-		archiver = archive.Zip
 		ending = "zip"
+		archiver = archive.Zip
 	}
+
 	archivePath, err := archive.ArchiveBinaryAndResources(
 		filepath.Join(outDestRoot, settings.GetFullVersionName(), goos+"_"+arch),
 		filepath.Join(outDestRoot, relativeBin), appName, resources, settings, archiver, ending)
