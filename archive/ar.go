@@ -40,12 +40,13 @@ func ArForDeb(archiveFilename string, items [][]string) error {
 	defer func() {
 		err := fo.Close()
 		if err != nil {
-	            panic(err)
+	            log.Printf("Error closing output file", err)
 		}
 	}()
 	header := "!<arch>\n"
 	if _, err := fo.Write([]byte(header)); err != nil {
-            log.Fatalf("Write error: %v", err)
+		log.Printf("Write error: %v", err)
+		return err
         } else {
 		for _, item := range items {
 			fi, err := os.Open(item[0])
@@ -58,6 +59,8 @@ func ArForDeb(archiveFilename string, items [][]string) error {
 					return err
 				} else {
 					fmodTimestamp := fmt.Sprintf("%d", finf.ModTime().Unix())
+					//use root (for deb). These files are only for dpkg to extract as root anyway
+					//this behaviour could be made configurable if 'Ar' gets used for anything else beyond .deb creation
 					uid := "0"
 					gid := "0"
 					//Files only atm (not dirs)
@@ -65,9 +68,16 @@ func ArForDeb(archiveFilename string, items [][]string) error {
 					size := fmt.Sprintf("%d", finf.Size())
 					line := fmt.Sprintf("%s%s%s%s%s%s`\n", pad(item[1],16), pad(fmodTimestamp, 12), pad(gid, 6), pad(uid, 6), pad(mode, 8), pad(size, 10))
 					if _, err := fo.Write([]byte(line)); err != nil {
-						log.Printf("Error")
+						return err
 					} else {
 						copyFile(fi, fo)
+						//0.5.4 bugfix: data section is 2-byte aligned.
+						if finf.Size() % 2 == 1 {
+							if _, err = fo.Write([]byte("\n")); err != nil {
+								return err
+							}
+						}
+
 					}
 				}
 			}

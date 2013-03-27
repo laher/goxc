@@ -36,7 +36,7 @@ func init() {
 	core.TASK_PKG_BUILD,
 	"Build a binary package. Currently only supports .deb format for Debian/Ubuntu Linux.",
 	runTaskPkgBuild,
-	map[string]interface{}{"metadata": map[string]interface{}{"maintainer": "unknown"},"metadata-deb": map[string]interface{}{"Depends": "golang"}}})
+	map[string]interface{}{"metadata": map[string]interface{}{"maintainer": "unknown"},"metadata-deb": map[string]interface{}{"Depends": "golang"},"rmtemp": true}})
 }
 
 func runTaskPkgBuild(tp taskParams) (err error) {
@@ -83,7 +83,7 @@ func getDebArch(destArch string) string {
 	case core.X86:
 		architecture = "i386"
 	case core.ARM:
-		architecture = "arm"
+		architecture = "armel"
 	case core.AMD64:
 		architecture = "amd64"
 	}
@@ -94,11 +94,14 @@ func debBuild(destOs, destArch string, tp taskParams) (err error) {
 	log.Printf("Deb support is still very nascent. Please test your debs before distributing them!!!!")
 	metadata := tp.settings.GetTaskSetting(core.TASK_PKG_BUILD, "metadata").(map[string]interface{})
 	metadataDeb := tp.settings.GetTaskSetting(core.TASK_PKG_BUILD, "metadata-deb").(map[string]interface{})
+	rmtemp := tp.settings.GetTaskSetting(core.TASK_PKG_BUILD, "rmtemp").(bool)
 	relativeBin := core.GetRelativeBin(destOs, destArch, tp.appName, false, tp.settings.GetFullVersionName())
 	appPath := filepath.Join(tp.outDestRoot, relativeBin)
 	debDir := filepath.Dir(appPath)
 	tmpDir := filepath.Join(debDir, ".goxc-temp")
-	defer os.RemoveAll(tmpDir)
+	if rmtemp {
+		defer os.RemoveAll(tmpDir)
+	}
 	os.MkdirAll(tmpDir, 0755)
 	err = ioutil.WriteFile(filepath.Join(tmpDir, "debian-binary"), []byte("2.0\n"), 0644)
 	if err != nil {
