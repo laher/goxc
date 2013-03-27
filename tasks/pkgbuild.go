@@ -53,11 +53,13 @@ func runTaskPkgBuild(tp taskParams) (err error) {
 
 func pkgBuildPlat(destOs, destArch string, tp taskParams) (err error) {
 	if destOs == core.LINUX {
-		//TODO rpm?
+		//TODO rpm
 		//TODO sdeb
 		return debBuild(destOs, destArch, tp)
 	}
-	// TODO ports?
+	// TODO BSD ports?
+	// TODO Mac apps?
+	// TODO Windows - msi or something? Perhaps build an installer using 'https://github.com/jteeuwen/go-bindata' to pack the compressed executable
 	return nil
 }
 
