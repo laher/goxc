@@ -40,7 +40,7 @@ func ArForDeb(archiveFilename string, items [][]string) error {
 	defer func() {
 		err := fo.Close()
 		if err != nil {
-	            log.Printf("Error closing output file", err)
+	            log.Printf("Error closing output file: %v", err)
 		}
 	}()
 	header := "!<arch>\n"
