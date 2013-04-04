@@ -314,8 +314,12 @@ func setupFlags() *flag.FlagSet {
 	flagSet := flag.NewFlagSet("goxc", flag.ContinueOnError)
 	flagSet.StringVar(&configName, "c", core.CONFIG_NAME_DEFAULT, "config name (default='.goxc')")
 
+	//TODO deprecate?
 	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (default is all - \"linux darwin windows freebsd openbsd\")")
 	flagSet.StringVar(&settings.Arch, "arch", "", "Specify Arch (default is all - \"386 amd64 arm\")")
+
+	//TODO introduce and implement in time for 0.6
+	//flagSet.StringVar(&settings.BuildConstraints, "bc", "", "Specify build constraints (e.g. 'linux,arm windows')")
 
 	flagSet.StringVar(&settings.PackageVersion, "pv", "", "Package version (usually [major].[minor].[patch]. default='"+core.PACKAGE_VERSION_DEFAULT+"')")
 	flagSet.StringVar(&settings.PackageVersion, "av", "", "DEPRECATED: Package version (deprecated option name)")

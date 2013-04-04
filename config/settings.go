@@ -48,8 +48,8 @@ type Settings struct {
 	Arch string
 	Os   string
 
-	//TODO: similar to build constraints used by Golang
-	// BuildConstraints []string
+	//NET 0.5.5
+	BuildConstraints string
 
 	Resources Resources
 

@@ -2,13 +2,13 @@
 	"FormatVersion": "0.5.0",
 	"Settings": {
 		"ArtifactsDest": "../goxc-pages/dl",
-		"PackageVersion": "0.5.4",
+		"PackageVersion": "0.5.5",
 		"Resources": {
 			"Include": "README.md"
 		},
 		"TaskSettings": {
 			"codesign": {
-				"id": "123"
+				"id": "goxc"
 			},
 			"downloads-page": {
 				"fileheader": "---\nlayout: default\ntitle: Download goxc\n---\n\nNote: please use 'go get -u github.com/laher/goxc' instead of these binaries.",

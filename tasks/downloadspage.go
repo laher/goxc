@@ -51,7 +51,7 @@ func runTaskDownloadsPage(tp taskParams) error {
 		if fileheader != "" {
 			_, err = fmt.Fprintf(f, "%s\n\n", fileheader)
 		}
-		_, err = fmt.Fprintf(f, "%s downloads (%s)\n-------------\n", tp.appName, tp.settings.GetFullVersionName())
+		_, err = fmt.Fprintf(f, "%s downloads (version %s)\n-------------\n", tp.appName, tp.settings.GetFullVersionName())
 		versionDir := filepath.Join(tp.outDestRoot, tp.settings.GetFullVersionName())
 		fileInfos, err := ioutil.ReadDir(versionDir)
 		if err == nil {
@@ -86,10 +86,15 @@ func runTaskDownloadsPage(tp taskParams) error {
 				}
 			}
 			_, err = fmt.Fprint(f, "\n")
+			first := true
 			//readmes etc will come below main artifacts
 			for _, fi := range fileInfos {
 				if !fi.IsDir() {
 					if fi.Name() != filename {
+						if first == true {
+							first = false
+							fmt.Fprintf(f, "\n### Resources\n")
+						}
 						relativeLink := fi.Name()
 						_, err = fmt.Fprintf(f, " * [%s](%s)\n", relativeLink, relativeLink)
 					}

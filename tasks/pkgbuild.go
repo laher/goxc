@@ -58,7 +58,7 @@ func pkgBuildPlat(destOs, destArch string, tp taskParams) (err error) {
 		return debBuild(destOs, destArch, tp)
 	}
 	// TODO BSD ports?
-	// TODO Mac apps?
+	// TODO Mac pkgs?
 	// TODO Windows - msi or something? Perhaps build an installer using 'https://github.com/jteeuwen/go-bindata' to pack the compressed executable
 	return nil
 }
@@ -93,7 +93,6 @@ func getDebArch(destArch string) string {
 }
 
 func debBuild(destOs, destArch string, tp taskParams) (err error) {
-	log.Printf("Deb support is still very nascent. Please test your debs before distributing them!!!!")
 	metadata := tp.settings.GetTaskSetting(core.TASK_PKG_BUILD, "metadata").(map[string]interface{})
 	metadataDeb := tp.settings.GetTaskSetting(core.TASK_PKG_BUILD, "metadata-deb").(map[string]interface{})
 	rmtemp := tp.settings.GetTaskSetting(core.TASK_PKG_BUILD, "rmtemp").(bool)
