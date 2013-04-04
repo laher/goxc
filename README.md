@@ -101,15 +101,11 @@ Specify aliases wherever possible.
 
 ### NEW TASK in 0.5.3
 
-There's a new task to generate .debs (Debian/Ubuntu installers).
+There's a new task, 'pkg-build', to generate .debs (Debian/Ubuntu installers).
 
-This is very nascent so I expect bugs to crop up, and config variables to change in the near future.
+As of 0.5.5, this is now included in the default workflow.
 
-Eventually this will be included into the default workflow.
-
-For now, to generate debs, please check [goxc's own config file](https://github.com/laher/goxc/blob/master/.goxc.json) for config parameters, then use the following tasks list:
-
-	goxc -tasks=validate,compile,pkg-build,package
+Options are currently limited. For now, please check [goxc's own config file](https://github.com/laher/goxc/blob/master/.goxc.json) for config parameters.
 
 Alternatively, run your normal tasks excluding 'rmbin', then call pkg-build individually.
 
