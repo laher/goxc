@@ -63,9 +63,8 @@ func buildToolchain(goos string, arch string, settings config.Settings) error {
 	}
 	if settings.IsVerbose() {
 		log.Printf("'make' env: GOOS=%s CGO_ENABLED=%s GOARCH=%s GOROOT=%s", goos, cgoEnabled, arch, goroot)
-		log.Printf("'make' args: %s", cmd.Args)
-		log.Printf("'make' working directory: %s", cmd.Dir)
 	}
+	log.Printf("Invoking '%v' from %s", executils.PrintableArgs(cmd.Args), cmd.Dir)
 	f, err := executils.RedirectIO(cmd)
 	if err != nil {
 		log.Printf("Error redirecting IO: %s", err)

@@ -53,9 +53,9 @@ func InvokeGo(workingDirectory string, args []string, envExtra []string, isVerbo
 	cmd.Env = append(cmd.Env, envExtra...)
 
 	if envExtra != nil && len(envExtra) > 0 {
-		log.Printf("'go' extra env vers: %s", envExtra)
+		log.Printf("'go' extra env vars: %s", envExtra)
 	}
-	log.Printf("invoking 'go %v' from '%s'", printableArgs(args), workingDirectory)
+	log.Printf("invoking 'go %v' from '%s'", PrintableArgs(args), workingDirectory)
 	err = cmd.Start()
 	if err != nil {
 		log.Printf("Launch error: %s", err)
@@ -74,13 +74,16 @@ func InvokeGo(workingDirectory string, args []string, envExtra []string, isVerbo
 	return nil
 }
 
-func printableArgs(args []string) string {
+func PrintableArgs(args []string) string {
 	ret:= ""
 	for _, arg := range args {
+		if len(ret) > 0 {
+			ret = ret + " "
+		}
 		if strings.Contains(arg, " ") {
-			ret = ret + " \"" + arg + "\""
+			ret = ret + "\"" + arg + "\""
 		} else {
-			ret = ret + " " + arg
+			ret = ret + arg
 		}
 	}
 	return ret

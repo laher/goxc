@@ -73,12 +73,34 @@ func LoadJsonConfigOverrideable(dir string, configName string, useLocal bool, ve
 	return Settings{}, err
 }
 
+//0.5.6 provide more detail about errors (syntax errors for now)
+func printErrorDetails(rawJson []byte, err error) {
+	switch typedErr := err.(type) {
+	case *json.SyntaxError:
+		lineNumber := 1
+		colNumber := 0
+		for i, b := range rawJson {
+			if int64(i) == typedErr.Offset {
+				log.Printf("JSON syntax error on line %d, column %d", lineNumber, colNumber)
+				return
+			}
+			if b == '\n' {
+				lineNumber = lineNumber + 1
+				colNumber = 0
+			} else {
+				colNumber = colNumber + 1
+			}
+		}
+	}
+}
+
 //beginnings of taskSettings merging
 func getTaskSettings(rawJson []byte, fileName string) (map[string]interface{}, error) {
 	var f interface{}
 	err := json.Unmarshal(rawJson, &f)
 	if err != nil {
 		log.Printf("ERROR (%s): invalid json!", fileName)
+		printErrorDetails(rawJson, err)
 		return nil, err
 	}
 	m := f.(map[string]interface{})
@@ -99,6 +121,7 @@ func validateRawJson(rawJson []byte, fileName string) []error {
 	err := json.Unmarshal(rawJson, &f)
 	if err != nil {
 		log.Printf("ERROR (%s): invalid json!", fileName)
+		printErrorDetails(rawJson, err)
 		return []error{err}
 	}
 	errs := []error{}
@@ -163,32 +186,120 @@ func loadFile(jsonFile string, verbose bool) ([]byte, error) {
 }
 
 // load json file. Glob for goxc
+//v0.5.6 parse from an interface{} instead of JsonSettings.
+//More flexible & better error reporting possible.
 func loadJsonFile(jsonFile string, verbose bool) (JsonSettings, error) {
-	var settings JsonSettings
+	var jsonSettings JsonSettings
 	rawJson, err := loadFile(jsonFile, verbose)
 	if err != nil {
-		return settings, err
+		return jsonSettings, err
 	}
 	errs := validateRawJson(rawJson, jsonFile)
 	if errs != nil && len(errs) > 0 {
-		return settings, errs[0]
+		return jsonSettings, errs[0]
 	}
-
+	jsonSettings = JsonSettings{}
+	jsonSettings.Settings = Settings{}
+	jsonSettings.Settings.Resources = Resources{}
 	//TODO: super-verbose option for logging file content? log.Printf("%s\n", string(file))
-	json.Unmarshal(rawJson, &settings)
+	var f interface{}
+	err = json.Unmarshal(rawJson, &f)
 	if err != nil {
-		log.Printf("Unmarshal error: %s", err)
-		return settings, err
+		log.Printf("ERROR (%s): invalid json!", jsonFile)
+		printErrorDetails(rawJson, err)
+		return jsonSettings, err
 	} else {
+		//fill all the way down.
+		m := f.(map[string]interface{})
+		if fv, keyExists := m["FormatVersion"]; keyExists {
+			//OK
+			jsonSettings.FormatVersion = fv.(string)
+			if s, keyExists := m["Settings"]; keyExists {
+				settingsSection := s.(map[string]interface{})
+				for k, v := range settingsSection {
+					//try to match key
+					switch k {
+					case "Tasks":
+						jsonSettings.Settings.Tasks, err = fromJsonStringArray(v, k)
+					case "TasksAppend":
+						jsonSettings.Settings.TasksAppend, err = fromJsonStringArray(v, k)
+						if err != nil {
+							return jsonSettings, err
+						}
+					case "ArtifactsDest":
+						jsonSettings.Settings.ArtifactsDest, err = fromJsonString(v, k)
+					case "Arch":
+						jsonSettings.Settings.Arch, err = fromJsonString(v, k)
+					case "Os":
+						jsonSettings.Settings.Os, err = fromJsonString(v, k)
+					case "BuildConstraints":
+						jsonSettings.Settings.BuildConstraints, err = fromJsonString(v, k)
+					case "Resources":
+						for k2, v2 := range v.(map[string]interface{}) {
+							switch k2 {
+							case "Include":
+								jsonSettings.Settings.Resources.Include, err = fromJsonString(v2, k + ":" + k2)
+							case "Exclude":
+								jsonSettings.Settings.Resources.Exclude, err = fromJsonString(v2, k + ":" + k2)
+							}
+						}
+					case "PackageVersion":
+						log.Printf("Package version %s", v)
+						jsonSettings.Settings.PackageVersion, err = fromJsonString(v, k)
+					case "BranchName":
+						jsonSettings.Settings.BranchName, err = fromJsonString(v, k)
+					case "PrereleaseInfo":
+						jsonSettings.Settings.PrereleaseInfo, err = fromJsonString(v, k)
+					case "BuildName":
+						jsonSettings.Settings.BuildName, err = fromJsonString(v, k)
+					case "Verbosity":
+						jsonSettings.Settings.Verbosity, err = fromJsonString(v, k)
+					case "TaskSettings":
+						jsonSettings.Settings.TaskSettings, err = fromJsonStringMap(v, k)
+					default:
+						log.Printf("Warning!! Unrecognised Setting '%s' (value %v)", k, v)
+					}
+					if err != nil {
+						return jsonSettings, err
+					}
+				}
+			}
+		} else {
+			return jsonSettings, errors.New("File format version not specified!")
+		}
 		//settings.Settings.TaskSettings, err= getTaskSettings(rawJson, jsonFile)
 		if verbose {
 			log.Printf("unmarshalled settings OK")
 		}
 	}
 	//TODO: verbosity here? log.Printf("Results: %v", settings)
-	return settings, nil
+	return jsonSettings, nil
 }
-
+func fromJsonStringArray(v interface{}, k string) ([]string, error) {
+	ret := []string{}
+	switch typedV := v.(type) {
+	case []interface{}:
+		for _, i := range typedV {
+			ret = append(ret, i.(string))
+		}
+		return ret, nil
+	}
+	return ret, fmt.Errorf("%s should be a json array, not a %T", k, v)
+}
+func fromJsonString(v interface{}, k string) (string, error) {
+	switch typedV := v.(type) {
+	case string:
+		return typedV, nil
+	}
+	return "", fmt.Errorf("%s should be a json string, not a %T", k, v)
+}
+func fromJsonStringMap(v interface{}, k string) (map[string]interface{}, error) {
+	switch typedV := v.(type) {
+	case map[string]interface{}:
+		return typedV, nil
+	}
+	return nil, fmt.Errorf("%s should be a json map, not a %T", k, v)
+}
 func WriteJsonConfig(dir string, settings JsonSettings, configName string, isLocal bool) error {
 	if isLocal {
 		jsonFile := filepath.Join(dir, configName+".local.json")

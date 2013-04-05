@@ -60,6 +60,7 @@ var (
 	codesignId       string
 	isWriteConfig    bool
 	isVerbose        bool
+	workingDirectoryFlag string
 )
 
 func printHelp(flagSet *flag.FlagSet) {
@@ -254,7 +255,9 @@ func interpretSettings(call []string) (string, config.Settings) {
 
 	args := flagSet.Args()
 	var workingDirectory string
-	if len(args) < 1 {
+	if workingDirectoryFlag != "" {
+		workingDirectory = workingDirectoryFlag
+	} else if len(args) < 1 {
 		if isBuildToolchain {
 			//default to HOME folder
 			log.Printf("Building toolchain, so getting config from HOME directory. To use current folder's config, specify the folder (i.e. goxc -t .)")
@@ -320,6 +323,8 @@ func setupFlags() *flag.FlagSet {
 
 	//TODO introduce and implement in time for 0.6
 	//flagSet.StringVar(&settings.BuildConstraints, "bc", "", "Specify build constraints (e.g. 'linux,arm windows')")
+
+	flagSet.StringVar(&workingDirectoryFlag, "wd", "", "Specify directory to work on")
 
 	flagSet.StringVar(&settings.PackageVersion, "pv", "", "Package version (usually [major].[minor].[patch]. default='"+core.PACKAGE_VERSION_DEFAULT+"')")
 	flagSet.StringVar(&settings.PackageVersion, "av", "", "DEPRECATED: Package version (deprecated option name)")

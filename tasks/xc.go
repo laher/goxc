@@ -71,7 +71,8 @@ func xcPlat(goos, arch string, workingDirectory string, settings config.Settings
 	args := []string{"build"}
 	relativeBin := core.GetRelativeBin(goos, arch, appName, false, settings.GetFullVersionName())
 	args = append(args, executils.GetLdFlagVersionArgs(settings.GetFullVersionName())...)
-	args = append(args, "-o", filepath.Join(outDestRoot, relativeBin), workingDirectory)
+	args = append(args, "-o", filepath.Join(outDestRoot, relativeBin), ".")
+	//TODO: use runtime.Version() to detect whether this is needed (unnecessary from 1.1+)
 	cgoEnabled := executils.CgoEnabled(goos, arch)
 	envExtra := []string{ "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch }
 	err := executils.InvokeGo(workingDirectory, args, envExtra, settings.IsVerbose())

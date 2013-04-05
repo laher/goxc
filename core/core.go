@@ -144,6 +144,13 @@ func GetGoPathElement(workingDirectory string) string {
 	return gopath
 }
 
+func getSupportedPlatforms() [][]string {
+	if strings.HasPrefix(runtime.Version(), "go1.0") {
+		return SUPPORTED_PLATFORMS_1_0
+	}
+	return SUPPORTED_PLATFORMS_1_1
+}
+
 //0.5 add support for space delimiters (similar to BuildConstraints)
 //0.5 add support for different oses/services
 func GetDestPlatforms(specifiedOses string, specifiedArches string) [][]string {
@@ -152,7 +159,7 @@ func GetDestPlatforms(specifiedOses string, specifiedArches string) [][]string {
 
 	for _, o := range destOses {
 		supported := false
-		for _, supportedPlatformArr := range PLATFORMS {
+		for _, supportedPlatformArr := range getSupportedPlatforms() {
 			supportedOs := supportedPlatformArr[0]
 			if o == supportedOs {
 				supported = true
@@ -164,7 +171,7 @@ func GetDestPlatforms(specifiedOses string, specifiedArches string) [][]string {
 	}
 	for _, o := range destArchs {
 		supported := false
-		for _, supportedPlatformArr := range PLATFORMS {
+		for _, supportedPlatformArr := range getSupportedPlatforms() {
 			supportedArch := supportedPlatformArr[1]
 			if o == supportedArch {
 				supported = true
@@ -181,7 +188,7 @@ func GetDestPlatforms(specifiedOses string, specifiedArches string) [][]string {
 		destArchs = []string{""}
 	}
 	var destPlatforms [][]string
-	for _, supportedPlatformArr := range PLATFORMS {
+	for _, supportedPlatformArr := range getSupportedPlatforms() {
 		supportedOs := supportedPlatformArr[0]
 		supportedArch := supportedPlatformArr[1]
 		for _, destOs := range destOses {

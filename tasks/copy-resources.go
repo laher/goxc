@@ -22,7 +22,9 @@ import (
 	"github.com/laher/goxc/core"
 	"io"
 	"os"
+	"log"
 	"path/filepath"
+	"strings"
 )
 
 //runs automatically
@@ -38,6 +40,9 @@ func runTaskCopyResources(tp taskParams) error {
 	resources := core.ParseIncludeResources(tp.workingDirectory, tp.settings.Resources.Include, tp.settings.IsVerbose())
 	destFolder := filepath.Join(tp.outDestRoot, tp.settings.GetFullVersionName())
 	for _, resource := range resources {
+		if strings.HasPrefix(resource, tp.workingDirectory) {
+			resource = resource[len(tp.workingDirectory)+1:]
+		}
 		_, err := copyFile(filepath.Join(destFolder, resource), filepath.Join(tp.workingDirectory, resource))
 		if err != nil {
 			return err
@@ -47,6 +52,7 @@ func runTaskCopyResources(tp taskParams) error {
 }
 
 func copyFile(dstName, srcName string) (written int64, err error) {
+    log.Printf("Copying file %s to %s", srcName, dstName)
     src, err := os.Open(srcName)
     if err != nil {
         return

@@ -26,6 +26,7 @@ const (
 	NETBSD  = "netbsd"
 	OPENBSD = "openbsd"
 	WINDOWS = "windows"
+	PLAN9 = "plan9"
 	// Message to install go from source, incase it is missing
 	MSG_INSTALL_GO_FROM_SOURCE = "goxc requires Go to be installed from Source. Please follow instructions at http://golang.org/doc/install/source"
 )
@@ -87,23 +88,34 @@ const (
 )
 
 // Supported platforms
-var PLATFORMS = [][]string{
-	{DARWIN, X86},
-	{DARWIN, AMD64},
-	{LINUX, X86},
-	{LINUX, AMD64},
-	{LINUX, ARM},
-	{FREEBSD, X86},
-	{FREEBSD, AMD64},
-	// {FREEBSD, ARM},
-	// couldnt build toolchain for netbsd using a linux 386 host: 2013-02-19
-	//	{NETBSD, X86},
-	//	{NETBSD, AMD64},
-	{OPENBSD, X86},
-	{OPENBSD, AMD64},
-	{WINDOWS, X86},
-	{WINDOWS, AMD64},
-}
+var (
+	SUPPORTED_PLATFORMS_1_0 = [][]string{
+		{DARWIN, X86},
+		{DARWIN, AMD64},
+		{LINUX, X86},
+		{LINUX, AMD64},
+		{LINUX, ARM},
+		{FREEBSD, X86},
+		{FREEBSD, AMD64},
+		// {FREEBSD, ARM},
+		// couldnt build toolchain for netbsd using a linux 386 host: 2013-02-19
+		//	{NETBSD, X86},
+		//	{NETBSD, AMD64},
+		{OPENBSD, X86},
+		{OPENBSD, AMD64},
+		{WINDOWS, X86},
+		{WINDOWS, AMD64} }
+	NEW_PLATFORMS_1_1 = [][]string{
+		{FREEBSD, ARM},
+		{NETBSD, X86},
+		{NETBSD, AMD64},
+		{NETBSD, ARM},
+		{PLAN9, X86} }
+
+	SUPPORTED_PLATFORMS_1_1 = append( append([][]string{}, SUPPORTED_PLATFORMS_1_0...), NEW_PLATFORMS_1_1...)
+
+)
+
 
 var (
 	TASKS_CLEAN    = []string{TASK_GO_CLEAN, TASK_CLEAN_DESTINATION}
