@@ -25,7 +25,7 @@ import (
 func init() {
 	register(Task{
 		"clean-destination",
-		"Delete the output folder for this version of the artifact.",
+		"Delete the output directory for this version of the artifact.",
 		runTaskCleanDestination,
 		nil})
 }

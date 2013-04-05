@@ -259,14 +259,14 @@ func interpretSettings(call []string) (string, config.Settings) {
 		workingDirectory = workingDirectoryFlag
 	} else if len(args) < 1 {
 		if isBuildToolchain {
-			//default to HOME folder
-			log.Printf("Building toolchain, so getting config from HOME directory. To use current folder's config, specify the folder (i.e. goxc -t .)")
+			//default to HOME dir
+			log.Printf("Building toolchain, so getting config from HOME directory. To use current directory's config, use the wd option (i.e. goxc -t -wd=.)")
 			workingDirectory = userHomeDir()
 		} else {
 			if isVerbose {
-				log.Printf("Using config from current folder")
+				log.Printf("Using config from current directory")
 			}
-			//default to current folder
+			//default to current directory
 			workingDirectory = "."
 		}
 	} else {
@@ -344,7 +344,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.BoolVar(&isVersion, "version", false, "Print version")
 
 	flagSet.BoolVar(&isVerbose, "v", false, "Verbose")
-	flagSet.StringVar(&isCliZipArchives, "z", "", "DEPRECATED (use archive & rmbin tasks instead): create ZIP archives instead of folders (true/false. default=true)")
+	flagSet.StringVar(&isCliZipArchives, "z", "", "DEPRECATED (use archive & rmbin tasks instead): create ZIP archives instead of directories (true/false. default=true)")
 	flagSet.StringVar(&tasksToRun, "tasks", "", "Tasks to run. Use `goxc -h tasks` for more details")
 	flagSet.StringVar(&tasksPlus, "tasks+", "", "Additional tasks to run")
 	flagSet.StringVar(&tasksMinus, "tasks-", "", "Tasks to exclude")
@@ -439,7 +439,7 @@ func printFlag(flag *flag.Flag, isBool bool) {
 func userHomeDir() string {
 	usr, err := user.Current()
 	if err != nil {
-		log.Printf("Could not get home folder: %s", err)
+		log.Printf("Could not get home directory: %s", err)
 		return os.Getenv("HOME")
 	}
 	log.Printf("user dir: %s", usr.HomeDir)

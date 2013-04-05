@@ -8,7 +8,7 @@ By default, goxc [g]zips up the programs and generates a 'downloads page' in mar
 goxc is written in Go but uses *os.exec* to call 'go build' with the appropriate flags & env variables for each supported platform.
 
 goxc was inspired by Dave Cheney's Bash script [golang-crosscompile](https://github.com/davecheney/golang-crosscompile).
-BUT, goxc crosscompiles to all platforms at once. The artifacts are saved into a folder structure along with a markdown file of relative links.
+BUT, goxc crosscompiles to all platforms at once. The artifacts are saved into a directory structure along with a markdown file of relative links.
 
 Thanks to [dchest](https://github.com/dchest) for the tidy-up and adding the zip feature, and [matrixik](https://bitbucket.org/matrixik) for his improvements and input.
 
@@ -37,11 +37,11 @@ To build the toolchains for all 11 platforms:
 
 To build [g]zipped binaries for your app:
 
-	goxc path/to/app/folder
+	goxc path/to/app/dir
 
 OR
 
-	cd path/to/app/folder
+	cd path/to/app/dir
 	goxc
 
 
@@ -54,7 +54,7 @@ Use `goxc -h options` to list all options.
 
 	goxc -os=linux -arch="amd64 arm"
 
- * e.g. To set a destination root folder and artifact version number:
+ * e.g. To set a destination root directory and artifact version number:
 
 	goxc -d=my/jekyll/site/downloads -pv=0.1.1
 
@@ -75,16 +75,18 @@ goxc performs a number of operations, defined as tasks. You can specify tasks wi
 ### Available tasks
 
  * toolchain       Build toolchain. Make sure to run this each time you update go source.
- * clean-destination  Delete the output folder for this version of the artifact.
+ * clean-destination  Delete the output directory for this version of the artifact.
  * go-clean        runs `go clean`.
  * go-fmt          runs `go fmt ./...`.
- * go-test         runs `go test ./...`. (folder is configurable).
+ * go-test         runs `go test ./...`. (directory is configurable).
  * go-vet          runs `go vet ./...`.
  * go-install      runs `go install`. installs a version consistent with goxc-built binaries.
  * xc              Cross compile. Builds executables for other platforms.
  * codesign        sign code for Mac. Only Mac hosts are supported for this task.
+ * copy-resources  Copies resources to the 'downloads' area.
  * archive         Create a compressed archive. Currently 'zip' format is used for all platforms except Linux (tar.gz)
- * rmbin           delete binary. Normally runs after 'archive' task to reduce size of output folder.
+ * pkg-build       Build a binary package. Currently only supports .deb format for Debian/Ubuntu
+ * rmbin           delete binary. Normally runs after 'archive' task to reduce size of output directory.
  * downloads-page  Generate a downloads page. Currently only supports Markdown format.
 
 ### Task aliases
@@ -92,11 +94,11 @@ goxc performs a number of operations, defined as tasks. You can specify tasks wi
 Task aliases are a name given to a sequence of tasks. You can specify tasks or aliases interchangeably.
 Specify aliases wherever possible.
 
- * all             [toolchain go-fmt go-vet go-test go-install xc codesign archive rmbin downloads-page]
- * package         [archive rmbin downloads-page]
- * default         [go-vet go-test go-install xc codesign archive rmbin downloads-page]
+ * all             [toolchain go-fmt go-vet go-test go-install xc codesign copy-resources archive pkg-build rmbin downloads-page]
+ * package         [archive pkg-build rmbin downloads-page]
+ * default         [go-vet go-test go-install xc codesign copy-resources archive pkg-build rmbin downloads-page]
  * validate        [go-vet go-test]
- * compile         [go-install xc codesign]
+ * compile         [go-install xc codesign copy-resources]
  * clean           [go-clean clean-destination]
 
 ### NEW TASK in 0.5.3
@@ -115,23 +117,23 @@ Alternatively, run your normal tasks excluding 'rmbin', then call pkg-build indi
 Outcome
 -------
 
-By default, artifacts are generated and then immediately archived into (outputfolder).
+By default, artifacts are generated and then immediately archived into (outputdir).
 
-e.g.1 /my/outputfolder/0.1.1/linux_arm/myapp_0.1.1_linux_arm.tar.gz
-e.g.2 /my/outputfolder/0.1.1/windows_386/myapp_0.1.1_windows_386.zip
+e.g.1 /my/outputdir/0.1.1/linux_arm/myapp_0.1.1_linux_arm.tar.gz
+e.g.2 /my/outputdir/0.1.1/windows_386/myapp_0.1.1_windows_386.zip
 
 If you specified the version number -pv=123 then the filename would be myapp_0.1.1_linux_arm_123.tar.gz.
 
-By default, the output folder is ($GOBIN)/(appname)-xc, and the version is 'unknown', but you can specify these.
+By default, the output directory is ($GOBIN)/(appname)-xc, and the version is 'unknown', but you can specify these.
 
 e.g.
 
       goxc -pv=0.1.1 -d=/home/me/myapp/ghpages/downloads/
 
 
-If non-archived, artifacts generated into a folder structure as follows:
+If non-archived, artifacts generated into a directory structure as follows:
 
- (outputfolder)/(version)/(OS)_(ARCH)/(appname)(.exe?)
+ (outputdir)/(version)/(OS)_(ARCH)/(appname)(.exe?)
 
 Configuration file
 -----------------

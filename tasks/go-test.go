@@ -27,7 +27,7 @@ import (
 func init() {
 	register(Task{
 		core.TASK_GO_TEST,
-		"runs `go test ./...`. (folder is configurable).",
+		"runs `go test ./...`. (dir is configurable).",
 		runTaskGoTest,
 		map[string]interface{}{"dir": "./..."}})
 }
