@@ -17,6 +17,9 @@ package platforms
 */
 
 import (
+	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
+	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
+	"github.com/laher/goxc/core"
 	"log"
 	"strings"
 )
@@ -59,11 +62,11 @@ func ApplyBuildConstraints(buildConstraints string, unfilteredPlatforms [][]stri
 }
 
 func IsArch(part string) bool {
-	return pos(ARCHS, part) > -1
+	return core.StringSlicePos(ARCHS, part) > -1
 }
 
 func IsOs(part string) bool {
-	return pos(OSES, part) > -1
+	return core.StringSlicePos(OSES, part) > -1
 }
 
 func isNegative(part string) (bool, string) {
@@ -73,27 +76,7 @@ func isNegative(part string) (bool, string) {
 	}
 	return false, part
 }
-func delIndex(a []string, i int) []string {
-	a = append(a[:i], a[i+1:]...)
-	// OR  a = a[:i+copy(a[i:], a[i+1:])]
-	return a
-}
-func del(slice []string, value string) []string {
-	p := pos(slice, value)
-	if p > -1 {
-		return delIndex(slice, p)
-	}
-	return slice
-}
 
-func pos(slice []string, value string) int {
-	for p, v := range slice {
-		if v == value {
-			return p
-		}
-	}
-	return -1
-}
 
 func resolveItem(itemOses, itemNegOses, itemArchs, itemNegArchs []string, unfilteredPlatforms [][]string) [][]string {
 	ret := [][]string{}
@@ -102,7 +85,7 @@ func resolveItem(itemOses, itemNegOses, itemArchs, itemNegArchs []string, unfilt
 		itemOses = getOses(unfilteredPlatforms)
 	}
 	for _, itemNegOs := range itemNegOses {
-		del(itemOses, itemNegOs)
+		core.StringSliceDel(itemOses, itemNegOs)
 	}
 
 	for _, itemOs := range itemOses {
@@ -113,7 +96,7 @@ func resolveItem(itemOses, itemNegOses, itemArchs, itemNegArchs []string, unfilt
 			itemArchsThisOs = getArchsForOs(unfilteredPlatforms, itemOs)
 		}
 		for _, itemNegArch := range itemNegArchs {
-			itemArchsThisOs = del(itemArchsThisOs, itemNegArch)
+			itemArchsThisOs = core.StringSliceDel(itemArchsThisOs, itemNegArch)
 		}
 		for _, itemArch := range itemArchsThisOs {
 			ret = append(ret, []string{itemOs, itemArch})
