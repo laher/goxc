@@ -21,8 +21,8 @@ import (
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/core"
 	"io"
-	"os"
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -30,10 +30,10 @@ import (
 //runs automatically
 func init() {
 	register(Task{
-	core.TASK_COPY_RESOURCES,
-	"Copy resources",
-	runTaskCopyResources,
-	nil })
+		TASK_COPY_RESOURCES,
+		"Copy resources",
+		runTaskCopyResources,
+		nil})
 }
 
 func runTaskCopyResources(tp taskParams) error {
@@ -52,18 +52,18 @@ func runTaskCopyResources(tp taskParams) error {
 }
 
 func copyFile(dstName, srcName string) (written int64, err error) {
-    log.Printf("Copying file %s to %s", srcName, dstName)
-    src, err := os.Open(srcName)
-    if err != nil {
-        return
-    }
-    defer src.Close()
+	log.Printf("Copying file %s to %s", srcName, dstName)
+	src, err := os.Open(srcName)
+	if err != nil {
+		return
+	}
+	defer src.Close()
 
-    dst, err := os.Create(dstName)
-    if err != nil {
-        return
-    }
-    defer dst.Close()
+	dst, err := os.Create(dstName)
+	if err != nil {
+		return
+	}
+	defer dst.Close()
 
-    return io.Copy(dst, src)
+	return io.Copy(dst, src)
 }

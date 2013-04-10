@@ -1,3 +1,4 @@
+// GOXC IS NOT READY FOR USE AS AN API - function names and packages will continue to change until version 1.0
 package main
 
 /*
@@ -28,6 +29,7 @@ import (
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/platforms"
 	"github.com/laher/goxc/tasks"
 )
 
@@ -47,19 +49,19 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION          = "0.5.x"
-	settings         config.Settings
-	configName       string
-	isVersion        bool
-	isHelp           bool
-	isBuildToolchain bool
-	tasksToRun       string
-	tasksPlus        string
-	tasksMinus       string
-	isCliZipArchives string
-	codesignId       string
-	isWriteConfig    bool
-	isVerbose        bool
+	VERSION              = "0.5.x"
+	settings             config.Settings
+	configName           string
+	isVersion            bool
+	isHelp               bool
+	isBuildToolchain     bool
+	tasksToRun           string
+	tasksPlus            string
+	tasksMinus           string
+	isCliZipArchives     string
+	codesignId           string
+	isWriteConfig        bool
+	isVerbose            bool
 	workingDirectoryFlag string
 )
 
@@ -146,7 +148,7 @@ func fillDefaults(settings config.Settings) config.Settings {
 	}
 
 	if len(settings.Tasks) == 0 {
-		settings.Tasks = core.TASKS_DEFAULT
+		settings.Tasks = tasks.TASKS_DEFAULT
 	}
 	if settings.TaskSettings == nil {
 		settings.TaskSettings = make(map[string]interface{})
@@ -190,7 +192,8 @@ func goXC(call []string) {
 			log.Printf("Final settings %+v", settings)
 		}
 		//v2.0.0: Removed PKG_VERSION parsing
-		destPlatforms := core.GetDestPlatforms(settings.Os, settings.Arch)
+		destPlatforms := platforms.GetDestPlatforms(settings.Os, settings.Arch)
+		destPlatforms = platforms.ApplyBuildConstraints(settings.BuildConstraints, destPlatforms)
 		tasks.RunTasks(workingDirectory, destPlatforms, settings)
 	}
 }
@@ -206,9 +209,9 @@ func interpretSettings(call []string) (string, config.Settings) {
 		}
 		if isBuildToolchain {
 			if tasksToRun != "" {
-				tasksToRun = core.TASK_BUILD_TOOLCHAIN + "," + tasksToRun
+				tasksToRun = tasks.TASK_BUILD_TOOLCHAIN + "," + tasksToRun
 			} else {
-				tasksToRun = core.TASK_BUILD_TOOLCHAIN
+				tasksToRun = tasks.TASK_BUILD_TOOLCHAIN
 			}
 		}
 		if tasksPlus != "" {
@@ -225,14 +228,14 @@ func interpretSettings(call []string) (string, config.Settings) {
 		//0.5.0 using Tasks instead of ArtifactTypes
 		if isCliZipArchives == "true" || isCliZipArchives == "t" {
 			//settings.ArtifactTypes = []string{core.ARTIFACT_TYPE_ZIP}
-			settings.Tasks = remove(settings.TasksExclude, core.TASK_ARCHIVE)
-			settings.Tasks = appendIfMissing(settings.Tasks, core.TASK_ARCHIVE)
+			settings.Tasks = remove(settings.TasksExclude, tasks.TASK_ARCHIVE)
+			settings.Tasks = appendIfMissing(settings.Tasks, tasks.TASK_ARCHIVE)
 		} else if isCliZipArchives == "false" || isCliZipArchives == "f" {
-			settings.TasksExclude = appendIfMissing(settings.TasksExclude, core.TASK_ARCHIVE)
+			settings.TasksExclude = appendIfMissing(settings.TasksExclude, tasks.TASK_ARCHIVE)
 		}
 		//TODO use Setting
 		if codesignId != "" {
-			settings.SetTaskSetting(core.TASK_CODESIGN, "id", codesignId)
+			settings.SetTaskSetting(tasks.TASK_CODESIGN, "id", codesignId)
 		}
 	}
 	//log.Printf("Settings: %s", settings)
@@ -322,7 +325,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.Arch, "arch", "", "Specify Arch (default is all - \"386 amd64 arm\")")
 
 	//TODO introduce and implement in time for 0.6
-	//flagSet.StringVar(&settings.BuildConstraints, "bc", "", "Specify build constraints (e.g. 'linux,arm windows')")
+	flagSet.StringVar(&settings.BuildConstraints, "bc", "", "Specify build constraints (e.g. 'linux,arm windows')")
 
 	flagSet.StringVar(&workingDirectoryFlag, "wd", "", "Specify directory to work on")
 

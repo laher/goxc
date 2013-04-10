@@ -20,7 +20,6 @@ import (
 	"fmt"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
-	"github.com/laher/goxc/core"
 	"io/ioutil"
 	"log"
 	"os"
@@ -29,7 +28,7 @@ import (
 )
 
 var dpTask = Task{
-	core.TASK_DOWNLOADS_PAGE,
+	TASK_DOWNLOADS_PAGE,
 	"Generate a downloads page. Currently only supports Markdown format.",
 	runTaskDownloadsPage,
 	map[string]interface{}{"filename": "downloads.md",
@@ -41,13 +40,13 @@ func init() {
 }
 
 func runTaskDownloadsPage(tp taskParams) error {
-	filename := tp.settings.GetTaskSetting(core.TASK_DOWNLOADS_PAGE, "filename").(string)
+	filename := tp.settings.GetTaskSetting(TASK_DOWNLOADS_PAGE, "filename").(string)
 	reportFilename := filepath.Join(tp.outDestRoot, tp.settings.GetFullVersionName(), filename)
 	flags := os.O_WRONLY | os.O_TRUNC | os.O_CREATE
 	f, err := os.OpenFile(reportFilename, flags, 0600)
 	if err == nil {
 		defer f.Close()
-		fileheader := tp.settings.GetTaskSetting(core.TASK_DOWNLOADS_PAGE, "fileheader").(string)
+		fileheader := tp.settings.GetTaskSetting(TASK_DOWNLOADS_PAGE, "fileheader").(string)
 		if fileheader != "" {
 			_, err = fmt.Fprintf(f, "%s\n\n", fileheader)
 		}

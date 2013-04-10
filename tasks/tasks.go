@@ -1,3 +1,4 @@
+// GOXC IS NOT READY FOR USE AS AN API - function names and packages will continue to change until version 1.0
 package tasks
 
 /*
@@ -25,6 +26,47 @@ import (
 	"log"
 )
 
+const (
+	TASK_BUILD_TOOLCHAIN = core.TASK_BUILD_TOOLCHAIN
+
+	TASK_CLEAN_DESTINATION = "clean-destination"
+	TASK_GO_CLEAN          = "go-clean"
+
+	TASK_GO_VET  = "go-vet"
+	TASK_GO_TEST = "go-test"
+	TASK_GO_FMT  = "go-fmt"
+
+	TASK_GO_INSTALL = "go-install"
+	TASK_XC         = "xc"
+	TASK_CODESIGN   = "codesign"
+
+	TASK_COPY_RESOURCES = "copy-resources"
+	TASK_ARCHIVE        = "archive" //zip
+	TASK_REMOVE_BIN     = "rmbin"   //after zipping
+	TASK_DOWNLOADS_PAGE = "downloads-page"
+
+	TASK_PKG_BUILD = "pkg-build"
+
+	TASKALIAS_CLEAN = "clean"
+
+	TASKALIAS_VALIDATE = "validate"
+	TASKALIAS_COMPILE  = "compile"
+	TASKALIAS_PACKAGE  = "package"
+
+	TASKALIAS_DEFAULT = "default"
+	TASKALIAS_ALL     = "all"
+)
+
+var (
+	TASKS_CLEAN    = []string{TASK_GO_CLEAN, TASK_CLEAN_DESTINATION}
+	TASKS_VALIDATE = []string{TASK_GO_VET, TASK_GO_TEST}
+	TASKS_COMPILE  = []string{TASK_GO_INSTALL, TASK_XC, TASK_CODESIGN, TASK_COPY_RESOURCES}
+	TASKS_PACKAGE  = []string{TASK_ARCHIVE, TASK_PKG_BUILD, TASK_REMOVE_BIN, TASK_DOWNLOADS_PAGE}
+	TASKS_DEFAULT  = append(append(append([]string{}, TASKS_VALIDATE...), TASKS_COMPILE...), TASKS_PACKAGE...)
+	TASKS_OTHER    = []string{TASK_BUILD_TOOLCHAIN, TASK_GO_FMT}
+	TASKS_ALL      = append(append([]string{}, TASKS_OTHER...), TASKS_DEFAULT...)
+)
+
 type taskParams struct {
 	destPlatforms                 [][]string
 	appName                       string
@@ -42,12 +84,12 @@ type Task struct {
 var (
 	allTasks = make(map[string]Task)
 	Aliases  = map[string][]string{
-		core.TASKALIAS_CLEAN:    core.TASKS_CLEAN,
-		core.TASKALIAS_VALIDATE: core.TASKS_VALIDATE,
-		core.TASKALIAS_COMPILE:  core.TASKS_COMPILE,
-		core.TASKALIAS_PACKAGE:  core.TASKS_PACKAGE,
-		core.TASKALIAS_DEFAULT:  core.TASKS_DEFAULT,
-		core.TASKALIAS_ALL:      core.TASKS_ALL}
+		TASKALIAS_CLEAN:    TASKS_CLEAN,
+		TASKALIAS_VALIDATE: TASKS_VALIDATE,
+		TASKALIAS_COMPILE:  TASKS_COMPILE,
+		TASKALIAS_PACKAGE:  TASKS_PACKAGE,
+		TASKALIAS_DEFAULT:  TASKS_DEFAULT,
+		TASKALIAS_ALL:      TASKS_ALL}
 )
 
 func register(task Task) {

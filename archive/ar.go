@@ -24,6 +24,7 @@ import (
 	"os"
 	"strings"
 )
+
 /* example ...
 !<arch>
 debian-binary   1282478016  0     0     100644  4         `
@@ -35,19 +36,21 @@ control.tar.gz  1282478016  0     0     100644  444       `
 func ArForDeb(archiveFilename string, items [][]string) error {
 	// open output file
 	fo, err := os.Create(archiveFilename)
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 	// close fo on exit and check for its returned error
 	defer func() {
 		err := fo.Close()
 		if err != nil {
-	            log.Printf("Error closing output file: %v", err)
+			log.Printf("Error closing output file: %v", err)
 		}
 	}()
 	header := "!<arch>\n"
 	if _, err := fo.Write([]byte(header)); err != nil {
 		log.Printf("Write error: %v", err)
 		return err
-        } else {
+	} else {
 		for _, item := range items {
 			fi, err := os.Open(item[0])
 			if err != nil {
@@ -66,13 +69,13 @@ func ArForDeb(archiveFilename string, items [][]string) error {
 					//Files only atm (not dirs)
 					mode := "100644"
 					size := fmt.Sprintf("%d", finf.Size())
-					line := fmt.Sprintf("%s%s%s%s%s%s`\n", pad(item[1],16), pad(fmodTimestamp, 12), pad(gid, 6), pad(uid, 6), pad(mode, 8), pad(size, 10))
+					line := fmt.Sprintf("%s%s%s%s%s%s`\n", pad(item[1], 16), pad(fmodTimestamp, 12), pad(gid, 6), pad(uid, 6), pad(mode, 8), pad(size, 10))
 					if _, err := fo.Write([]byte(line)); err != nil {
 						return err
 					} else {
 						copyFile(fi, fo)
 						//0.5.4 bugfix: data section is 2-byte aligned.
-						if finf.Size() % 2 == 1 {
+						if finf.Size()%2 == 1 {
 							if _, err = fo.Write([]byte("\n")); err != nil {
 								return err
 							}
@@ -87,26 +90,32 @@ func ArForDeb(archiveFilename string, items [][]string) error {
 }
 
 func copyFile(fi *os.File, fo *os.File) {
-    // make a read buffer
-    r := bufio.NewReader(fi)
-    // make a write buffer
-    w := bufio.NewWriter(fo)
+	// make a read buffer
+	r := bufio.NewReader(fi)
+	// make a write buffer
+	w := bufio.NewWriter(fo)
 
-    // make a buffer to keep chunks that are read
-    buf := make([]byte, 1024)
-    for {
-        // read a chunk
-        n, err := r.Read(buf)
-        if err != nil && err != io.EOF { panic(err) }
-        if n == 0 { break }
+	// make a buffer to keep chunks that are read
+	buf := make([]byte, 1024)
+	for {
+		// read a chunk
+		n, err := r.Read(buf)
+		if err != nil && err != io.EOF {
+			panic(err)
+		}
+		if n == 0 {
+			break
+		}
 
-        // write a chunk
-        if _, err := w.Write(buf[:n]); err != nil {
-            panic(err)
-        }
-    }
+		// write a chunk
+		if _, err := w.Write(buf[:n]); err != nil {
+			panic(err)
+		}
+	}
 
-    if err := w.Flush(); err != nil { panic(err) }
+	if err := w.Flush(); err != nil {
+		panic(err)
+	}
 }
 
 func pad(value string, length int) string {

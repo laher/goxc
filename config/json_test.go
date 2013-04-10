@@ -8,7 +8,7 @@ import (
 func TestStripEmpties(t *testing.T) {
 	js := []byte(`{ "Settings": {
 	"Verbosity" : "",
-	"artifactVersion" : "0.1.1",
+	"PackageVersion" : "0.1.1",
 	"zipArchives" : false,
 	"ArtifactsDest" : "../goxc-pages/",
 	"platforms": ["windows/386"],
@@ -24,7 +24,7 @@ func TestStripEmpties(t *testing.T) {
 func TestLoadSettings(t *testing.T) {
 	js := []byte(`{ "Settings" : {
 	"Verbosity" : "v",
-	"artifactVersion" : "0.1.1",
+	"PackageVersion" : "0.1.1",
 	"zipArchives" : false,
 	"ArtifactsDest" : "../goxc-pages/",
 	"platforms": "windows/386"

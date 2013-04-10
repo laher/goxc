@@ -20,8 +20,9 @@ import (
 	"fmt"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
-	"github.com/laher/goxc/core"
 	"github.com/laher/goxc/archive"
+	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/platforms"
 	"io/ioutil"
 	"log"
 	"os"
@@ -29,14 +30,13 @@ import (
 	//"strings"
 )
 
-
 //runs automatically
 func init() {
 	register(Task{
-	core.TASK_PKG_BUILD,
-	"Build a binary package. Currently only supports .deb format for Debian/Ubuntu Linux.",
-	runTaskPkgBuild,
-	map[string]interface{}{"metadata": map[string]interface{}{"maintainer": "unknown"},"metadata-deb": map[string]interface{}{"Depends": "golang"},"rmtemp": true}})
+		TASK_PKG_BUILD,
+		"Build a binary package. Currently only supports .deb format for Debian/Ubuntu Linux.",
+		runTaskPkgBuild,
+		map[string]interface{}{"metadata": map[string]interface{}{"maintainer": "unknown"}, "metadata-deb": map[string]interface{}{"Depends": "golang"}, "rmtemp": true}})
 }
 
 func runTaskPkgBuild(tp taskParams) (err error) {
@@ -52,7 +52,7 @@ func runTaskPkgBuild(tp taskParams) (err error) {
 }
 
 func pkgBuildPlat(destOs, destArch string, tp taskParams) (err error) {
-	if destOs == core.LINUX {
+	if destOs == platforms.LINUX {
 		//TODO rpm
 		//TODO sdeb
 		return debBuild(destOs, destArch, tp)
@@ -82,20 +82,20 @@ func getDebControlFileContent(appName, maintainer, version, arch, description st
 func getDebArch(destArch string) string {
 	architecture := "all"
 	switch destArch {
-	case core.X86:
+	case platforms.X86:
 		architecture = "i386"
-	case core.ARM:
+	case platforms.ARM:
 		architecture = "armel"
-	case core.AMD64:
+	case platforms.AMD64:
 		architecture = "amd64"
 	}
 	return architecture
 }
 
 func debBuild(destOs, destArch string, tp taskParams) (err error) {
-	metadata := tp.settings.GetTaskSetting(core.TASK_PKG_BUILD, "metadata").(map[string]interface{})
-	metadataDeb := tp.settings.GetTaskSetting(core.TASK_PKG_BUILD, "metadata-deb").(map[string]interface{})
-	rmtemp := tp.settings.GetTaskSetting(core.TASK_PKG_BUILD, "rmtemp").(bool)
+	metadata := tp.settings.GetTaskSetting(TASK_PKG_BUILD, "metadata").(map[string]interface{})
+	metadataDeb := tp.settings.GetTaskSetting(TASK_PKG_BUILD, "metadata-deb").(map[string]interface{})
+	rmtemp := tp.settings.GetTaskSetting(TASK_PKG_BUILD, "rmtemp").(bool)
 	relativeBin := core.GetRelativeBin(destOs, destArch, tp.appName, false, tp.settings.GetFullVersionName())
 	appPath := filepath.Join(tp.outDestRoot, relativeBin)
 	debDir := filepath.Dir(appPath)
@@ -120,25 +120,25 @@ func debBuild(destOs, destArch string, tp taskParams) (err error) {
 	if tp.settings.IsVerbose() {
 		log.Printf("Control file:\n%s", string(controlContent))
 	}
-	err = ioutil.WriteFile(filepath.Join(tmpDir,"control"), controlContent, 0644)
+	err = ioutil.WriteFile(filepath.Join(tmpDir, "control"), controlContent, 0644)
 	if err != nil {
 		return err
 	}
-	err = archive.TarGz(filepath.Join(tmpDir,"control.tar.gz"), [][]string{[]string{ filepath.Join(tmpDir,"control"), "control"} })
+	err = archive.TarGz(filepath.Join(tmpDir, "control.tar.gz"), [][]string{[]string{filepath.Join(tmpDir, "control"), "control"}})
 	if err != nil {
 		return err
 	}
 	//build
 	//TODO add resources to /usr/share
-	err = archive.TarGz(filepath.Join(tmpDir,"data.tar.gz"), [][]string{[]string{ appPath, "/usr/bin/"+tp.appName} })
+	err = archive.TarGz(filepath.Join(tmpDir, "data.tar.gz"), [][]string{[]string{appPath, "/usr/bin/" + tp.appName}})
 	if err != nil {
 		return err
 	}
-	targetFile := filepath.Join(debDir, fmt.Sprintf("%s_%s_%s.deb", tp.appName, tp.settings.GetFullVersionName(), getDebArch(destArch) )) //goxc_0.5.2_i386.deb")
+	targetFile := filepath.Join(debDir, fmt.Sprintf("%s_%s_%s.deb", tp.appName, tp.settings.GetFullVersionName(), getDebArch(destArch))) //goxc_0.5.2_i386.deb")
 	inputs := [][]string{
-	 []string{filepath.Join(tmpDir,"debian-binary"),"debian-binary"},
-	 []string{filepath.Join(tmpDir,"control.tar.gz"),"control.tar.gz"},
-	 []string{filepath.Join(tmpDir,"data.tar.gz"),"data.tar.gz"}}
+		[]string{filepath.Join(tmpDir, "debian-binary"), "debian-binary"},
+		[]string{filepath.Join(tmpDir, "control.tar.gz"), "control.tar.gz"},
+		[]string{filepath.Join(tmpDir, "data.tar.gz"), "data.tar.gz"}}
 	err = archive.ArForDeb(targetFile, inputs)
 	return
 }

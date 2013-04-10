@@ -21,6 +21,7 @@ import (
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/platforms"
 	"log"
 	"os/exec"
 	"path/filepath"
@@ -28,7 +29,7 @@ import (
 )
 
 var codesignTask = Task{
-	core.TASK_CODESIGN,
+	TASK_CODESIGN,
 	"sign code for Mac. Only Mac hosts are supported for this task.",
 	runTaskCodesign,
 	map[string]interface{}{"id": ""}}
@@ -53,7 +54,7 @@ func runTaskCodesign(tp taskParams) error {
 func codesignPlat(goos, arch string, outDestRoot string, relativeBin string, settings config.Settings) {
 	// settings.codesign only works on OS X for binaries generated for OS X.
 	id := settings.GetTaskSetting("codesign", "id")
-	if id != "" && runtime.GOOS == core.DARWIN && goos == core.DARWIN {
+	if id != "" && runtime.GOOS == platforms.DARWIN && goos == platforms.DARWIN {
 		if err := signBinary(filepath.Join(outDestRoot, relativeBin), id.(string)); err != nil {
 			log.Printf("codesign failed: %s", err)
 		} else {

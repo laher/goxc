@@ -2,7 +2,7 @@
 	"FormatVersion": "0.5.0",
 	"Settings": {
 		"ArtifactsDest": "../goxc-pages/dl",
-		"PackageVersion": "0.5.6",
+		"PackageVersion": "0.5.7",
 		"Resources": {
 			"Include": "README.md"
 		},

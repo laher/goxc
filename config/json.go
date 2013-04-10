@@ -238,9 +238,9 @@ func loadJsonFile(jsonFile string, verbose bool) (JsonSettings, error) {
 						for k2, v2 := range v.(map[string]interface{}) {
 							switch k2 {
 							case "Include":
-								jsonSettings.Settings.Resources.Include, err = fromJsonString(v2, k + ":" + k2)
+								jsonSettings.Settings.Resources.Include, err = fromJsonString(v2, k+":"+k2)
 							case "Exclude":
-								jsonSettings.Settings.Resources.Exclude, err = fromJsonString(v2, k + ":" + k2)
+								jsonSettings.Settings.Resources.Exclude, err = fromJsonString(v2, k+":"+k2)
 							}
 						}
 					case "PackageVersion":

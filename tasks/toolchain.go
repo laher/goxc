@@ -20,6 +20,7 @@ import (
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
 	"github.com/laher/goxc/executils"
+	"github.com/laher/goxc/platforms"
 	"log"
 	"os"
 	"os/exec"
@@ -57,7 +58,7 @@ func buildToolchain(goos string, arch string, settings config.Settings) error {
 	cgoEnabled := executils.CgoEnabled(goos, arch)
 	cmd.Env = append([]string{}, os.Environ()...)
 	cmd.Env = append(cmd.Env, "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
-	if goos == core.LINUX && arch == core.ARM {
+	if goos == platforms.LINUX && arch == platforms.ARM {
 		// see http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go
 		cmd.Env = append(cmd.Env, "GOARM=5")
 	}

@@ -1,3 +1,4 @@
+// GOXC IS NOT READY FOR USE AS AN API - function names and packages will continue to change until version 1.0
 package core
 
 /*
@@ -29,6 +30,8 @@ import (
 	"runtime"
 	"strings"
 )
+
+const ()
 
 func GetMakeScriptPath(goroot string) string {
 	gohostos := runtime.GOOS
@@ -142,69 +145,6 @@ func GetGoPathElement(workingDirectory string) string {
 		}
 	}
 	return gopath
-}
-
-func getSupportedPlatforms() [][]string {
-	if strings.HasPrefix(runtime.Version(), "go1.0") {
-		return SUPPORTED_PLATFORMS_1_0
-	}
-	return SUPPORTED_PLATFORMS_1_1
-}
-
-//0.5 add support for space delimiters (similar to BuildConstraints)
-//0.5 add support for different oses/services
-func GetDestPlatforms(specifiedOses string, specifiedArches string) [][]string {
-	destOses := strings.FieldsFunc(specifiedOses, func(r rune) bool { return r == ',' || r == ' ' })
-	destArchs := strings.FieldsFunc(specifiedArches, func(r rune) bool { return r == ',' || r == ' ' })
-
-	for _, o := range destOses {
-		supported := false
-		for _, supportedPlatformArr := range getSupportedPlatforms() {
-			supportedOs := supportedPlatformArr[0]
-			if o == supportedOs {
-				supported = true
-			}
-		}
-		if !supported {
-			log.Printf("WARNING: Operating System '%s' is unsupported", o)
-		}
-	}
-	for _, o := range destArchs {
-		supported := false
-		for _, supportedPlatformArr := range getSupportedPlatforms() {
-			supportedArch := supportedPlatformArr[1]
-			if o == supportedArch {
-				supported = true
-			}
-		}
-		if !supported {
-			log.Printf("WARNING: Architecture '%s' is unsupported", o)
-		}
-	}
-	if len(destOses) == 0 {
-		destOses = []string{""}
-	}
-	if len(destArchs) == 0 {
-		destArchs = []string{""}
-	}
-	var destPlatforms [][]string
-	for _, supportedPlatformArr := range getSupportedPlatforms() {
-		supportedOs := supportedPlatformArr[0]
-		supportedArch := supportedPlatformArr[1]
-		for _, destOs := range destOses {
-			if destOs == "" || supportedOs == destOs {
-				for _, destArch := range destArchs {
-					if destArch == "" || supportedArch == destArch {
-						destPlatforms = append(destPlatforms, supportedPlatformArr)
-					}
-				}
-			}
-		}
-	}
-	if len(destPlatforms) < 1 {
-		log.Printf("WARNING: no valid platforms specified")
-	}
-	return destPlatforms
 }
 
 func GetOutDestRoot(appName string, artifactsDestSetting string, workingDirectory string) string {

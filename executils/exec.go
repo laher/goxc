@@ -1,3 +1,4 @@
+// GOXC IS NOT READY FOR USE AS AN API - function names and packages will continue to change until version 1.0
 package executils
 
 /*
@@ -23,7 +24,7 @@ import (
 	"os/exec"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
-	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/platforms"
 	"runtime"
 	"strings"
 )
@@ -31,7 +32,7 @@ import (
 // ldflags relate to any build task ...
 func GetLdFlagVersionArgs(fullVersionName string) []string {
 	if fullVersionName != "" {
-		return []string{"-ldflags", "-X main.VERSION "+fullVersionName+""}
+		return []string{"-ldflags", "-X main.VERSION " + fullVersionName + ""}
 	}
 	return []string{}
 }
@@ -75,7 +76,7 @@ func InvokeGo(workingDirectory string, args []string, envExtra []string, isVerbo
 }
 
 func PrintableArgs(args []string) string {
-	ret:= ""
+	ret := ""
 	for _, arg := range args {
 		if len(ret) > 0 {
 			ret = ret + " "
@@ -111,7 +112,7 @@ func CgoEnabled(goos, arch string) string {
 	var cgoEnabled string
 	if goos == runtime.GOOS && arch == runtime.GOARCH {
 		//note: added conditional in line with Dave Cheney, but this combination is not yet supported.
-		if runtime.GOOS == core.FREEBSD && runtime.GOARCH == core.ARM {
+		if runtime.GOOS == platforms.FREEBSD && runtime.GOARCH == platforms.ARM {
 			cgoEnabled = "0"
 		} else {
 			cgoEnabled = "1"

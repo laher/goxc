@@ -50,7 +50,6 @@ func TarGz(archiveFilename string, items [][]string) error {
 	return err
 }
 
-
 func TarGzWrite(fileparts []string, tw *tar.Writer, fi os.FileInfo) error {
 	fr, err := os.Open(fileparts[0])
 	if err == nil {
@@ -104,4 +103,3 @@ func addDirectoryToTarGz(dirPath []string, tw *tar.Writer) error {
 	}
 	return err
 }
-

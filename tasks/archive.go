@@ -22,6 +22,7 @@ import (
 	"github.com/laher/goxc/archive"
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/platforms"
 	"log"
 	"path/filepath"
 )
@@ -34,7 +35,7 @@ var archiveTask = Task{
 	"Create a compressed archive. Currently 'zip' format is used for all platforms except Linux (tar.gz)",
 	runTaskArchive,
 
-	map[string]interface{}{"os": map[string]interface{}{core.LINUX: "TarGz"}}}
+	map[string]interface{}{"os": map[string]interface{}{platforms.LINUX: "TarGz"}}}
 
 //runs automatically
 func init() {
@@ -63,11 +64,11 @@ func archivePlat(goos, arch, appName, workingDirectory, outDestRoot string, sett
 
 	var archiver archive.Archiver
 	var ending string
-	osOptions := settings.GetTaskSetting(core.TASK_ARCHIVE, "os").(map[string]interface{})
+	osOptions := settings.GetTaskSetting(TASK_ARCHIVE, "os").(map[string]interface{})
 
 	if osOption, keyExists := osOptions[goos]; keyExists {
 		if osOption == "TarGz" {
-		//if goos == core.LINUX {
+			//if goos == core.LINUX {
 			ending = "tar.gz"
 			archiver = archive.TarGz
 		} else {

@@ -77,6 +77,6 @@ func TestSanityCheck(t *testing.T) {
 }
 
 func TestGoVersion(t *testing.T) {
-	v:= runtime.Version()
+	v := runtime.Version()
 	t.Logf("Version is %s", v)
 }
