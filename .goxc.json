@@ -1,11 +1,10 @@
 {
-	"FormatVersion": "0.5.0",
 	"Settings": {
 		"ArtifactsDest": "../goxc-pages/dl",
-		"PackageVersion": "0.5.8",
 		"Resources": {
 			"Include": "README.md"
 		},
+		"PackageVersion": "0.5.9",
 		"TaskSettings": {
 			"codesign": {
 				"id": "goxc"
@@ -15,19 +14,17 @@
 				"filename": "index.md"
 			},
 			"pkg-build": {
-				"metadata" : {
-					"maintainer" : "Am Laher (https://github.com/laher)",
-					"description" : "Cross-compiler utility for Go"
+				"metadata": {
+					"description": "Cross-compiler utility for Go",
+					"maintainer": "Am Laher (https://github.com/laher)"
 				},
-				"metadata-deb" : {
-					"Depends" : "golang",
-					"Homepage" : "https://github.com/laher/goxc"
+				"metadata-deb": {
+					"Depends": "golang",
+					"Homepage": "https://github.com/laher/goxc"
 				}
 			}
 		},
-		"TasksAppend": [
-			"go-fmt"
-			]
-
-	}
+		"GoxcConfigVersion": "0.5.0"
+	},
+	"FormatVersion": "0.5.0"
 }

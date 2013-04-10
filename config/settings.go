@@ -23,8 +23,8 @@ import (
 )
 
 type Resources struct {
-	Include string
-	Exclude string
+	Include string `json:",omitempty"`
+	Exclude string `json:",omitempty"`
 }
 
 type Settings struct {
@@ -37,34 +37,37 @@ type Settings struct {
 
 	//0.2.0 Tasks replaces IsBuildToolChain bool
 	//0.5.0 Tasks is a much longer list.
-	Tasks []string
+	Tasks []string `json:",omitempty"`
 
 	//0.5.0 adding exclusions. Easier for dealing with aliases. (e.g. Tasks=[default], TasksExclude=[rmbin] is easier than specifying individual tasks)
-	TasksExclude []string
+	TasksExclude []string `json:",omitempty"`
 
 	//0.5.0 adding extra tasks. TODO (maybe) - prepend
-	TasksAppend []string
+	TasksAppend []string `json:",omitempty"`
 
 	//TODO: replace Os/Arch with BuildConstraints?
-	Arch string
-	Os   string
+	Arch string `json:",omitempty"`
+	Os   string `json:",omitempty"`
 
 	//NEW 0.5.5 - implemented 0.5.7
-	BuildConstraints string
+	BuildConstraints string `json:",omitempty"`
 
-	Resources Resources
+	Resources Resources `json:",omitempty"`
 
 	//versioning
-	PackageVersion string
-	BranchName     string
-	PrereleaseInfo string
-	BuildName      string
+	PackageVersion string `json:",omitempty"`
+	BranchName     string `json:",omitempty"`
+	PrereleaseInfo string `json:",omitempty"`
+	BuildName      string `json:",omitempty"`
 
 	//0.2.0 Verbosity replaces Verbose bool
-	Verbosity string // none/debug/
+	Verbosity string  `json:",omitempty"` // none/debug/
 
 	//TaskSettings map[string]map[string]interface{}
-	TaskSettings map[string]interface{}
+	TaskSettings map[string]interface{} `json:",omitempty"`
+
+	//for 0.6.0, to replace 'FormatVersion'
+	GoxcConfigVersion string `json:",omitempty"`
 }
 
 func (s Settings) IsVerbose() bool {

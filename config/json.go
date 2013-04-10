@@ -27,7 +27,7 @@ import (
 	"path/filepath"
 )
 
-const FORMAT_VERSION = "0.5.0"
+const GOXC_CONFIG_VERSION = "0.5.0"
 
 type JsonSettings struct {
 	Settings Settings
@@ -37,7 +37,8 @@ type JsonSettings struct {
 }
 
 func WrapJsonSettings(settings Settings) JsonSettings {
-	return JsonSettings{Settings: settings, FormatVersion: FORMAT_VERSION}
+	settings.GoxcConfigVersion = GOXC_CONFIG_VERSION
+	return JsonSettings{Settings: settings, FormatVersion: GOXC_CONFIG_VERSION}
 }
 
 func LoadJsonConfigOverrideable(dir string, configName string, useLocal bool, verbose bool) (Settings, error) {
@@ -128,8 +129,8 @@ func validateRawJson(rawJson []byte, fileName string) []error {
 	m := f.(map[string]interface{})
 	rejectOldTaskDefinitions := false
 	if formatVersion, keyExists := m["FormatVersion"]; keyExists {
-		if formatVersion != FORMAT_VERSION {
-			log.Printf("WARNING (%s): is an old config file. File version: %s. Expected version %s", fileName, formatVersion, FORMAT_VERSION)
+		if formatVersion != GOXC_CONFIG_VERSION {
+			log.Printf("WARNING (%s): is an old config file. File version: %s. Expected version %s", fileName, formatVersion, GOXC_CONFIG_VERSION)
 			rejectOldTaskDefinitions = true
 		}
 	} else {
@@ -315,12 +316,14 @@ func writeJsonFile(settings JsonSettings, jsonFile string) error {
 		log.Printf("Could NOT marshal json")
 		return err
 	}
+/* StripEmpties no longer required (use omitempty tag)
 	stripped, err := StripEmpties(data, settings.Settings.IsVerbose())
 	if err == nil {
 		data = stripped
 	} else {
 		log.Printf("Error stripping empty config keys - %s", err)
 	}
+*/
 	log.Printf("Writing file %s", jsonFile)
 	return ioutil.WriteFile(jsonFile, data, 0644)
 }
@@ -340,6 +343,7 @@ func writeJson(m JsonSettings) ([]byte, error) {
 	return json.MarshalIndent(m, "", "\t")
 }
 
+//v0.5.9: DEPRECATED
 func StripEmpties(rawJson []byte, verbose bool) ([]byte, error) {
 	var f interface{}
 	err := json.Unmarshal(rawJson, &f)
