@@ -49,7 +49,7 @@ type Settings struct {
 	Arch string
 	Os   string
 
-	//NET 0.5.5
+	//NEW 0.5.5 - implemented 0.5.7
 	BuildConstraints string
 
 	Resources Resources
@@ -150,6 +150,9 @@ func Merge(high Settings, low Settings) Settings {
 
 	if high.Os == "" {
 		high.Os = low.Os
+	}
+	if high.BuildConstraints == "" {
+		high.BuildConstraints = low.BuildConstraints
 	}
 	if high.PackageVersion == "" {
 		high.PackageVersion = low.PackageVersion
