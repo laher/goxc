@@ -27,18 +27,20 @@ import (
 	"path/filepath"
 )
 
-const GOXC_CONFIG_VERSION = "0.5.0"
+const GOXC_CONFIG_VERSION = "0.6"
+var GOXC_CONFIG_SUPPORTED = []string{ "0.5.0", "0.6" }
 
+// v0.5.9 DEPRECATD
 type JsonSettings struct {
 	Settings Settings
 	//Format for goxc.json files
 	FormatVersion string
 	//TODO??: InheritFiles []string
 }
-
-func WrapJsonSettings(settings Settings) JsonSettings {
+// v0.5.9 DEPRECATED
+func WrapJsonSettings(settings Settings) Settings {
 	settings.GoxcConfigVersion = GOXC_CONFIG_VERSION
-	return JsonSettings{Settings: settings, FormatVersion: GOXC_CONFIG_VERSION}
+	return settings
 }
 
 func LoadJsonConfigOverrideable(dir string, configName string, useLocal bool, verbose bool) (Settings, error) {
@@ -50,24 +52,24 @@ func LoadJsonConfigOverrideable(dir string, configName string, useLocal bool, ve
 		if err != nil {
 			//load non-local file only.
 			settings, err := loadJsonFile(jsonFile, verbose)
-			return settings.Settings, err
+			return settings, err
 		} else {
 			settings, err := loadJsonFile(jsonFile, verbose)
 			if err != nil {
 				if os.IsNotExist(err) {
-					return localSettings.Settings, nil
+					return localSettings, nil
 				} else {
 					//parse error. Stop right there.
-					return settings.Settings, err
+					return settings, err
 				}
 			} else {
-				return Merge(localSettings.Settings, settings.Settings), nil
+				return Merge(localSettings, settings), nil
 			}
 		}
 	} else {
 		//load non-local file only.
 		settings, err := loadJsonFile(jsonFile, verbose)
-		return settings.Settings, err
+		return settings, err
 	}
 	//unreachable but required by go compiler
 	//return localSettings.Settings, err
@@ -125,12 +127,13 @@ func validateRawJson(rawJson []byte, fileName string) []error {
 		printErrorDetails(rawJson, err)
 		return []error{err}
 	}
-	errs := []error{}
+	var errs []error
 	m := f.(map[string]interface{})
 	rejectOldTaskDefinitions := false
-	if formatVersion, keyExists := m["FormatVersion"]; keyExists {
-		if formatVersion != GOXC_CONFIG_VERSION {
-			log.Printf("WARNING (%s): is an old config file. File version: %s. Expected version %s", fileName, formatVersion, GOXC_CONFIG_VERSION)
+	if fv, keyExists := m["FormatVersion"]; keyExists {
+		formatVersion := fv.(string)
+		if -1 == core.StringSlicePos(GOXC_CONFIG_SUPPORTED, formatVersion) {
+			log.Printf("WARNING (%s): is an old config file. File version: %s. Current version %v", fileName, formatVersion, GOXC_CONFIG_VERSION)
 			rejectOldTaskDefinitions = true
 		}
 	} else {
@@ -139,6 +142,14 @@ func validateRawJson(rawJson []byte, fileName string) []error {
 	}
 	if s, keyExists := m["Settings"]; keyExists {
 		settings := s.(map[string]interface{})
+		errs = validateSettingsSection(settings, fileName, rejectOldTaskDefinitions)
+	} else {
+		errs = validateSettingsSection(m, fileName, rejectOldTaskDefinitions)
+	}
+	return errs
+}
+
+func validateSettingsSection(settings map[string]interface{}, fileName string, rejectOldTaskDefinitions bool) (errs []error) {
 		if _, keyExists := settings["ArtifactTypes"]; keyExists {
 			msg := "'ArtifactTypes' setting is deprecated. Please use tasks instead (By default goxc zips the binary ('archive' task) and then deletes the binary ('rmbin' task)."
 			log.Printf("ERROR (%s): %s", fileName, msg)
@@ -161,9 +172,6 @@ func validateRawJson(rawJson []byte, fileName string) []error {
 				}
 			}
 		}
-	} else {
-		log.Printf("No settings found. Ignoring file.")
-	}
 	return errs
 }
 
@@ -189,84 +197,42 @@ func loadFile(jsonFile string, verbose bool) ([]byte, error) {
 // load json file. Glob for goxc
 //v0.5.6 parse from an interface{} instead of JsonSettings.
 //More flexible & better error reporting possible.
-func loadJsonFile(jsonFile string, verbose bool) (JsonSettings, error) {
-	var jsonSettings JsonSettings
+func loadJsonFile(jsonFile string, verbose bool) (Settings, error) {
+	var settings Settings
 	rawJson, err := loadFile(jsonFile, verbose)
 	if err != nil {
-		return jsonSettings, err
+		return settings, err
 	}
 	errs := validateRawJson(rawJson, jsonFile)
 	if errs != nil && len(errs) > 0 {
-		return jsonSettings, errs[0]
+		return settings, errs[0]
 	}
-	jsonSettings = JsonSettings{}
-	jsonSettings.Settings = Settings{}
-	jsonSettings.Settings.Resources = Resources{}
 	//TODO: super-verbose option for logging file content? log.Printf("%s\n", string(file))
 	var f interface{}
 	err = json.Unmarshal(rawJson, &f)
 	if err != nil {
 		log.Printf("ERROR (%s): invalid json!", jsonFile)
 		printErrorDetails(rawJson, err)
-		return jsonSettings, err
+		return settings, err
 	} else {
 		//fill all the way down.
 		m := f.(map[string]interface{})
 		if fv, keyExists := m["FormatVersion"]; keyExists {
 			//OK
-			jsonSettings.FormatVersion = fv.(string)
 			if s, keyExists := m["Settings"]; keyExists {
 				settingsSection := s.(map[string]interface{})
-				for k, v := range settingsSection {
-					//try to match key
-					switch k {
-					case "Tasks":
-						jsonSettings.Settings.Tasks, err = fromJsonStringArray(v, k)
-					case "TasksAppend":
-						jsonSettings.Settings.TasksAppend, err = fromJsonStringArray(v, k)
-						if err != nil {
-							return jsonSettings, err
-						}
-					case "ArtifactsDest":
-						jsonSettings.Settings.ArtifactsDest, err = fromJsonString(v, k)
-					case "Arch":
-						jsonSettings.Settings.Arch, err = fromJsonString(v, k)
-					case "Os":
-						jsonSettings.Settings.Os, err = fromJsonString(v, k)
-					case "BuildConstraints":
-						jsonSettings.Settings.BuildConstraints, err = fromJsonString(v, k)
-					case "Resources":
-						for k2, v2 := range v.(map[string]interface{}) {
-							switch k2 {
-							case "Include":
-								jsonSettings.Settings.Resources.Include, err = fromJsonString(v2, k+":"+k2)
-							case "Exclude":
-								jsonSettings.Settings.Resources.Exclude, err = fromJsonString(v2, k+":"+k2)
-							}
-						}
-					case "PackageVersion":
-						log.Printf("Package version %s", v)
-						jsonSettings.Settings.PackageVersion, err = fromJsonString(v, k)
-					case "BranchName":
-						jsonSettings.Settings.BranchName, err = fromJsonString(v, k)
-					case "PrereleaseInfo":
-						jsonSettings.Settings.PrereleaseInfo, err = fromJsonString(v, k)
-					case "BuildName":
-						jsonSettings.Settings.BuildName, err = fromJsonString(v, k)
-					case "Verbosity":
-						jsonSettings.Settings.Verbosity, err = fromJsonString(v, k)
-					case "TaskSettings":
-						jsonSettings.Settings.TaskSettings, err = fromJsonStringMap(v, k)
-					default:
-						log.Printf("Warning!! Unrecognised Setting '%s' (value %v)", k, v)
-					}
-					if err != nil {
-						return jsonSettings, err
-					}
+				if _, keyExists = settingsSection["FormatVersion"]; !keyExists {
+					//set from jsonSettings
+					settingsSection["FormatVersion"] = fv.(string)
 				}
+				settings, err:= loadSettingsSection(settingsSection)
+				return settings, err
+			} else {
+				return loadSettingsSection(m)
 			}
+
 		} else {
-			return jsonSettings, errors.New("File format version not specified!")
+			return settings, errors.New("File format version not specified!")
 		}
 		//settings.Settings.TaskSettings, err= getTaskSettings(rawJson, jsonFile)
 		if verbose {
@@ -274,8 +240,60 @@ func loadJsonFile(jsonFile string, verbose bool) (JsonSettings, error) {
 		}
 	}
 	//TODO: verbosity here? log.Printf("Results: %v", settings)
-	return jsonSettings, nil
+	return settings, nil
 }
+
+func loadSettingsSection(settingsSection map[string]interface{}) (settings Settings, err error) {
+	settings = Settings{ Resources : Resources{} }
+	for k, v := range settingsSection {
+		//try to match key
+		switch k {
+		case "Tasks":
+			settings.Tasks, err = fromJsonStringArray(v, k)
+		case "TasksAppend":
+			settings.TasksAppend, err = fromJsonStringArray(v, k)
+		case "ArtifactsDest":
+			settings.ArtifactsDest, err = fromJsonString(v, k)
+		case "Arch":
+			settings.Arch, err = fromJsonString(v, k)
+		case "Os":
+			settings.Os, err = fromJsonString(v, k)
+		case "BuildConstraints":
+			settings.BuildConstraints, err = fromJsonString(v, k)
+		case "Resources":
+			for k2, v2 := range v.(map[string]interface{}) {
+				switch k2 {
+				case "Include":
+					settings.Resources.Include, err = fromJsonString(v2, k+":"+k2)
+				case "Exclude":
+					settings.Resources.Exclude, err = fromJsonString(v2, k+":"+k2)
+				}
+			}
+		case "PackageVersion":
+			log.Printf("Package version %s", v)
+			settings.PackageVersion, err = fromJsonString(v, k)
+		case "BranchName":
+			settings.BranchName, err = fromJsonString(v, k)
+		case "PrereleaseInfo":
+			settings.PrereleaseInfo, err = fromJsonString(v, k)
+		case "BuildName":
+			settings.BuildName, err = fromJsonString(v, k)
+		case "Verbosity":
+			settings.Verbosity, err = fromJsonString(v, k)
+		case "TaskSettings":
+			settings.TaskSettings, err = fromJsonStringMap(v, k)
+		case "FormatVersion":
+			settings.GoxcConfigVersion, err = fromJsonString(v, k)
+		default:
+			log.Printf("Warning!! Unrecognised Setting '%s' (value %v)", k, v)
+		}
+		if err != nil {
+			return settings, err
+		}
+	}
+	return settings, err
+}
+
 func fromJsonStringArray(v interface{}, k string) ([]string, error) {
 	ret := []string{}
 	switch typedV := v.(type) {
@@ -287,6 +305,7 @@ func fromJsonStringArray(v interface{}, k string) ([]string, error) {
 	}
 	return ret, fmt.Errorf("%s should be a json array, not a %T", k, v)
 }
+
 func fromJsonString(v interface{}, k string) (string, error) {
 	switch typedV := v.(type) {
 	case string:
@@ -294,6 +313,7 @@ func fromJsonString(v interface{}, k string) (string, error) {
 	}
 	return "", fmt.Errorf("%s should be a json string, not a %T", k, v)
 }
+
 func fromJsonStringMap(v interface{}, k string) (map[string]interface{}, error) {
 	switch typedV := v.(type) {
 	case map[string]interface{}:
@@ -301,7 +321,9 @@ func fromJsonStringMap(v interface{}, k string) (map[string]interface{}, error) 
 	}
 	return nil, fmt.Errorf("%s should be a json map, not a %T", k, v)
 }
-func WriteJsonConfig(dir string, settings JsonSettings, configName string, isLocal bool) error {
+
+func WriteJsonConfig(dir string, settings Settings, configName string, isLocal bool) error {
+	settings.GoxcConfigVersion = GOXC_CONFIG_VERSION
 	if isLocal {
 		jsonFile := filepath.Join(dir, configName+".local.json")
 		return writeJsonFile(settings, jsonFile)
@@ -310,13 +332,13 @@ func WriteJsonConfig(dir string, settings JsonSettings, configName string, isLoc
 	return writeJsonFile(settings, jsonFile)
 }
 
-func writeJsonFile(settings JsonSettings, jsonFile string) error {
+func writeJsonFile(settings Settings, jsonFile string) error {
 	data, err := json.MarshalIndent(settings, "", "\t")
 	if err != nil {
 		log.Printf("Could NOT marshal json")
 		return err
 	}
-/* StripEmpties no longer required (use omitempty tag)
+/* v0.5.9 StripEmpties no longer required (use omitempty tag)
 	stripped, err := StripEmpties(data, settings.Settings.IsVerbose())
 	if err == nil {
 		data = stripped
@@ -329,6 +351,7 @@ func writeJsonFile(settings JsonSettings, jsonFile string) error {
 }
 
 //use json from string
+//v0.5.9 DEPRECATED (unused)
 func readJson(js []byte) (JsonSettings, error) {
 	var settings JsonSettings
 	err := json.Unmarshal(js, &settings)
@@ -339,6 +362,7 @@ func readJson(js []byte) (JsonSettings, error) {
 	return settings, err
 }
 
+//v0.5.9 DEPRECATED (unused)
 func writeJson(m JsonSettings) ([]byte, error) {
 	return json.MarshalIndent(m, "", "\t")
 }

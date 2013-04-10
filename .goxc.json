@@ -1,30 +1,27 @@
 {
-	"Settings": {
-		"ArtifactsDest": "../goxc-pages/dl",
-		"Resources": {
-			"Include": "README.md"
+	"ArtifactsDest": "../goxc-pages/dl",
+	"Resources": {
+		"Include": "README.md"
+	},
+	"PackageVersion": "0.5.9",
+	"TaskSettings": {
+		"codesign": {
+			"id": "goxc"
 		},
-		"PackageVersion": "0.5.9",
-		"TaskSettings": {
-			"codesign": {
-				"id": "goxc"
+		"downloads-page": {
+			"fileheader": "---\nlayout: default\ntitle: Download goxc\n---\n\nNote: please use 'go get -u github.com/laher/goxc' instead of these binaries.",
+			"filename": "index.md"
+		},
+		"pkg-build": {
+			"metadata": {
+				"description": "Cross-compiler utility for Go",
+				"maintainer": "Am Laher (https://github.com/laher)"
 			},
-			"downloads-page": {
-				"fileheader": "---\nlayout: default\ntitle: Download goxc\n---\n\nNote: please use 'go get -u github.com/laher/goxc' instead of these binaries.",
-				"filename": "index.md"
-			},
-			"pkg-build": {
-				"metadata": {
-					"description": "Cross-compiler utility for Go",
-					"maintainer": "Am Laher (https://github.com/laher)"
-				},
-				"metadata-deb": {
-					"Depends": "golang",
-					"Homepage": "https://github.com/laher/goxc"
-				}
+			"metadata-deb": {
+				"Depends": "golang",
+				"Homepage": "https://github.com/laher/goxc"
 			}
-		},
-		"GoxcConfigVersion": "0.5.0"
+		}
 	},
 	"FormatVersion": "0.5.0"
 }

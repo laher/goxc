@@ -179,7 +179,7 @@ func fillDefaults(settings config.Settings) config.Settings {
 func goXC(call []string) {
 	workingDirectory, settings := interpretSettings(call)
 	if isWriteConfig {
-		err := config.WriteJsonConfig(workingDirectory, config.WrapJsonSettings(settings), configName, false)
+		err := config.WriteJsonConfig(workingDirectory, settings, configName, false)
 		if err != nil {
 			log.Printf("Could not write config file: %v", err)
 		}

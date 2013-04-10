@@ -67,7 +67,7 @@ type Settings struct {
 	TaskSettings map[string]interface{} `json:",omitempty"`
 
 	//for 0.6.0, to replace 'FormatVersion'
-	GoxcConfigVersion string `json:",omitempty"`
+	GoxcConfigVersion string `json:"FormatVersion,omitempty"`
 }
 
 func (s Settings) IsVerbose() bool {
