@@ -45,10 +45,9 @@ type Settings struct {
 	//0.5.0 adding extra tasks. TODO (maybe) - prepend
 	TasksAppend []string `json:",omitempty"`
 
-	//TODO: replace Os/Arch with BuildConstraints?
+	//0.6 complement Os/Arch with BuildConstraints
 	Arch string `json:",omitempty"`
 	Os   string `json:",omitempty"`
-
 	//NEW 0.5.5 - implemented 0.5.7
 	BuildConstraints string `json:",omitempty"`
 
@@ -61,7 +60,7 @@ type Settings struct {
 	BuildName      string `json:",omitempty"`
 
 	//0.2.0 Verbosity replaces Verbose bool
-	Verbosity string  `json:",omitempty"` // none/debug/
+	Verbosity string `json:",omitempty"` // none/debug/
 
 	//TaskSettings map[string]map[string]interface{}
 	TaskSettings map[string]interface{} `json:",omitempty"`
@@ -136,11 +135,11 @@ func Merge(high Settings, low Settings) Settings {
 	if high.ArtifactsDest == "" {
 		high.ArtifactsDest = low.ArtifactsDest
 	}
-	/* TODO - BuildConstraints
+	//0.6 Adding BuildConstraints
 	if high.BuildConstraints == "" {
 		high.BuildConstraints = low.BuildConstraints
 	}
-	*/
+
 	if high.Resources.Exclude == "" {
 		high.Resources.Exclude = low.Resources.Exclude
 	}
@@ -173,22 +172,18 @@ func Merge(high Settings, low Settings) Settings {
 	if high.Verbosity == "" {
 		high.Verbosity = low.Verbosity
 	}
-	/* 0.5.0 codesign setting is replaced by task setting 'id'
-	if high.Codesign == "" {
-		high.Codesign = low.Codesign
-	}
-	*/
+	//0.5.0 codesign setting is replaced by task setting 'id'
 	if len(high.Tasks) == 0 {
 		high.Tasks = low.Tasks
+	}
+	//0.6 fixed missing 'merge'
+	if len(high.TasksAppend) == 0 {
+		high.TasksAppend = low.TasksAppend
 	}
 	if len(high.TasksExclude) == 0 {
 		high.TasksExclude = low.TasksExclude
 	}
-	/* 0.5.0 replaced.
-	if len(high.ArtifactTypes) == 0 {
-		high.ArtifactTypes = low.ArtifactTypes
-	}
-	*/
+	//0.5.0 replaced ArtifactTypes
 	if len(high.TaskSettings) == 0 {
 		high.TaskSettings = low.TaskSettings
 	} else {
@@ -198,12 +193,10 @@ func Merge(high Settings, low Settings) Settings {
 }
 
 func mergeMaps(high, low map[string]interface{}) map[string]interface{} {
-	//log.Printf("Merging %+v with %+v", high, low)
 	if high == nil {
 		return low
 	}
 	for key, lowVal := range low {
-		//log.Printf("Merging key %s", key)
 		if highVal, keyExists := high[key]; keyExists {
 			// NOTE: go deeper for maps.
 			// (Slices and other types should not go deeper)
@@ -211,7 +204,6 @@ func mergeMaps(high, low map[string]interface{}) map[string]interface{} {
 			case map[string]interface{}:
 				switch lowValTyped := lowVal.(type) {
 				case map[string]interface{}:
-					//log.Printf("Go deeper for key '%s'", key)
 					high[key] = mergeMaps(highValTyped, lowValTyped)
 				}
 			}

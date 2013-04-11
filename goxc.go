@@ -34,7 +34,7 @@ import (
 )
 
 const (
-	MSG_HELP               = "Usage: goxc [options] <directory_name>\n"
+	MSG_HELP               = "Usage: goxc [<option(s)>] [<task(s)>]\n"
 	MSG_HELP_TOPICS        = "goxc -h <topic>\n"
 	MSG_HELP_TOPICS_EG     = "More help:\n\tgoxc -h options\nor\n\tgoxc -h tasks\n"
 	MSG_HELP_LINK          = "Please see https://github.com/laher/goxc/wiki for full details.\n"
@@ -54,6 +54,7 @@ var (
 	configName           string
 	isVersion            bool
 	isHelp               bool
+	isHelpTasks          bool
 	isBuildToolchain     bool
 	tasksToRun           string
 	tasksPlus            string
@@ -68,11 +69,12 @@ var (
 func printHelp(flagSet *flag.FlagSet) {
 	args := flagSet.Args()
 	if len(args) < 1 {
-		fmt.Fprint(os.Stderr, MSG_HELP)
-		fmt.Fprintf(os.Stderr, "Version '%s'\n", VERSION)
-		fmt.Fprint(os.Stderr, MSG_HELP_DESC)
-		fmt.Fprint(os.Stderr, MSG_HELP_TC)
-		fmt.Fprint(os.Stderr, MSG_HELP_TOPICS_EG)
+		//fmt.Fprint(os.Stderr, MSG_HELP)
+		fmt.Fprintf(os.Stderr, "goxc version '%s'\n", VERSION)
+		printHelpTopic(flagSet, "options")
+		//fmt.Fprint(os.Stderr, MSG_HELP_DESC)
+		//fmt.Fprint(os.Stderr, MSG_HELP_TC)
+		//fmt.Fprint(os.Stderr, MSG_HELP_TOPICS_EG)
 	} else {
 		printHelpTopic(flagSet, args[0])
 	}
@@ -85,8 +87,8 @@ func printHelpTopic(flagSet *flag.FlagSet, topic string) {
 		printOptions(flagSet)
 		return
 	case "tasks":
-		fmt.Fprint(os.Stderr, "Use the '-tasks=' option to specify tasks, and '-tasks-=' or '-tasks+=' to adjust them.\n\n\te.g. `goxc -tasks=default -tasks+=go-fmt -tasks-=rmbin`\n")
-		fmt.Fprint(os.Stderr, "\nAvailable tasks:\n")
+		fmt.Fprint(os.Stderr, "Use commandline arguments to specify tasks, or '-tasks-=' or '-tasks+=' to adjust them.\n\ne.g. to run all the 'default' tasks skipping 'rmbin' and appending 'go-fmt':\n\t`goxc -tasks+=go-fmt -tasks-=rmbin default`\n")
+		fmt.Fprint(os.Stderr, "\nAvailable tasks & aliases (specify aliases where possible):\n")
 		allTasks := tasks.ListTasks()
 		var padding string
 		for _, task := range allTasks {
@@ -97,14 +99,14 @@ func printHelpTopic(flagSet *flag.FlagSet, topic string) {
 			}
 			fmt.Fprintf(os.Stderr, " %s  %s%s\n", task.Name, padding, task.Description)
 		}
-		fmt.Fprint(os.Stderr, "\nTask aliases (specify aliases where possible):\n")
+		//fmt.Fprint(os.Stderr, "\nTask aliases (specify aliases where possible):\n")
 		for alias, taskNames := range tasks.Aliases {
-			if len(alias) < 14 {
-				padding = strings.Repeat(" ", 14-len(alias))
+			if len(alias) < 15 {
+				padding = strings.Repeat(" ", 15-len(alias))
 			} else {
 				padding = ""
 			}
-			fmt.Fprintf(os.Stderr, " %s  %s%v\n", alias, padding, taskNames)
+			fmt.Fprintf(os.Stderr, " %s%s alias: %v\n", alias, padding, taskNames)
 		}
 		return
 	}
@@ -179,11 +181,11 @@ func fillDefaults(settings config.Settings) config.Settings {
 func goXC(call []string) {
 	workingDirectory, settings := interpretSettings(call)
 	if isWriteConfig {
-		err := config.WriteJsonConfig(workingDirectory, settings, configName, false)
+		err := config.WriteJsonConfig(workingDirectory, config.WrapJsonSettings(settings), configName, false)
 		if err != nil {
 			log.Printf("Could not write config file: %v", err)
 		}
-		// 0.2.5 writeConfig now just exits after writing config
+		//0.2.5 writeConfig now just exits after writing config
 	} else {
 		//0.2.3 fillDefaults should only happen after writing config
 		settings = fillDefaults(settings)
@@ -191,7 +193,7 @@ func goXC(call []string) {
 		if settings.IsVerbose() {
 			log.Printf("Final settings %+v", settings)
 		}
-		//v2.0.0: Removed PKG_VERSION parsing
+		//2.0.0: Removed PKG_VERSION parsing
 		destPlatforms := platforms.GetDestPlatforms(settings.Os, settings.Arch)
 		destPlatforms = platforms.ApplyBuildConstraints(settings.BuildConstraints, destPlatforms)
 		tasks.RunTasks(workingDirectory, destPlatforms, settings)
@@ -207,21 +209,25 @@ func interpretSettings(call []string) (string, config.Settings) {
 		if isVerbose {
 			settings.Verbosity = core.VERBOSITY_VERBOSE
 		}
-		if isBuildToolchain {
-			if tasksToRun != "" {
-				tasksToRun = tasks.TASK_BUILD_TOOLCHAIN + "," + tasksToRun
-			} else {
-				tasksToRun = tasks.TASK_BUILD_TOOLCHAIN
-			}
-		}
-		if tasksPlus != "" {
-			settings.TasksAppend = strings.Split(tasksPlus, ",")
-		}
+		//0.6 use args. Parse into slice.
+		settings.Tasks = flagSet.Args()
+
+		//0.6 merge after tasks
 		if tasksToRun != "" {
-			settings.Tasks = strings.Split(tasksToRun, ",")
+			tasksToRunSlice := strings.FieldsFunc(tasksToRun, func(r rune) bool { return r == ',' || r == ' ' })
+			settings.Tasks = append(settings.Tasks, tasksToRunSlice...)
+		}
+
+		//TODO permit/recommend spaces
+		if tasksPlus != "" {
+			settings.TasksAppend = strings.FieldsFunc(tasksPlus, func(r rune) bool { return r == ',' || r == ' ' })
 		}
 		if tasksMinus != "" {
 			settings.TasksExclude = strings.Split(tasksMinus, ",")
+		}
+		if isBuildToolchain {
+			//0.6 prepend to settings.Tasks slice (instead of tasksToRun string)
+			settings.Tasks = append([]string{tasks.TASK_BUILD_TOOLCHAIN}, settings.Tasks...)
 		}
 		//0.2.3 NOTE this will be superceded soon
 		//using string because that makes it overrideable
@@ -240,10 +246,14 @@ func interpretSettings(call []string) (string, config.Settings) {
 	}
 	//log.Printf("Settings: %s", settings)
 	if isHelp {
-
 		printHelp(flagSet)
 		os.Exit(0)
 	}
+	if isHelpTasks {
+		printHelpTopic(flagSet, "tasks")
+		os.Exit(0)
+	}
+
 	if isVersion {
 		printVersion(flagSet)
 		os.Exit(0)
@@ -255,12 +265,11 @@ func interpretSettings(call []string) (string, config.Settings) {
 		log.Printf(core.MSG_INSTALL_GO_FROM_SOURCE)
 		os.Exit(1)
 	}
-
-	args := flagSet.Args()
+	//0.6 do NOT use args[0]
 	var workingDirectory string
 	if workingDirectoryFlag != "" {
 		workingDirectory = workingDirectoryFlag
-	} else if len(args) < 1 {
+	} else {
 		if isBuildToolchain {
 			//default to HOME dir
 			log.Printf("Building toolchain, so getting config from HOME directory. To use current directory's config, use the wd option (i.e. goxc -t -wd=.)")
@@ -272,8 +281,6 @@ func interpretSettings(call []string) (string, config.Settings) {
 			//default to current directory
 			workingDirectory = "."
 		}
-	} else {
-		workingDirectory = args[0]
 	}
 	log.Printf("Working directory: '%s', Config name: %s", workingDirectory, configName)
 
@@ -342,15 +349,18 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.Resources.Include, "include", "", "Include resources in archives (default="+core.RESOURCES_INCLUDE_DEFAULT+")") //TODO: Add resources to non-zips & downloads.md
 
 	//0.2.0 Not easy to 'merge' boolean config items. More flexible to translate them to string options anyway
-	flagSet.BoolVar(&isHelp, "h", false, "Help")
-	flagSet.BoolVar(&isHelp, "help", false, "Help")
+	flagSet.BoolVar(&isHelp, "h", false, "Help - options")
+	flagSet.BoolVar(&isHelp, "help", false, "Help - options")
+	flagSet.BoolVar(&isHelpTasks, "ht", false, "Help about tasks")
+	flagSet.BoolVar(&isHelpTasks, "h-tasks", false, "Help about tasks")
+	flagSet.BoolVar(&isHelpTasks, "help-tasks", false, "Help about tasks")
 	flagSet.BoolVar(&isVersion, "version", false, "Print version")
 
 	flagSet.BoolVar(&isVerbose, "v", false, "Verbose")
 	flagSet.StringVar(&isCliZipArchives, "z", "", "DEPRECATED (use archive & rmbin tasks instead): create ZIP archives instead of directories (true/false. default=true)")
-	flagSet.StringVar(&tasksToRun, "tasks", "", "Tasks to run. Use `goxc -h tasks` for more details")
-	flagSet.StringVar(&tasksPlus, "tasks+", "", "Additional tasks to run")
-	flagSet.StringVar(&tasksMinus, "tasks-", "", "Tasks to exclude")
+	flagSet.StringVar(&tasksToRun, "tasks", "", "Tasks to run. Use `goxc -ht` for more details")
+	flagSet.StringVar(&tasksPlus, "tasks+", "", "Additional tasks to run. See -ht for tasks list")
+	flagSet.StringVar(&tasksMinus, "tasks-", "", "Tasks to exclude. See -ht for tasks list")
 	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s). Equivalent to -tasks=toolchain")
 	flagSet.BoolVar(&isWriteConfig, "wc", false, "(over)write config. Overwrites are additive. Try goxc -wc to produce a starting point.")
 	flagSet.Usage = func() {
@@ -361,17 +371,16 @@ func setupFlags() *flag.FlagSet {
 
 func printOptions(flagSet *flag.FlagSet) {
 	fmt.Print("Options:\n")
-	taskOptions := []string{"t", "tasks", "tasks+", "tasks-"}
-	versioningOptions := []string{"pv", "pi", "br", "bu"}
-	deprecatedOptions := []string{"av", "z"}
-	platformOptions := []string{"os", "arch"}
+	taskOptions := []string{"t", "tasks+", "tasks-"}
+	packageVersioningOptions := []string{"pv", "pi", "br", "bu"}
+	deprecatedOptions := []string{"av", "z", "tasks", "h-tasks", "help-tasks", "ht"} //still work but not mentioned
+	platformOptions := []string{"os", "arch", "bc"}
 	cfOptions := []string{"wc", "c"}
 	boolOptions := []string{"h", "v", "version", "t", "wc"}
 
 	//help
-	fmt.Printf("  -h             %s\n", flagSet.Lookup("h").Usage)
-	fmt.Printf("  -h options     Show this information\n")
-	fmt.Printf("  -h tasks       List all available tasks and task aliases\n")
+	fmt.Printf("  -h             Help - show options\n")
+	fmt.Printf("  -ht            Help - show tasks (and task aliases)\n")
 	fmt.Printf("  -version       %s\n", flagSet.Lookup("version").Usage)
 	fmt.Printf("  -v             %s\n", flagSet.Lookup("v").Usage)
 
@@ -400,7 +409,7 @@ func printOptions(flagSet *flag.FlagSet) {
 	//versioning
 	fmt.Printf("Package versioning:\n")
 	flagSet.VisitAll(func(flag *flag.Flag) {
-		if core.ContainsString(versioningOptions, flag.Name) {
+		if core.ContainsString(packageVersioningOptions, flag.Name) {
 			printFlag(flag, core.ContainsString(boolOptions, flag.Name))
 		}
 	})
@@ -409,11 +418,11 @@ func printOptions(flagSet *flag.FlagSet) {
 	fmt.Printf("Other options:\n")
 	flagSet.VisitAll(func(flag *flag.Flag) {
 		if core.ContainsString(taskOptions, flag.Name) ||
-			core.ContainsString(versioningOptions, flag.Name) ||
+			core.ContainsString(packageVersioningOptions, flag.Name) ||
 			core.ContainsString(platformOptions, flag.Name) ||
 			core.ContainsString(cfOptions, flag.Name) ||
 			core.ContainsString(deprecatedOptions, flag.Name) ||
-			core.ContainsString([]string{"h", "help", "version", "v"}, flag.Name) {
+			core.ContainsString([]string{"h", "help", "h-options", "help-options", "version", "v"}, flag.Name) {
 			return
 		}
 		printFlag(flag, core.ContainsString(boolOptions, flag.Name))

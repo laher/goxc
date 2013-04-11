@@ -17,6 +17,7 @@ package tasks
 */
 
 import (
+	"errors"
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
 	"github.com/laher/goxc/executils"
@@ -24,6 +25,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 )
@@ -40,10 +42,40 @@ func init() {
 }
 
 func runTaskToolchain(tp taskParams) error {
-	for _, platformArr := range tp.destPlatforms {
-		destOs := platformArr[0]
-		destArch := platformArr[1]
-		buildToolchain(destOs, destArch, tp.settings)
+	if len(tp.destPlatforms) < 1 {
+		return errors.New("No valid platforms specified")
+	} else {
+		log.Printf("Please do NOT try to quit during a build-toolchain. This can leave your Go toolchain in a non-working state.")
+		busy := false
+		schan := make(chan os.Signal, 1)
+		signal.Notify(schan, os.Interrupt)
+		g := func() {
+			for sig := range schan {
+				// sig is a ^C, handle it
+				if busy == true {
+					log.Printf("WARNING!!! Received SIGINT (%v) during buildToolchain! DO NOT QUIT DURING BUILD TOOLCHAIN! You may need to run $GOROOT/src/make.bash (or .bat)", sig)
+				}
+			}
+		}
+		go g()
+		success := 0
+		var err error
+		for _, platformArr := range tp.destPlatforms {
+			busy = true
+			destOs := platformArr[0]
+			destArch := platformArr[1]
+			err = buildToolchain(destOs, destArch, tp.settings)
+			if err != nil {
+				log.Printf("Error: %v", err)
+			} else {
+				busy = false
+				success = success + 1
+			}
+		}
+		if success < 1 {
+			log.Printf("No successes!")
+			return err
+		}
 	}
 	return nil
 }
@@ -75,12 +107,12 @@ func buildToolchain(goos string, arch string, settings config.Settings) error {
 	}
 	err = cmd.Start()
 	if err != nil {
-		log.Printf("Launch error: %s", err)
+		log.Printf("Build toolchain: Launch error: %s", err)
 		return err
 	}
 	err = cmd.Wait()
 	if err != nil {
-		log.Printf("Wait error: %s", err)
+		log.Printf("Build Toolchain: wait error: %s", err)
 		return err
 	}
 	if settings.IsVerbose() {

@@ -77,7 +77,6 @@ func isNegative(part string) (bool, string) {
 	return false, part
 }
 
-
 func resolveItem(itemOses, itemNegOses, itemArchs, itemNegArchs []string, unfilteredPlatforms [][]string) [][]string {
 	ret := [][]string{}
 	if len(itemOses) == 0 {

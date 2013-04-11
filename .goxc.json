@@ -3,7 +3,8 @@
 	"Resources": {
 		"Include": "README.md"
 	},
-	"PackageVersion": "0.5.9",
+	"PackageVersion": "0.6.0",
+	"PrereleaseInfo": "rc",
 	"TaskSettings": {
 		"codesign": {
 			"id": "goxc"
@@ -23,5 +24,6 @@
 			}
 		}
 	},
+	"TasksAppend" : [ "go-fmt" ],
 	"FormatVersion": "0.6"
 }

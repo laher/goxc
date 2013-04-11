@@ -134,16 +134,23 @@ func RunTasks(workingDirectory string, destPlatforms [][]string, settings config
 			tasksToRun = append(tasksToRun, taskName)
 		}
 	}
+	//0.6 check all tasks are valid before continuing
+	for _, taskName := range tasksToRun {
+		if _, keyExists := allTasks[taskName]; !keyExists {
+			log.Printf("Task %s does NOT exist!", taskName)
+			return
+		}
+	}
 	log.Printf("Running tasks: %v", tasksToRun)
 	for _, taskName := range tasksToRun {
-		if !core.ContainsString(exclusions, taskName) {
-			log.SetPrefix("[goxc:" + taskName + "] ")
-			err := runTask(taskName, destPlatforms, appName, workingDirectory, outDestRoot, settings)
-			if err != nil {
-				// TODO: implement 'force' option.
-				log.Printf("Stopping after '%s' failed with error '%v'", taskName, err)
-				return
-			}
+		log.SetPrefix("[goxc:" + taskName + "] ")
+		err := runTask(taskName, destPlatforms, appName, workingDirectory, outDestRoot, settings)
+		if err != nil {
+			// TODO: implement 'force' option.
+			log.Printf("Stopping after '%s' failed with error '%v'", taskName, err)
+			return
+		} else {
+			log.Printf("Task %s succeeded", taskName)
 		}
 	}
 }
@@ -153,8 +160,6 @@ func runTask(taskName string, destPlatforms [][]string, appName, workingDirector
 		tp := taskParams{destPlatforms, appName, workingDirectory, outDestRoot, settings}
 		return taskV.f(tp)
 	}
-
-	// TODO: custom tasks
 	log.Printf("Unrecognised task '%s'", taskName)
 	return fmt.Errorf("Unrecognised task '%s'", taskName)
 }

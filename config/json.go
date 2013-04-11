@@ -28,16 +28,18 @@ import (
 )
 
 const GOXC_CONFIG_VERSION = "0.6"
-var GOXC_CONFIG_SUPPORTED = []string{ "0.5.0", "0.6" }
 
-// v0.5.9 DEPRECATD
+var GOXC_CONFIG_SUPPORTED = []string{"0.5.0", "0.6"}
+
+//0.6 DEPRECATD
 type JsonSettings struct {
 	Settings Settings
 	//Format for goxc.json files
 	FormatVersion string
 	//TODO??: InheritFiles []string
 }
-// v0.5.9 DEPRECATED
+
+//0.6 DEPRECATED
 func WrapJsonSettings(settings Settings) Settings {
 	settings.GoxcConfigVersion = GOXC_CONFIG_VERSION
 	return settings
@@ -150,28 +152,28 @@ func validateRawJson(rawJson []byte, fileName string) []error {
 }
 
 func validateSettingsSection(settings map[string]interface{}, fileName string, rejectOldTaskDefinitions bool) (errs []error) {
-		if _, keyExists := settings["ArtifactTypes"]; keyExists {
-			msg := "'ArtifactTypes' setting is deprecated. Please use tasks instead (By default goxc zips the binary ('archive' task) and then deletes the binary ('rmbin' task)."
-			log.Printf("ERROR (%s): %s", fileName, msg)
-			errs = append(errs, errors.New(msg))
-		}
-		if _, keyExists := settings["Codesign"]; keyExists {
-			msg := "'Codesign' setting is deprecated. Please use setting \"Settings\" : { \"TaskSettings\" : { \"codesign\" : { \"id\" : \"blah\" } } }."
-			log.Printf("ERROR (%s): %s", fileName, msg)
-			errs = append(errs, errors.New(msg))
-		}
-		if rejectOldTaskDefinitions {
-			if val, keyExists := settings["Tasks"]; keyExists {
-				valArr := val.([]interface{})
-				if len(valArr) == 1 && valArr[0] == core.TASK_BUILD_TOOLCHAIN {
-					//build-toolchain hasn't changed. Continue.
-				} else {
-					msg := "task definitions have changed in version 0.5.0. Please refer to latest docs and update your config file to version 0.5.0 accordingly."
-					log.Printf("ERROR (%s): %s", fileName, msg)
-					errs = append(errs, errors.New(msg))
-				}
+	if _, keyExists := settings["ArtifactTypes"]; keyExists {
+		msg := "'ArtifactTypes' setting is deprecated. Please use tasks instead (By default goxc zips the binary ('archive' task) and then deletes the binary ('rmbin' task)."
+		log.Printf("ERROR (%s): %s", fileName, msg)
+		errs = append(errs, errors.New(msg))
+	}
+	if _, keyExists := settings["Codesign"]; keyExists {
+		msg := "'Codesign' setting is deprecated. Please use setting \"Settings\" : { \"TaskSettings\" : { \"codesign\" : { \"id\" : \"blah\" } } }."
+		log.Printf("ERROR (%s): %s", fileName, msg)
+		errs = append(errs, errors.New(msg))
+	}
+	if rejectOldTaskDefinitions {
+		if val, keyExists := settings["Tasks"]; keyExists {
+			valArr := val.([]interface{})
+			if len(valArr) == 1 && valArr[0] == core.TASK_BUILD_TOOLCHAIN {
+				//build-toolchain hasn't changed. Continue.
+			} else {
+				msg := "task definitions have changed in version 0.5.0. Please refer to latest docs and update your config file to version 0.5.0 accordingly."
+				log.Printf("ERROR (%s): %s", fileName, msg)
+				errs = append(errs, errors.New(msg))
 			}
 		}
+	}
 	return errs
 }
 
@@ -195,7 +197,7 @@ func loadFile(jsonFile string, verbose bool) ([]byte, error) {
 }
 
 // load json file. Glob for goxc
-//v0.5.6 parse from an interface{} instead of JsonSettings.
+//0.5.6 parse from an interface{} instead of JsonSettings.
 //More flexible & better error reporting possible.
 func loadJsonFile(jsonFile string, verbose bool) (Settings, error) {
 	var settings Settings
@@ -225,7 +227,7 @@ func loadJsonFile(jsonFile string, verbose bool) (Settings, error) {
 					//set from jsonSettings
 					settingsSection["FormatVersion"] = fv.(string)
 				}
-				settings, err:= loadSettingsSection(settingsSection)
+				settings, err := loadSettingsSection(settingsSection)
 				return settings, err
 			} else {
 				return loadSettingsSection(m)
@@ -244,7 +246,7 @@ func loadJsonFile(jsonFile string, verbose bool) (Settings, error) {
 }
 
 func loadSettingsSection(settingsSection map[string]interface{}) (settings Settings, err error) {
-	settings = Settings{ Resources : Resources{} }
+	settings = Settings{Resources: Resources{}}
 	for k, v := range settingsSection {
 		//try to match key
 		switch k {
@@ -338,20 +340,14 @@ func writeJsonFile(settings Settings, jsonFile string) error {
 		log.Printf("Could NOT marshal json")
 		return err
 	}
-/* v0.5.9 StripEmpties no longer required (use omitempty tag)
-	stripped, err := StripEmpties(data, settings.Settings.IsVerbose())
-	if err == nil {
-		data = stripped
-	} else {
-		log.Printf("Error stripping empty config keys - %s", err)
-	}
-*/
+	//0.6 StripEmpties no longer required (use omitempty tag instead)
+
 	log.Printf("Writing file %s", jsonFile)
 	return ioutil.WriteFile(jsonFile, data, 0644)
 }
 
 //use json from string
-//v0.5.9 DEPRECATED (unused)
+//0.6 DEPRECATED (unused)
 func readJson(js []byte) (JsonSettings, error) {
 	var settings JsonSettings
 	err := json.Unmarshal(js, &settings)
@@ -362,12 +358,12 @@ func readJson(js []byte) (JsonSettings, error) {
 	return settings, err
 }
 
-//v0.5.9 DEPRECATED (unused)
+//0.6 DEPRECATED (unused)
 func writeJson(m JsonSettings) ([]byte, error) {
 	return json.MarshalIndent(m, "", "\t")
 }
 
-//v0.5.9: DEPRECATED
+//0.6 DEPRECATED (in favour of omitempty tag)
 func StripEmpties(rawJson []byte, verbose bool) ([]byte, error) {
 	var f interface{}
 	err := json.Unmarshal(rawJson, &f)

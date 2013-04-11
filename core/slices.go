@@ -16,7 +16,6 @@ package core
    limitations under the License.
 */
 
-
 func StringSliceDelIndex(a []string, i int) []string {
 	a = append(a[:i], a[i+1:]...)
 	// OR  a = a[:i+copy(a[i:], a[i+1:])]

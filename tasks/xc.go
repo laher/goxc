@@ -40,23 +40,30 @@ func init() {
 }
 
 func runTaskXC(tp taskParams) error {
-	//func runTaskXC(destPlatforms [][]string, workingDirectory string, settings config.Settings) error {
 	if len(tp.destPlatforms) == 0 {
 		return errors.New("No valid platforms specified")
 	}
+	success := 0
+	var err error
 	for _, platformArr := range tp.destPlatforms {
 		destOs := platformArr[0]
 		destArch := platformArr[1]
-		err := xcPlat(destOs, destArch, tp.workingDirectory, tp.settings)
+		err = xcPlat(destOs, destArch, tp.workingDirectory, tp.settings)
 		if err != nil {
 			log.Printf("Error: %v", err)
+		} else {
+			success = success + 1
 		}
+	}
+	//0.6 return error if no platforms succeeded.
+	if success < 1 {
+		log.Printf("No successes!")
+		return err
 	}
 	return nil
 }
 
 // xcPlat: Cross compile for a particular platform
-// 'isFirst' is used simply to determine whether to start a new downloads.md page
 // 0.3.0 - breaking change - changed 'call []string' to 'workingDirectory string'.
 func xcPlat(goos, arch string, workingDirectory string, settings config.Settings) error {
 	log.Printf("building for platform %s_%s.", goos, arch)

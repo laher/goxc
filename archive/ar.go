@@ -25,7 +25,7 @@ import (
 	"strings"
 )
 
-/* example ...
+/* example showing ar file entries ...
 !<arch>
 debian-binary   1282478016  0     0     100644  4         `
 2.0
