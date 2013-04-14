@@ -24,6 +24,7 @@ import (
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
 	"log"
+	"strings"
 )
 
 const (
@@ -137,7 +138,10 @@ func RunTasks(workingDirectory string, destPlatforms [][]string, settings config
 	//0.6 check all tasks are valid before continuing
 	for _, taskName := range tasksToRun {
 		if _, keyExists := allTasks[taskName]; !keyExists {
-			log.Printf("Task %s does NOT exist!", taskName)
+			if strings.HasPrefix(taskName, ".") {
+				log.Printf("'%s' looks like a directory, not a task - specify 'working directory' with -wd option", taskName)
+			}
+			log.Printf("Task %s does NOT exist! [specify 'working directory' with -wd option]", taskName)
 			return
 		}
 	}

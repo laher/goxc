@@ -4,7 +4,7 @@
 		"Include": "README.md"
 	},
 	"PackageVersion": "0.6.0",
-	"PrereleaseInfo": "rc",
+	"PrereleaseInfo": "rc1",
 	"TaskSettings": {
 		"codesign": {
 			"id": "goxc"
@@ -22,6 +22,11 @@
 				"Depends": "golang",
 				"Homepage": "https://github.com/laher/goxc"
 			}
+		},
+		"bintray": {
+			"repository": "goxc",
+			"subject": "laher",
+			"package": "goxc"
 		}
 	},
 	"TasksAppend" : [ "go-fmt" ],

@@ -251,41 +251,41 @@ func loadSettingsSection(settingsSection map[string]interface{}) (settings Setti
 		//try to match key
 		switch k {
 		case "Tasks":
-			settings.Tasks, err = fromJsonStringArray(v, k)
+			settings.Tasks, err = FromJsonStringSlice(v, k)
 		case "TasksAppend":
-			settings.TasksAppend, err = fromJsonStringArray(v, k)
+			settings.TasksAppend, err = FromJsonStringSlice(v, k)
 		case "ArtifactsDest":
-			settings.ArtifactsDest, err = fromJsonString(v, k)
+			settings.ArtifactsDest, err = FromJsonString(v, k)
 		case "Arch":
-			settings.Arch, err = fromJsonString(v, k)
+			settings.Arch, err = FromJsonString(v, k)
 		case "Os":
-			settings.Os, err = fromJsonString(v, k)
+			settings.Os, err = FromJsonString(v, k)
 		case "BuildConstraints":
-			settings.BuildConstraints, err = fromJsonString(v, k)
+			settings.BuildConstraints, err = FromJsonString(v, k)
 		case "Resources":
 			for k2, v2 := range v.(map[string]interface{}) {
 				switch k2 {
 				case "Include":
-					settings.Resources.Include, err = fromJsonString(v2, k+":"+k2)
+					settings.Resources.Include, err = FromJsonString(v2, k+":"+k2)
 				case "Exclude":
-					settings.Resources.Exclude, err = fromJsonString(v2, k+":"+k2)
+					settings.Resources.Exclude, err = FromJsonString(v2, k+":"+k2)
 				}
 			}
 		case "PackageVersion":
 			log.Printf("Package version %s", v)
-			settings.PackageVersion, err = fromJsonString(v, k)
+			settings.PackageVersion, err = FromJsonString(v, k)
 		case "BranchName":
-			settings.BranchName, err = fromJsonString(v, k)
+			settings.BranchName, err = FromJsonString(v, k)
 		case "PrereleaseInfo":
-			settings.PrereleaseInfo, err = fromJsonString(v, k)
+			settings.PrereleaseInfo, err = FromJsonString(v, k)
 		case "BuildName":
-			settings.BuildName, err = fromJsonString(v, k)
+			settings.BuildName, err = FromJsonString(v, k)
 		case "Verbosity":
-			settings.Verbosity, err = fromJsonString(v, k)
+			settings.Verbosity, err = FromJsonString(v, k)
 		case "TaskSettings":
-			settings.TaskSettings, err = fromJsonStringMap(v, k)
+			settings.TaskSettings, err = FromJsonStringMap(v, k)
 		case "FormatVersion":
-			settings.GoxcConfigVersion, err = fromJsonString(v, k)
+			settings.GoxcConfigVersion, err = FromJsonString(v, k)
 		default:
 			log.Printf("Warning!! Unrecognised Setting '%s' (value %v)", k, v)
 		}
@@ -296,7 +296,7 @@ func loadSettingsSection(settingsSection map[string]interface{}) (settings Setti
 	return settings, err
 }
 
-func fromJsonStringArray(v interface{}, k string) ([]string, error) {
+func FromJsonStringSlice(v interface{}, k string) ([]string, error) {
 	ret := []string{}
 	switch typedV := v.(type) {
 	case []interface{}:
@@ -308,7 +308,7 @@ func fromJsonStringArray(v interface{}, k string) ([]string, error) {
 	return ret, fmt.Errorf("%s should be a json array, not a %T", k, v)
 }
 
-func fromJsonString(v interface{}, k string) (string, error) {
+func FromJsonString(v interface{}, k string) (string, error) {
 	switch typedV := v.(type) {
 	case string:
 		return typedV, nil
@@ -316,7 +316,7 @@ func fromJsonString(v interface{}, k string) (string, error) {
 	return "", fmt.Errorf("%s should be a json string, not a %T", k, v)
 }
 
-func fromJsonStringMap(v interface{}, k string) (map[string]interface{}, error) {
+func FromJsonStringMap(v interface{}, k string) (map[string]interface{}, error) {
 	switch typedV := v.(type) {
 	case map[string]interface{}:
 		return typedV, nil
