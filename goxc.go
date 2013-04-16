@@ -282,7 +282,7 @@ func interpretSettings(call []string) (string, config.Settings) {
 			workingDirectory = "."
 		}
 	}
-	log.Printf("Working directory: '%s', Config name: %s", workingDirectory, configName)
+	log.Printf("Working directory: '%s', Config name: '%s'", workingDirectory, configName)
 
 	settings, err := mergeConfiguredSettings(workingDirectory, configName, !isWriteConfig)
 	if err != nil {
@@ -325,7 +325,7 @@ func remove(arr []string, v string) []string {
 // This is done to make merging options from configuration files easier.
 func setupFlags() *flag.FlagSet {
 	flagSet := flag.NewFlagSet("goxc", flag.ContinueOnError)
-	flagSet.StringVar(&configName, "c", core.CONFIG_NAME_DEFAULT, "config name (default='.goxc')")
+	flagSet.StringVar(&configName, "c", core.CONFIG_NAME_DEFAULT, "config name (default='')")
 
 	//TODO deprecate?
 	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (default is all - \"linux darwin windows freebsd openbsd\")")

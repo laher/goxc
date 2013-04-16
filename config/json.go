@@ -27,14 +27,18 @@ import (
 	"path/filepath"
 )
 
-const GOXC_CONFIG_VERSION = "0.6"
+const (
+	GOXC_CONFIG_VERSION = "0.6"
+	GOXC_FILE_EXT       = ".goxc.json"
+	GOXC_LOCAL_FILE_EXT = ".goxc.local.json"
+)
 
 var GOXC_CONFIG_SUPPORTED = []string{"0.5.0", "0.6"}
 
-//0.6 DEPRECATD
+//0.6 DEPRECATED
 type JsonSettings struct {
 	Settings Settings
-	//Format for goxc.json files
+	//Format for .goxc.json files
 	FormatVersion string
 	//TODO??: InheritFiles []string
 }
@@ -46,8 +50,8 @@ func WrapJsonSettings(settings Settings) Settings {
 }
 
 func LoadJsonConfigOverrideable(dir string, configName string, useLocal bool, verbose bool) (Settings, error) {
-	jsonFile := filepath.Join(dir, configName+".json")
-	jsonLocalFile := filepath.Join(dir, configName+".local.json")
+	jsonFile := filepath.Join(dir, configName+GOXC_FILE_EXT)
+	jsonLocalFile := filepath.Join(dir, configName+GOXC_LOCAL_FILE_EXT)
 	var err error
 	if useLocal {
 		localSettings, err := loadJsonFile(jsonLocalFile, verbose)
@@ -327,10 +331,10 @@ func FromJsonStringMap(v interface{}, k string) (map[string]interface{}, error) 
 func WriteJsonConfig(dir string, settings Settings, configName string, isLocal bool) error {
 	settings.GoxcConfigVersion = GOXC_CONFIG_VERSION
 	if isLocal {
-		jsonFile := filepath.Join(dir, configName+".local.json")
+		jsonFile := filepath.Join(dir, configName+GOXC_LOCAL_FILE_EXT)
 		return writeJsonFile(settings, jsonFile)
 	}
-	jsonFile := filepath.Join(dir, configName+".json")
+	jsonFile := filepath.Join(dir, configName+GOXC_FILE_EXT)
 	return writeJsonFile(settings, jsonFile)
 }
 

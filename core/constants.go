@@ -46,7 +46,7 @@ const (
 	//ARTIFACT_TYPE_ZIP = "zip"
 	//ARTIFACT_TYPE_BIN = "bin"
 
-	CONFIG_NAME_DEFAULT = ".goxc"
+	CONFIG_NAME_DEFAULT = ""
 
 	//taskname required by config/json
 	TASK_BUILD_TOOLCHAIN = "toolchain"

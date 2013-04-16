@@ -1,9 +1,9 @@
 goxc
 ====
 
-[goxc](http://www.laher.net.nz/goxc) cross-compiles Go programs to (up to) 11 target platforms at once.
+[goxc](http://www.laher.net.nz/goxc) is a build tool for Go, focussing on cross-compiling and packaging.
 
-By default, goxc [g]zips up the programs and generates a 'downloads page' in markdown (with a Jekyll header).
+By default, goxc [g]zips (& .debs for Linux) the programs, and generates a 'downloads page' in markdown (with a Jekyll header).
 
 goxc is written in Go but uses *os.exec* to call 'go build' with the appropriate flags & env variables for each supported platform.
 
@@ -12,7 +12,24 @@ BUT, goxc crosscompiles to all platforms at once. The artifacts are saved into a
 
 Thanks to [dchest](https://github.com/dchest) for the tidy-up and adding the zip feature, and [matrixik](https://bitbucket.org/matrixik) for his improvements and input.
 
-**NOTE: Version 0.5.0 (2013-03-24) is a major change. If you are using config files, please [read about the changes](https://github.com/laher/goxc/wiki/upgrading-0.5) for more information!**
+**NOTE: Version 0.5.0 and 0.6.0 have significant changes, which may affect you if you are using config files.**
+**Please read about these changes [0.5](https://github.com/laher/goxc/wiki/upgrading-0.5) and [0.6](https://github.com/laher/goxc/issues/7)**
+
+Features
+--------
+ * Cross-compilation, including building toolchains
+ * filtering on target platform (via commandline options or config file)
+ * Zip (or tar.gz) archiving of cross-compiled artifacts
+ * Packaging into .debs (for Debian/Ubuntu)
+ * Bundling of READMEs etc into archives
+ * Configuration files for repeatable builds. Includes support for multiple configurations per-project.
+ * Override files for 'local' working-copy-specific (or branch-specific) configurations.
+ * Config file generation & upgrade (using -wc option).
+ * go-test, go-vet, go-fmt, go-install, go-clean tasks.
+ * version number interpolation during build/test/... (uses go's -ldflags compiler option)
+ * 'downloads page' generation (markdown format).
+ * Per-task configuration options.
+ * TODO: bintray.com integration (deploys binaries to bintray.com). Almost there.
 
 Installation
 --------------
@@ -36,10 +53,6 @@ To build the toolchains for all 11 platforms:
 ### Now build your artifacts
 
 To build [g]zipped binaries for your app:
-
-	goxc path/to/app/dir
-
-OR
 
 	cd path/to/app/dir
 	goxc
@@ -72,48 +85,6 @@ goxc performs a number of operations, defined as tasks. You can specify tasks wi
  * You can skip tasks with '-tasks-='. Skip the 'package' stage with `goxc -tasks-=package`
  * For a list of tasks and 'task aliases', run `goxc -h tasks`
 
-### Available tasks
-
- * toolchain       Build toolchain. Make sure to run this each time you update go source.
- * clean-destination  Delete the output directory for this version of the artifact.
- * go-clean        runs `go clean`.
- * go-fmt          runs `go fmt ./...`.
- * go-test         runs `go test ./...`. (directory is configurable).
- * go-vet          runs `go vet ./...`.
- * go-install      runs `go install`. installs a version consistent with goxc-built binaries.
- * xc              Cross compile. Builds executables for other platforms.
- * codesign        sign code for Mac. Only Mac hosts are supported for this task.
- * copy-resources  Copies resources to the 'downloads' area.
- * archive         Create a compressed archive. Currently 'zip' format is used for all platforms except Linux (tar.gz)
- * pkg-build       Build a binary package. Currently only supports .deb format for Debian/Ubuntu
- * rmbin           delete binary. Normally runs after 'archive' task to reduce size of output directory.
- * downloads-page  Generate a downloads page. Currently only supports Markdown format.
-
-### Task aliases
-
-Task aliases are a name given to a sequence of tasks. You can specify tasks or aliases interchangeably.
-Specify aliases wherever possible.
-
- * all             [toolchain go-fmt go-vet go-test go-install xc codesign copy-resources archive pkg-build rmbin downloads-page]
- * package         [archive pkg-build rmbin downloads-page]
- * default         [go-vet go-test go-install xc codesign copy-resources archive pkg-build rmbin downloads-page]
- * validate        [go-vet go-test]
- * compile         [go-install xc codesign copy-resources]
- * clean           [go-clean clean-destination]
-
-### NEW TASK in 0.5.3
-
-There's a new task, 'pkg-build', to generate .debs (Debian/Ubuntu installers).
-
-As of 0.5.5, this is now included in the default workflow.
-
-Options are currently limited. For now, please check [goxc's own config file](https://github.com/laher/goxc/blob/master/.goxc.json) for config parameters.
-
-Alternatively, run your normal tasks excluding 'rmbin', then call pkg-build individually.
-
-	goxc -tasks-=rmbin
-	goxc -tasks=pkg-build
-
 Outcome
 -------
 
@@ -121,15 +92,17 @@ By default, artifacts are generated and then immediately archived into (outputdi
 
 e.g.1 /my/outputdir/0.1.1/linux_arm/myapp_0.1.1_linux_arm.tar.gz
 e.g.2 /my/outputdir/0.1.1/windows_386/myapp_0.1.1_windows_386.zip
+e.g.3 /my/outputdir/0.1.1/linux_386/myapp_0.1.1_linux_386.deb
 
-If you specified the version number -pv=123 then the filename would be myapp_0.1.1_linux_arm_123.tar.gz.
+The version number is specified with -pv=0.1.1 .
 
 By default, the output directory is ($GOBIN)/(appname)-xc, and the version is 'unknown', but you can specify these.
 
 e.g.
 
-      goxc -pv=0.1.1 -d=/home/me/myapp/ghpages/downloads/
+      goxc -pv=0.1.1 -d=/home/me/myuser-github-pages/myapp/downloads/
 
+**NOTE: it's not a good idea to use project-level github-pages - your repo will become huge. User-level gh-pages are an option.**
 
 If non-archived, artifacts generated into a directory structure as follows:
 
@@ -177,4 +150,3 @@ See also
  * [Changelog](https://github.com/laher/goxc/wiki/changelog)
  * [Package Versioning](https://github.com/laher/goxc/wiki/versioning)
  * [Upgrading to v0.5](https://github.com/laher/goxc/wiki/upgrading-0.5)
- * See also [my golang-crosscompile fork](https://github.com/laher/golang-crosscompile) for an added 'go-build-all' task similar to goxc.
