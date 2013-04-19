@@ -26,7 +26,7 @@
 			"repository": "goxc",
 			"subject": "laher",
 			"package": "goxc",
-			"downloadspage": "../laher.github.com/goxc/dl/index.md"
+			"downloadspage": "bintray.md"
 		}
 	},
 	"TasksAppend" : [ "go-fmt" ],

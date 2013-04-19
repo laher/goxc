@@ -274,7 +274,6 @@ func loadSettingsSection(settingsSection map[string]interface{}) (settings Setti
 				}
 			}
 		case "PackageVersion":
-			log.Printf("Package version %s", v)
 			settings.PackageVersion, err = typeutils.ToString(v, k)
 		case "BranchName":
 			settings.BranchName, err = typeutils.ToString(v, k)

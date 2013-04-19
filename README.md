@@ -16,21 +16,21 @@ Thanks to [dchest](https://github.com/dchest) for the tidy-up and adding the zip
 **Please read about these changes [0.5](https://github.com/laher/goxc/wiki/upgrading-0.5) and [0.6](https://github.com/laher/goxc/issues/7)**
 
 Notable Features
---------
+----------------
  * (re-)building toolchain to all or selected platforms.
  * Cross-compilation, to all supported platforms.
  * filtering on target platform (via commandline options or config file)
  * Zip (or tar.gz) archiving of cross-compiled artifacts
- * Packaging into .debs (for Debian/Ubuntu)
+ * Packaging into .debs (for Debian/Ubuntu Linux)
  * Bundling of READMEs etc into archives
+ * bintray.com integration (deploys binaries to bintray.com. bintray.com registration required.)
+ * 'downloads page' generation (markdown format).
  * Configuration files for repeatable builds. Includes support for multiple configurations per-project.
+ * Per-task configuration options.
  * Override files for 'local' working-copy-specific (or branch-specific) configurations.
  * Config file generation & upgrade (using -wc option).
  * go-test, go-vet, go-fmt, go-install, go-clean tasks.
  * version number interpolation during build/test/... (uses go's -ldflags compiler option)
- * 'downloads page' generation (markdown format).
- * Per-task configuration options.
- * TODO: bintray.com integration (deploys binaries to bintray.com). Almost there.
 
 Installation
 --------------
@@ -47,13 +47,13 @@ Basic Usage
 
 ### Run once
 
-To build the toolchains for all 11 platforms:
+To build the toolchains for all platforms:
 
        goxc -t
 
 ### Now build your artifacts
 
-To build [g]zipped binaries for your app:
+To build [g]zipped binaries and .debs for your app:
 
 	cd path/to/app/dir
 	goxc

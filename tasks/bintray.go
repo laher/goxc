@@ -27,7 +27,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -41,13 +40,12 @@ const TASK_BINTRAY = "bintray"
 func init() {
 	register(Task{
 		TASK_BINTRAY,
-		"Upload artifacts to bintray",
+		"Upload artifacts to bintray (bintray registration details required in goxc config)",
 		runTaskBintray,
 		map[string]interface{}{"subject": "", "apikey": "", "repository": "",
 			"apihost":         "https://api.bintray.com/",
-			"downloadshost":          "https://dl.bintray.com/",
-			"isdownloadspage": true, "downloadspage": "bintray.md",
-			"include": "*.tar.gz,*.deb,*.zip", "exclude": "*.exe"}})
+			"downloadshost":   "https://dl.bintray.com/",
+			"downloadspage": "bintray.md"}})
 }
 
 func runTaskBintray(tp taskParams) error {
@@ -125,14 +123,14 @@ func runTaskBintray(tp taskParams) error {
 					}
 					url := apiHost + "/content/" + subject + "/" + repository + "/" + pkg + "/" + tp.settings.GetFullVersionName() + "/" + relativePath
 					// for some reason there's no /pkg/ level in the downloads url.
-					downloadsUrl := downloadsHost + "/content/" + subject + "/" + repository + "/" + tp.settings.GetFullVersionName() + "/" + relativePath + "?direct"
-					resp, err := doMultipartFile("PUT", url, subject, apikey, fullPath, relativePath)
+					downloadsUrl := downloadsHost + "/content/" + subject + "/" + repository + "/" + relativePath + "?direct"
+					resp, err := uploadFile("PUT", url, subject, apikey, fullPath, relativePath)
 					if err != nil {
 						return err
 					}
 					log.Printf("File uploaded. %v", resp)
 					//TODO: move out of loop. Only once per batch? LOLWUT I don't know what this comment means any more.
-					_, err = fmt.Fprintf(f, " [[%s](%s)]", text, downloadUrl)
+					_, err = fmt.Fprintf(f, " [[%s](%s)]", text, downloadsUrl)
 					if err != nil {
 						return err
 					}
@@ -158,29 +156,24 @@ func publish(apihost, apikey, subject, repository, pkg, version string) error {
 }
 
 //PUT /content/:subject/:repo/:package/:version/:path
-func uploadFile(apihost, apikey, subject, repository, pkg, version, fullPath, relativePath string) error {
-	url := apihost + "/content/" + subject + "/" + repository + "/" + pkg + "/" + version + "/" + relativePath
-	/*
-		file, err := os.Open(fullPath)
-		if err != nil {
-			log.Printf("Error reading file for upload: %v", err)
-			return err
-		}
-		defer file.Close()
-		fi, err := file.Stat()
-		if err != nil {
-			log.Printf("Error reading file for upload: %v", err)
-			return err
-		}
-		resp, err := doHttp("PUT", url, subject, apikey, file, fi.Size())
-	*/
-	resp, err := doMultipartFile("PUT", url, subject, apikey, fullPath, relativePath)
-	if err == nil {
-		log.Printf("File uploaded. %v", resp)
+func uploadFile(method, url, subject, apikey, fullPath, relativePath string) (map[string]interface{}, error) {
+	file, err := os.Open(fullPath)
+	if err != nil {
+		log.Printf("Error reading file for upload: %v", err)
+		return nil, err
 	}
-	return err
+	defer file.Close()
+	fi, err := file.Stat()
+	if err != nil {
+		log.Printf("Error statting file for upload: %v", err)
+		return nil, err
+	}
+	resp, err := doHttp(method, url, subject, apikey, file, fi.Size())
+	//resp, err := doMultipartFile("PUT", url, subject, apikey, fullPath, relativePath)
+	return resp, err
 }
 
+//NOTE: not necessary.
 //POST /packages/:subject/:repo/:package/versions
 func createVersion(apihost, apikey, subject, repository, pkg, version string) error {
 	req := map[string]interface{}{"name": version, "release_notes": "built by goxc", "release_url": "http://x.x.x/x/x"}
@@ -197,50 +190,8 @@ func createVersion(apihost, apikey, subject, repository, pkg, version string) er
 	return err
 }
 
-func doMultipartFile(method, url, subject, apikey, fullPath, relativePath string) (*http.Response, error) {
-	bodyBuf := bytes.NewBufferString("")
-	bodyWriter := multipart.NewWriter(bodyBuf)
-
-	// write the Part headers to the buffer
-	_, err := bodyWriter.CreateFormFile("upfile", relativePath)
-	if err != nil {
-		fmt.Println("error writing to buffer")
-		return nil, err
-	}
-
-	// write the file data
-	fh, err := os.Open(fullPath)
-	if err != nil {
-		fmt.Println("error opening file")
-		return nil, err
-	}
-	// boundary
-	boundary := bodyWriter.Boundary()
-	closeBuf := bytes.NewBufferString(fmt.Sprintf("\r\n--%s--\r\n", boundary))
-
-	// multi-reader defers the reading of the file data
-	requestReader := io.MultiReader(bodyBuf, fh, closeBuf)
-	fi, err := fh.Stat()
-	if err != nil {
-		fmt.Printf("Error Stating file: %s", fullPath)
-		return nil, err
-	}
-	req, err := http.NewRequest(method, url, requestReader)
-	if err != nil {
-		return nil, err
-	}
-
-	// Set headers
-	req.SetBasicAuth(subject, apikey)
-	req.Header.Add("Content-Type", "multipart/form-data; boundary="+boundary)
-	req.ContentLength = fi.Size() + int64(bodyBuf.Len()) + int64(closeBuf.Len())
-
-	return http.DefaultClient.Do(req)
-}
-
 func doHttp(method, url, subject, apikey string, requestReader io.Reader, requestLength int64) (map[string]interface{}, error) {
 	client := &http.Client{}
-	log.Printf("reader: %+v", requestReader)
 	req, err := http.NewRequest(method, url, requestReader)
 	if err != nil {
 		return nil, err
@@ -255,19 +206,20 @@ func doHttp(method, url, subject, apikey string, requestReader io.Reader, reques
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Http complete")
+	log.Printf("Http response received")
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 	resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	//200 is OK, 201 is Created, etc
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		log.Printf("Error code: %s", resp.Status)
 		log.Printf("Error body: %s", body)
 		return nil, errors.New(fmt.Sprintf("Invalid HTTP status: %s", resp.Status))
 	}
-	log.Printf("Response Body: %s", body)
+	log.Printf("Response status: '%s', Body: %s", resp.Status, body)
 	var b map[string]interface{}
 	err = json.Unmarshal(body, &b)
 	if err != nil {
