@@ -53,9 +53,9 @@ func runTaskCodesign(tp taskParams) error {
 
 func codesignPlat(goos, arch string, outDestRoot string, relativeBin string, settings config.Settings) {
 	// settings.codesign only works on OS X for binaries generated for OS X.
-	id := settings.GetTaskSetting("codesign", "id")
+	id := settings.GetTaskSettingString("codesign", "id")
 	if id != "" && runtime.GOOS == platforms.DARWIN && goos == platforms.DARWIN {
-		if err := signBinary(filepath.Join(outDestRoot, relativeBin), id.(string)); err != nil {
+		if err := signBinary(filepath.Join(outDestRoot, relativeBin), id); err != nil {
 			log.Printf("codesign failed: %s", err)
 		} else {
 			log.Printf("Signed with ID: %q", id)

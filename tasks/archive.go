@@ -64,7 +64,7 @@ func archivePlat(goos, arch, appName, workingDirectory, outDestRoot string, sett
 
 	var archiver archive.Archiver
 	var ending string
-	osOptions := settings.GetTaskSetting(TASK_ARCHIVE, "os").(map[string]interface{})
+	osOptions := settings.GetTaskSettingMap(TASK_ARCHIVE, "os")
 
 	if osOption, keyExists := osOptions[goos]; keyExists {
 		if osOption == "TarGz" {

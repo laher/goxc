@@ -27,20 +27,19 @@ const (
 	ARTIFACTS_DEST_DEFAULT    = ""
 	BUILD_CONSTRAINTS_DEFAULT = ""
 	CODESIGN_DEFAULT          = ""
+
 	// Default resources to include. Comma-separated list of globs.
 	RESOURCES_INCLUDE_DEFAULT = "INSTALL*,README*,LICENSE*"
 	RESOURCES_EXCLUDE_DEFAULT = "*.go" //TODO
-	OS_DEFAULT                = ""
-	ARCH_DEFAULT              = ""
-	PACKAGE_VERSION_DEFAULT   = "unknown"
-	PRERELEASE_INFO_DEFAULT   = "SNAPSHOT"
-	VERBOSE_DEFAULT           = false
-	ZIP_ARCHIVES_DEFAULT      = false
-	IS_BUILDTOOLCHAIN_DEFAULT = false
-	BRANCH_ORIGINAL           = "original"
 
-	VERBOSITY_QUIET   = "q" //TODO
+	OS_DEFAULT              = ""
+	ARCH_DEFAULT            = ""
+	PACKAGE_VERSION_DEFAULT = "unknown"
+	PRERELEASE_INFO_DEFAULT = "SNAPSHOT"
+	BRANCH_ORIGINAL         = "original"
+
 	VERBOSITY_DEFAULT = "d"
+	VERBOSITY_QUIET   = "q" //TODO
 	VERBOSITY_VERBOSE = "v"
 	//0.4 removed in favour of associated tasks
 	//ARTIFACT_TYPE_ZIP = "zip"

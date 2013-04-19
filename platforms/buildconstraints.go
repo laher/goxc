@@ -19,7 +19,7 @@ package platforms
 import (
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
-	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/typeutils"
 	"log"
 	"strings"
 )
@@ -62,11 +62,11 @@ func ApplyBuildConstraints(buildConstraints string, unfilteredPlatforms [][]stri
 }
 
 func IsArch(part string) bool {
-	return core.StringSlicePos(ARCHS, part) > -1
+	return typeutils.StringSlicePos(ARCHS, part) > -1
 }
 
 func IsOs(part string) bool {
-	return core.StringSlicePos(OSES, part) > -1
+	return typeutils.StringSlicePos(OSES, part) > -1
 }
 
 func isNegative(part string) (bool, string) {
@@ -84,7 +84,7 @@ func resolveItem(itemOses, itemNegOses, itemArchs, itemNegArchs []string, unfilt
 		itemOses = getOses(unfilteredPlatforms)
 	}
 	for _, itemNegOs := range itemNegOses {
-		core.StringSliceDel(itemOses, itemNegOs)
+		typeutils.StringSliceDel(itemOses, itemNegOs)
 	}
 
 	for _, itemOs := range itemOses {
@@ -95,7 +95,7 @@ func resolveItem(itemOses, itemNegOses, itemArchs, itemNegArchs []string, unfilt
 			itemArchsThisOs = getArchsForOs(unfilteredPlatforms, itemOs)
 		}
 		for _, itemNegArch := range itemNegArchs {
-			itemArchsThisOs = core.StringSliceDel(itemArchsThisOs, itemNegArch)
+			itemArchsThisOs = typeutils.StringSliceDel(itemArchsThisOs, itemNegArch)
 		}
 		for _, itemArch := range itemArchsThisOs {
 			ret = append(ret, []string{itemOs, itemArch})

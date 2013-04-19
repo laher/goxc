@@ -23,6 +23,7 @@ import (
 	"github.com/laher/goxc/archive"
 	"github.com/laher/goxc/core"
 	"github.com/laher/goxc/platforms"
+	"github.com/laher/goxc/typeutils"
 	"io/ioutil"
 	"log"
 	"os"
@@ -36,7 +37,7 @@ func init() {
 		TASK_PKG_BUILD,
 		"Build a binary package. Currently only supports .deb format for Debian/Ubuntu Linux.",
 		runTaskPkgBuild,
-		map[string]interface{}{"metadata": map[string]interface{}{"maintainer": "unknown"}, "metadata-deb": map[string]interface{}{"Depends": "golang"}, "rmtemp": true}})
+		map[string]interface{}{"metadata": map[string]interface{}{"maintainer": "unknown"}, "metadata-deb": map[string]interface{}{"Depends": ""}, "rmtemp": true}})
 }
 
 func runTaskPkgBuild(tp taskParams) (err error) {
@@ -93,9 +94,9 @@ func getDebArch(destArch string) string {
 }
 
 func debBuild(destOs, destArch string, tp taskParams) (err error) {
-	metadata := tp.settings.GetTaskSetting(TASK_PKG_BUILD, "metadata").(map[string]interface{})
-	metadataDeb := tp.settings.GetTaskSetting(TASK_PKG_BUILD, "metadata-deb").(map[string]interface{})
-	rmtemp := tp.settings.GetTaskSetting(TASK_PKG_BUILD, "rmtemp").(bool)
+	metadata := tp.settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata")
+	metadataDeb := tp.settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata-deb")
+	rmtemp := tp.settings.GetTaskSettingBool(TASK_PKG_BUILD, "rmtemp")
 	relativeBin := core.GetRelativeBin(destOs, destArch, tp.appName, false, tp.settings.GetFullVersionName())
 	appPath := filepath.Join(tp.outDestRoot, relativeBin)
 	debDir := filepath.Dir(appPath)
@@ -110,11 +111,17 @@ func debBuild(destOs, destArch string, tp taskParams) (err error) {
 	}
 	description := "?"
 	if desc, keyExists := metadata["description"]; keyExists {
-		description = desc.(string)
+		description, err = typeutils.ToString(desc, "description")
+		if err != nil {
+			return err
+		}
 	}
 	maintainer := "?"
 	if maint, keyExists := metadata["maintainer"]; keyExists {
-		maintainer = maint.(string)
+		maintainer, err = typeutils.ToString(maint, "maintainer")
+		if err != nil {
+			return err
+		}
 	}
 	controlContent := getDebControlFileContent(tp.appName, maintainer, tp.settings.GetFullVersionName(), destArch, description, metadataDeb)
 	if tp.settings.IsVerbose() {

@@ -1,4 +1,4 @@
-package core
+package typeutils
 
 /*
    Copyright 2013 Am Laher
@@ -21,6 +21,7 @@ func StringSliceDelIndex(a []string, i int) []string {
 	// OR  a = a[:i+copy(a[i:], a[i+1:])]
 	return a
 }
+
 func StringSliceDel(slice []string, value string) []string {
 	p := StringSlicePos(slice, value)
 	if p > -1 {

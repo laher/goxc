@@ -6,14 +6,14 @@ import (
 )
 
 func TestStripEmpties(t *testing.T) {
-	js := []byte(`{ "Settings": {
+	js := []byte(`{
 	"Verbosity" : "",
 	"PackageVersion" : "0.1.1",
 	"zipArchives" : false,
 	"ArtifactsDest" : "../goxc-pages/",
 	"platforms": ["windows/386"],
 	"blah" : []
-	 } }`)
+	 }`)
 
 	outjs, err := StripEmpties(js, true)
 	if err != nil {
@@ -22,18 +22,18 @@ func TestStripEmpties(t *testing.T) {
 	log.Printf("stripped: %v", string(outjs))
 }
 func TestLoadSettings(t *testing.T) {
-	js := []byte(`{ "Settings" : {
+	js := []byte(`{
 	"Verbosity" : "v",
 	"PackageVersion" : "0.1.1",
 	"zipArchives" : false,
 	"ArtifactsDest" : "../goxc-pages/",
 	"platforms": "windows/386"
-	} }`)
+	}`)
 	settings, err := readJson(js)
 	if err != nil {
 		t.Fatalf("Err: %v", err)
 	}
-	if !settings.Settings.IsVerbose() {
+	if !settings.IsVerbose() {
 		t.Fatalf("Verbose flag not set!")
 	}
 }

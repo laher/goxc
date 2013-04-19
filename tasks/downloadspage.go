@@ -40,13 +40,13 @@ func init() {
 }
 
 func runTaskDownloadsPage(tp taskParams) error {
-	filename := tp.settings.GetTaskSetting(TASK_DOWNLOADS_PAGE, "filename").(string)
+	filename := tp.settings.GetTaskSettingString(TASK_DOWNLOADS_PAGE, "filename")
 	reportFilename := filepath.Join(tp.outDestRoot, tp.settings.GetFullVersionName(), filename)
 	flags := os.O_WRONLY | os.O_TRUNC | os.O_CREATE
 	f, err := os.OpenFile(reportFilename, flags, 0600)
 	if err == nil {
 		defer f.Close()
-		fileheader := tp.settings.GetTaskSetting(TASK_DOWNLOADS_PAGE, "fileheader").(string)
+		fileheader := tp.settings.GetTaskSettingString(TASK_DOWNLOADS_PAGE, "fileheader")
 		if fileheader != "" {
 			_, err = fmt.Fprintf(f, "%s\n\n", fileheader)
 		}

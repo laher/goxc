@@ -19,6 +19,7 @@ package config
 
 import (
 	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/typeutils"
 	"log"
 )
 
@@ -63,7 +64,7 @@ type Settings struct {
 	Verbosity string `json:",omitempty"` // none/debug/
 
 	//TaskSettings map[string]map[string]interface{}
-	TaskSettings map[string]interface{} `json:",omitempty"`
+	TaskSettings map[string]map[string]interface{} `json:",omitempty"`
 
 	//for 0.6.0, to replace 'FormatVersion'
 	GoxcConfigVersion string `json:"FormatVersion,omitempty"`
@@ -84,7 +85,7 @@ func (s Settings) IsTask(taskName string) bool {
 
 func (s Settings) SetTaskSetting(taskName, settingName string, value interface{}) {
 	if s.TaskSettings == nil {
-		s.TaskSettings = make(map[string]interface{})
+		s.TaskSettings = make(map[string]map[string]interface{})
 	}
 	if value, keyExists := s.TaskSettings[taskName]; keyExists {
 		//ok
@@ -97,7 +98,7 @@ func (s Settings) SetTaskSetting(taskName, settingName string, value interface{}
 
 func (s Settings) GetTaskSetting(taskName, settingName string) interface{} {
 	if value, keyExists := s.TaskSettings[taskName]; keyExists {
-		taskMap := value.(map[string]interface{})
+		taskMap := value //.(map[string]interface{})
 		if settingValue, keyExists := taskMap[settingName]; keyExists {
 			return settingValue
 		}
@@ -108,6 +109,42 @@ func (s Settings) GetTaskSetting(taskName, settingName string) interface{} {
 		}
 	}
 	return nil
+}
+func (s Settings) GetTaskSettingMap(taskName, settingName string) map[string]interface{} {
+	retUntyped := s.GetTaskSetting(taskName, settingName)
+	if retUntyped == nil {
+		return nil
+	}
+	mp, err := typeutils.ToMap(retUntyped, taskName+"."+settingName)
+	if err != nil {
+		//already logged
+	}
+	return mp
+
+}
+
+func (s Settings) GetTaskSettingString(taskName, settingName string) string {
+	retUntyped := s.GetTaskSetting(taskName, settingName)
+	if retUntyped == nil {
+		return ""
+	}
+	str, err := typeutils.ToString(retUntyped, taskName+"."+settingName)
+	if err != nil {
+		//already logged
+	}
+	return str
+}
+
+func (s Settings) GetTaskSettingBool(taskName, settingName string) bool {
+	retUntyped := s.GetTaskSetting(taskName, settingName)
+	if retUntyped == nil {
+		return false
+	}
+	ret, err := typeutils.ToBool(retUntyped, taskName+"."+settingName)
+	if err != nil {
+		//already logged
+	}
+	return ret
 }
 
 func (settings Settings) GetFullVersionName() string {
@@ -187,29 +224,7 @@ func Merge(high Settings, low Settings) Settings {
 	if len(high.TaskSettings) == 0 {
 		high.TaskSettings = low.TaskSettings
 	} else {
-		high.TaskSettings = mergeMaps(high.TaskSettings, low.TaskSettings)
-	}
-	return high
-}
-
-func mergeMaps(high, low map[string]interface{}) map[string]interface{} {
-	if high == nil {
-		return low
-	}
-	for key, lowVal := range low {
-		if highVal, keyExists := high[key]; keyExists {
-			// NOTE: go deeper for maps.
-			// (Slices and other types should not go deeper)
-			switch highValTyped := highVal.(type) {
-			case map[string]interface{}:
-				switch lowValTyped := lowVal.(type) {
-				case map[string]interface{}:
-					high[key] = mergeMaps(highValTyped, lowValTyped)
-				}
-			}
-		} else {
-			high[key] = lowVal
-		}
+		high.TaskSettings = typeutils.MergeMapsStringMapStringInterface(high.TaskSettings, low.TaskSettings)
 	}
 	return high
 }

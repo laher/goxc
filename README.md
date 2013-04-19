@@ -12,12 +12,13 @@ BUT, goxc crosscompiles to all platforms at once. The artifacts are saved into a
 
 Thanks to [dchest](https://github.com/dchest) for the tidy-up and adding the zip feature, and [matrixik](https://bitbucket.org/matrixik) for his improvements and input.
 
-**NOTE: Version 0.5.0 and 0.6.0 have significant changes, which may affect you if you are using config files.**
+**NOTE: Version 0.5.0 and 0.6.0 have significant changes, which may affect you in certain cases - especially if you are using config files.**
 **Please read about these changes [0.5](https://github.com/laher/goxc/wiki/upgrading-0.5) and [0.6](https://github.com/laher/goxc/issues/7)**
 
-Features
+Notable Features
 --------
- * Cross-compilation, including building toolchains
+ * (re-)building toolchain to all or selected platforms.
+ * Cross-compilation, to all supported platforms.
  * filtering on target platform (via commandline options or config file)
  * Zip (or tar.gz) archiving of cross-compiled artifacts
  * Packaging into .debs (for Debian/Ubuntu)

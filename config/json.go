@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/typeutils"
 	"io/ioutil"
 	"log"
 	"os"
@@ -35,20 +36,9 @@ const (
 
 var GOXC_CONFIG_SUPPORTED = []string{"0.5.0", "0.6"}
 
-//0.6 DEPRECATED
-type JsonSettings struct {
-	Settings Settings
-	//Format for .goxc.json files
-	FormatVersion string
-	//TODO??: InheritFiles []string
-}
+//0.6 REMOVED JsonSettings struct.
 
-//0.6 DEPRECATED
-func WrapJsonSettings(settings Settings) Settings {
-	settings.GoxcConfigVersion = GOXC_CONFIG_VERSION
-	return settings
-}
-
+//Loads a config file and merges results with any 'override' files.
 func LoadJsonConfigOverrideable(dir string, configName string, useLocal bool, verbose bool) (Settings, error) {
 	jsonFile := filepath.Join(dir, configName+GOXC_FILE_EXT)
 	jsonLocalFile := filepath.Join(dir, configName+GOXC_LOCAL_FILE_EXT)
@@ -138,7 +128,7 @@ func validateRawJson(rawJson []byte, fileName string) []error {
 	rejectOldTaskDefinitions := false
 	if fv, keyExists := m["FormatVersion"]; keyExists {
 		formatVersion := fv.(string)
-		if -1 == core.StringSlicePos(GOXC_CONFIG_SUPPORTED, formatVersion) {
+		if -1 == typeutils.StringSlicePos(GOXC_CONFIG_SUPPORTED, formatVersion) {
 			log.Printf("WARNING (%s): is an old config file. File version: %s. Current version %v", fileName, formatVersion, GOXC_CONFIG_VERSION)
 			rejectOldTaskDefinitions = true
 		}
@@ -224,16 +214,24 @@ func loadJsonFile(jsonFile string, verbose bool) (Settings, error) {
 		//fill all the way down.
 		m := f.(map[string]interface{})
 		if fv, keyExists := m["FormatVersion"]; keyExists {
-			//OK
 			if s, keyExists := m["Settings"]; keyExists {
-				settingsSection := s.(map[string]interface{})
+				//Support for old versions, up until version 0.5.
+				settingsSection, err := typeutils.ToMap(s, "Settings")
+				if err != nil {
+					return settings, err
+				}
 				if _, keyExists = settingsSection["FormatVersion"]; !keyExists {
 					//set from jsonSettings
-					settingsSection["FormatVersion"] = fv.(string)
+					formatVersion, err := typeutils.ToString(fv, "FormatVersion")
+					if err != nil {
+						return settings, err
+					}
+					settingsSection["FormatVersion"] = formatVersion
 				}
 				settings, err := loadSettingsSection(settingsSection)
 				return settings, err
 			} else {
+				//0.6 has no '{ Settings {} }' level. Just use the top level.
 				return loadSettingsSection(m)
 			}
 
@@ -255,41 +253,41 @@ func loadSettingsSection(settingsSection map[string]interface{}) (settings Setti
 		//try to match key
 		switch k {
 		case "Tasks":
-			settings.Tasks, err = FromJsonStringSlice(v, k)
+			settings.Tasks, err = typeutils.ToStringSlice(v, k)
 		case "TasksAppend":
-			settings.TasksAppend, err = FromJsonStringSlice(v, k)
+			settings.TasksAppend, err = typeutils.ToStringSlice(v, k)
 		case "ArtifactsDest":
-			settings.ArtifactsDest, err = FromJsonString(v, k)
+			settings.ArtifactsDest, err = typeutils.ToString(v, k)
 		case "Arch":
-			settings.Arch, err = FromJsonString(v, k)
+			settings.Arch, err = typeutils.ToString(v, k)
 		case "Os":
-			settings.Os, err = FromJsonString(v, k)
+			settings.Os, err = typeutils.ToString(v, k)
 		case "BuildConstraints":
-			settings.BuildConstraints, err = FromJsonString(v, k)
+			settings.BuildConstraints, err = typeutils.ToString(v, k)
 		case "Resources":
 			for k2, v2 := range v.(map[string]interface{}) {
 				switch k2 {
 				case "Include":
-					settings.Resources.Include, err = FromJsonString(v2, k+":"+k2)
+					settings.Resources.Include, err = typeutils.ToString(v2, k+":"+k2)
 				case "Exclude":
-					settings.Resources.Exclude, err = FromJsonString(v2, k+":"+k2)
+					settings.Resources.Exclude, err = typeutils.ToString(v2, k+":"+k2)
 				}
 			}
 		case "PackageVersion":
 			log.Printf("Package version %s", v)
-			settings.PackageVersion, err = FromJsonString(v, k)
+			settings.PackageVersion, err = typeutils.ToString(v, k)
 		case "BranchName":
-			settings.BranchName, err = FromJsonString(v, k)
+			settings.BranchName, err = typeutils.ToString(v, k)
 		case "PrereleaseInfo":
-			settings.PrereleaseInfo, err = FromJsonString(v, k)
+			settings.PrereleaseInfo, err = typeutils.ToString(v, k)
 		case "BuildName":
-			settings.BuildName, err = FromJsonString(v, k)
+			settings.BuildName, err = typeutils.ToString(v, k)
 		case "Verbosity":
-			settings.Verbosity, err = FromJsonString(v, k)
+			settings.Verbosity, err = typeutils.ToString(v, k)
 		case "TaskSettings":
-			settings.TaskSettings, err = FromJsonStringMap(v, k)
+			settings.TaskSettings, err = typeutils.ToMapStringMapStringInterface(v, k)
 		case "FormatVersion":
-			settings.GoxcConfigVersion, err = FromJsonString(v, k)
+			settings.GoxcConfigVersion, err = typeutils.ToString(v, k)
 		default:
 			log.Printf("Warning!! Unrecognised Setting '%s' (value %v)", k, v)
 		}
@@ -298,34 +296,6 @@ func loadSettingsSection(settingsSection map[string]interface{}) (settings Setti
 		}
 	}
 	return settings, err
-}
-
-func FromJsonStringSlice(v interface{}, k string) ([]string, error) {
-	ret := []string{}
-	switch typedV := v.(type) {
-	case []interface{}:
-		for _, i := range typedV {
-			ret = append(ret, i.(string))
-		}
-		return ret, nil
-	}
-	return ret, fmt.Errorf("%s should be a json array, not a %T", k, v)
-}
-
-func FromJsonString(v interface{}, k string) (string, error) {
-	switch typedV := v.(type) {
-	case string:
-		return typedV, nil
-	}
-	return "", fmt.Errorf("%s should be a json string, not a %T", k, v)
-}
-
-func FromJsonStringMap(v interface{}, k string) (map[string]interface{}, error) {
-	switch typedV := v.(type) {
-	case map[string]interface{}:
-		return typedV, nil
-	}
-	return nil, fmt.Errorf("%s should be a json map, not a %T", k, v)
 }
 
 func WriteJsonConfig(dir string, settings Settings, configName string, isLocal bool) error {
@@ -352,8 +322,8 @@ func writeJsonFile(settings Settings, jsonFile string) error {
 
 //use json from string
 //0.6 DEPRECATED (unused)
-func readJson(js []byte) (JsonSettings, error) {
-	var settings JsonSettings
+func readJson(js []byte) (Settings, error) {
+	var settings Settings
 	err := json.Unmarshal(js, &settings)
 	if err != nil {
 		log.Printf("Error: %v", err)
@@ -363,7 +333,7 @@ func readJson(js []byte) (JsonSettings, error) {
 }
 
 //0.6 DEPRECATED (unused)
-func writeJson(m JsonSettings) ([]byte, error) {
+func writeJson(m Settings) ([]byte, error) {
 	return json.MarshalIndent(m, "", "\t")
 }
 

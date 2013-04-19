@@ -49,7 +49,7 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION              = "0.5.x"
+	VERSION              = "0.6.x"
 	settings             config.Settings
 	configName           string
 	isVersion            bool
@@ -69,12 +69,8 @@ var (
 func printHelp(flagSet *flag.FlagSet) {
 	args := flagSet.Args()
 	if len(args) < 1 {
-		//fmt.Fprint(os.Stderr, MSG_HELP)
 		fmt.Fprintf(os.Stderr, "goxc version '%s'\n", VERSION)
 		printHelpTopic(flagSet, "options")
-		//fmt.Fprint(os.Stderr, MSG_HELP_DESC)
-		//fmt.Fprint(os.Stderr, MSG_HELP_TC)
-		//fmt.Fprint(os.Stderr, MSG_HELP_TOPICS_EG)
 	} else {
 		printHelpTopic(flagSet, args[0])
 	}
@@ -99,7 +95,6 @@ func printHelpTopic(flagSet *flag.FlagSet, topic string) {
 			}
 			fmt.Fprintf(os.Stderr, " %s  %s%s\n", task.Name, padding, task.Description)
 		}
-		//fmt.Fprint(os.Stderr, "\nTask aliases (specify aliases where possible):\n")
 		for alias, taskNames := range tasks.Aliases {
 			if len(alias) < 15 {
 				padding = strings.Repeat(" ", 15-len(alias))
@@ -121,7 +116,7 @@ func printVersion(flagSet *flag.FlagSet) {
 
 //merge configuration file
 //maybe oneday: parse source
-//TODO honour build flags
+//TODO honour build flags ? (build flags are per-file rather than per-package, so not sure how this might work)
 func mergeConfiguredSettings(dir string, configName string, useLocal bool) (config.Settings, error) {
 	if settings.IsVerbose() {
 		log.Printf("loading configured settings")
@@ -148,12 +143,11 @@ func fillDefaults(settings config.Settings) config.Settings {
 	if settings.PackageVersion == "" {
 		settings.PackageVersion = core.PACKAGE_VERSION_DEFAULT
 	}
-
 	if len(settings.Tasks) == 0 {
 		settings.Tasks = tasks.TASKS_DEFAULT
 	}
 	if settings.TaskSettings == nil {
-		settings.TaskSettings = make(map[string]interface{})
+		settings.TaskSettings = make(map[string]map[string]interface{})
 	}
 
 	//fill in per-task settings ...
@@ -162,10 +156,9 @@ func fillDefaults(settings config.Settings) config.Settings {
 			if _, keyExists := settings.TaskSettings[t.Name]; !keyExists {
 				settings.TaskSettings[t.Name] = t.DefaultSettings
 			} else {
-				//TODO go deeper still
+				//TODO go deeper still?
 				for k, v := range t.DefaultSettings {
-					//log.Printf("k %s => v %s", k, v)
-					taskSettings := settings.TaskSettings[t.Name].(map[string]interface{})
+					taskSettings := settings.TaskSettings[t.Name]
 					if _, keyExists = taskSettings[k]; !keyExists {
 						taskSettings[k] = v
 					}
@@ -181,7 +174,7 @@ func fillDefaults(settings config.Settings) config.Settings {
 func goXC(call []string) {
 	workingDirectory, settings := interpretSettings(call)
 	if isWriteConfig {
-		err := config.WriteJsonConfig(workingDirectory, config.WrapJsonSettings(settings), configName, false)
+		err := config.WriteJsonConfig(workingDirectory, settings, configName, false)
 		if err != nil {
 			log.Printf("Could not write config file: %v", err)
 		}
@@ -244,7 +237,6 @@ func interpretSettings(call []string) (string, config.Settings) {
 			settings.SetTaskSetting(tasks.TASK_CODESIGN, "id", codesignId)
 		}
 	}
-	//log.Printf("Settings: %s", settings)
 	if isHelp {
 		printHelp(flagSet)
 		os.Exit(0)
