@@ -117,6 +117,9 @@ func printHelpTopic(flagSet *flag.FlagSet, topic string) {
 					} else {
 						fmt.Fprintf(os.Stderr, "TaskConfig:\n\"TaskConfig\": %s \n", string(out))
 					}
+				} else {
+					fmt.Fprintf(os.Stderr, "TaskConfig:\n No TaskConfig available for '%s'\n", task.Name)
+
 				}
 				return
 			}
@@ -395,7 +398,7 @@ func printOptions(flagSet *flag.FlagSet) {
 	boolOptions := []string{"h", "v", "version", "t", "wc"}
 
 	//help
-	fmt.Printf("  -h             Help - show options\n")
+	fmt.Printf("  -h <topic>     Help - default topic is 'options'. Also 'tasks', or any task or alias name.\n")
 	fmt.Printf("  -ht            Help - show tasks (and task aliases)\n")
 	fmt.Printf("  -version       %s\n", flagSet.Lookup("version").Usage)
 	fmt.Printf("  -v             %s\n", flagSet.Lookup("v").Usage)
