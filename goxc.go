@@ -18,6 +18,7 @@ package main
 */
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -77,9 +78,9 @@ func printHelp(flagSet *flag.FlagSet) {
 }
 
 func printHelpTopic(flagSet *flag.FlagSet, topic string) {
-	fmt.Fprint(os.Stderr, MSG_HELP)
 	switch topic {
 	case "options":
+		fmt.Fprint(os.Stderr, MSG_HELP)
 		printOptions(flagSet)
 		return
 	case "tasks":
@@ -104,6 +105,29 @@ func printHelpTopic(flagSet *flag.FlagSet, topic string) {
 			fmt.Fprintf(os.Stderr, " %s%s alias: %v\n", alias, padding, taskNames)
 		}
 		return
+	default:
+		//task help
+		for _, task := range tasks.ListTasks() {
+			if topic == task.Name {
+				fmt.Fprintf(os.Stderr, "Task:\n '%s'\nDescription:\n  %s\n", task.Name, task.Description)
+				if task.DefaultSettings != nil {
+					out, err := json.MarshalIndent(map[string]map[string]interface{}{ task.Name : task.DefaultSettings }, "", "\t")
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "Error displaying TaskConfig info %v\n", err)
+					} else {
+						fmt.Fprintf(os.Stderr, "TaskConfig:\n\"TaskConfig\": %s \n", string(out))
+					}
+				}
+				return
+			}
+		}
+		for alias, taskNames := range tasks.Aliases {
+			if topic == alias {
+				fmt.Fprintf(os.Stderr, "Alias '%s'\n'%s' runs the following tasks:\n  %s\n", alias, alias, taskNames)
+				return
+			}
+		}
+
 	}
 	fmt.Fprintf(os.Stderr, MSG_HELP_UNKNOWN_TOPIC, topic)
 	fmt.Fprint(os.Stderr, MSG_HELP_TOPICS)

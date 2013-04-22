@@ -15,7 +15,8 @@ package tasks
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-
+//TODO: handle conflicts (delete or skip?)
+//TODO: own options for downloadspage
 import (
 	"bytes"
 	"encoding/json"
@@ -43,8 +44,8 @@ func init() {
 		"Upload artifacts to bintray (bintray registration details required in goxc config)",
 		runTaskBintray,
 		map[string]interface{}{"subject": "", "apikey": "", "repository": "",
-			"apihost":         "https://api.bintray.com/",
-			"downloadshost":   "https://dl.bintray.com/",
+			"apihost":       "https://api.bintray.com/",
+			"downloadshost": "https://dl.bintray.com/",
 			"downloadspage": "bintray.md"}})
 }
 
@@ -108,6 +109,7 @@ func runTaskBintray(tp taskParams) error {
 			if err == nil {
 				platform := strings.Replace(fi.Name(), "_", "/", -1)
 				fmt.Fprintf(f, "\n * **%s**:", platform)
+				first := true
 				for _, fi2 := range fileInfos2 {
 					relativePath := fi.Name() + "/" + fi2.Name()
 					fullPath := filepath.Join(versionDir, relativePath)
@@ -129,8 +131,13 @@ func runTaskBintray(tp taskParams) error {
 						return err
 					}
 					log.Printf("File uploaded. %v", resp)
-					//TODO: move out of loop. Only once per batch? LOLWUT I don't know what this comment means any more.
-					_, err = fmt.Fprintf(f, " [[%s](%s)]", text, downloadsUrl)
+					commaIfRequired := ""
+					if first {
+						first = false
+					} else {
+						commaIfRequired = ","
+					}
+					_, err = fmt.Fprintf(f, "%s [[%s](%s)]", commaIfRequired, text, downloadsUrl)
 					if err != nil {
 						return err
 					}
@@ -221,9 +228,11 @@ func doHttp(method, url, subject, apikey string, requestReader io.Reader, reques
 	}
 	log.Printf("Response status: '%s', Body: %s", resp.Status, body)
 	var b map[string]interface{}
-	err = json.Unmarshal(body, &b)
-	if err != nil {
-		return nil, err
+	if len(body) > 0 {
+		err = json.Unmarshal(body, &b)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return b, err
 }
