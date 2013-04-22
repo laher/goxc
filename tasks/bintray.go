@@ -128,8 +128,22 @@ func runTaskBintray(tp taskParams) error {
 					downloadsUrl := downloadsHost + "/content/" + subject + "/" + repository + "/" + relativePath + "?direct"
 					resp, err := uploadFile("PUT", url, subject, apikey, fullPath, relativePath)
 					if err != nil {
-						return err
+						if serr, ok := err.(httpError); ok {
+							if serr.statusCode == 409 {
+								//conflict. skip
+								//continue but dont publish.
+								//TODO - provide an option to replace existing artifact
+								//TODO - ?check exists before attempting upload?
+								log.Printf("WARNING - file already exists. Skipping. %v", resp)
+								return nil
+							} else {
+								return err
+							}
+						} else {
+							return err
+						}
 					}
+
 					log.Printf("File uploaded. %v", resp)
 					commaIfRequired := ""
 					if first {
@@ -157,7 +171,7 @@ func runTaskBintray(tp taskParams) error {
 func publish(apihost, apikey, subject, repository, pkg, version string) error {
 	resp, err := doHttp("POST", apihost+"/content/"+subject+"/"+repository+"/"+pkg+"/"+version+"/publish", subject, apikey, nil, 0)
 	if err == nil {
-		log.Printf("File uploaded. %v", resp)
+		log.Printf("File published. %v", resp)
 	}
 	return err
 }
@@ -196,6 +210,14 @@ func createVersion(apihost, apikey, subject, repository, pkg, version string) er
 	}
 	return err
 }
+type httpError struct {
+	statusCode int
+	message string
+}
+
+func (e httpError) Error() string {
+	return fmt.Sprintf("Error code: %d, message: %s", e.statusCode, e.message)
+}
 
 func doHttp(method, url, subject, apikey string, requestReader io.Reader, requestLength int64) (map[string]interface{}, error) {
 	client := &http.Client{}
@@ -224,7 +246,7 @@ func doHttp(method, url, subject, apikey string, requestReader io.Reader, reques
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		log.Printf("Error code: %s", resp.Status)
 		log.Printf("Error body: %s", body)
-		return nil, errors.New(fmt.Sprintf("Invalid HTTP status: %s", resp.Status))
+		return nil, httpError{resp.StatusCode, resp.Status}
 	}
 	log.Printf("Response status: '%s', Body: %s", resp.Status, body)
 	var b map[string]interface{}
