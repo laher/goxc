@@ -21,6 +21,7 @@ import (
 	"fmt"
 )
 
+// coerce interface{} to slice of strings.
 func ToStringSlice(v interface{}, k string) ([]string, error) {
 	ret := []string{}
 	switch typedV := v.(type) {
@@ -33,6 +34,7 @@ func ToStringSlice(v interface{}, k string) ([]string, error) {
 	return ret, fmt.Errorf("%s should be a json array, not a %T", k, v)
 }
 
+// coerce interface{} to string.
 func ToString(v interface{}, k string) (string, error) {
 	switch typedV := v.(type) {
 	case string:
@@ -41,6 +43,7 @@ func ToString(v interface{}, k string) (string, error) {
 	return "", fmt.Errorf("%s should be a json string, not a %T", k, v)
 }
 
+// coerce interface{} to bool
 func ToBool(v interface{}, k string) (bool, error) {
 	switch typedV := v.(type) {
 	case bool:
@@ -49,6 +52,7 @@ func ToBool(v interface{}, k string) (bool, error) {
 	return false, fmt.Errorf("%s should be a json boolean, not a %T", k, v)
 }
 
+// coerce interface{} to map[string]interface{}
 func ToMap(v interface{}, k string) (map[string]interface{}, error) {
 	switch typedV := v.(type) {
 	case map[string]interface{}:
@@ -57,6 +61,7 @@ func ToMap(v interface{}, k string) (map[string]interface{}, error) {
 	return nil, fmt.Errorf("%s should be a json map, not a %T", k, v)
 }
 
+// coerce interface{} to map[string]map[string]interface{}
 func ToMapStringMapStringInterface(v interface{}, k string) (map[string]map[string]interface{}, error) {
 	switch typedV := v.(type) {
 	case map[string]interface{}:
@@ -73,6 +78,8 @@ func ToMapStringMapStringInterface(v interface{}, k string) (map[string]map[stri
 	return nil, fmt.Errorf("%s should be a json map[string]map[string]interface{}, not a %T", k, v)
 }
 
+// merge nested maps (first argument takes priority)
+// note that lists are replaced, not merged
 func MergeMapsStringMapStringInterface(high, low map[string]map[string]interface{}) map[string]map[string]interface{} {
 	if high == nil {
 		return low
@@ -89,6 +96,8 @@ func MergeMapsStringMapStringInterface(high, low map[string]map[string]interface
 	return high
 }
 
+// merge possibly-nested maps (first argument takes priority)
+// note that lists are replaced, not merged
 func MergeMaps(high, low map[string]interface{}) map[string]interface{} {
 	if high == nil {
 		return low

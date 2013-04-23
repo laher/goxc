@@ -30,18 +30,16 @@ import (
 	"runtime"
 )
 
-var toolchainTask = Task{
-	"toolchain",
-	"Build toolchain. Make sure to run this each time you update go source.",
-	runTaskToolchain,
-	nil}
-
 //runs automatically
 func init() {
-	register(toolchainTask)
+	register(Task{
+		"toolchain",
+		"Build toolchain. Make sure to run this each time you update go source.",
+		runTaskToolchain,
+		nil})
 }
 
-func runTaskToolchain(tp taskParams) error {
+func runTaskToolchain(tp TaskParams) error {
 	if len(tp.destPlatforms) < 1 {
 		return errors.New("No valid platforms specified")
 	} else {

@@ -27,19 +27,18 @@ import (
 	"strings"
 )
 
-var dpTask = Task{
-	TASK_DOWNLOADS_PAGE,
-	"Generate a downloads page. Currently only supports Markdown format.",
-	runTaskDownloadsPage,
-	map[string]interface{}{"filename": "downloads.md",
-		"fileheader": "---\nlayout: default\ntitle: Downloads\n---\n\n"}}
-
 //runs automatically
 func init() {
-	register(dpTask)
+	register(Task{
+		TASK_DOWNLOADS_PAGE,
+		"Generate a downloads page. Currently only supports Markdown format.",
+		runTaskDownloadsPage,
+		map[string]interface{}{"filename": "downloads.md",
+			"fileheader": "---\nlayout: default\ntitle: Downloads\n---\n\n"}})
+
 }
 
-func runTaskDownloadsPage(tp taskParams) error {
+func runTaskDownloadsPage(tp TaskParams) error {
 	filename := tp.settings.GetTaskSettingString(TASK_DOWNLOADS_PAGE, "filename")
 	reportFilename := filepath.Join(tp.outDestRoot, tp.settings.GetFullVersionName(), filename)
 	flags := os.O_WRONLY | os.O_TRUNC | os.O_CREATE

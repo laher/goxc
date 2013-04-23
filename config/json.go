@@ -19,7 +19,6 @@ package config
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/laher/goxc/core"
 	"github.com/laher/goxc/typeutils"
 	"io/ioutil"
@@ -44,28 +43,35 @@ func LoadJsonConfigOverrideable(dir string, configName string, useLocal bool, ve
 	jsonLocalFile := filepath.Join(dir, configName+GOXC_LOCAL_FILE_EXT)
 	var err error
 	if useLocal {
-		localSettings, err := loadJsonFile(jsonLocalFile, verbose)
+		localSettingsMap, err := loadJsonFileAsMap(jsonLocalFile, verbose)
 		if err != nil {
 			//load non-local file only.
-			settings, err := loadJsonFile(jsonFile, verbose)
-			return settings, err
+			settingsMap, err := loadJsonFileAsMap(jsonFile, verbose)
+			if err != nil {
+				return Settings{}, err
+			}
+			return loadSettingsSection(settingsMap)
 		} else {
-			settings, err := loadJsonFile(jsonFile, verbose)
+			settingsMap, err := loadJsonFileAsMap(jsonFile, verbose)
 			if err != nil {
 				if os.IsNotExist(err) {
-					return localSettings, nil
+					return loadSettingsSection(settingsMap)
 				} else {
 					//parse error. Stop right there.
-					return settings, err
+					return Settings{}, err
 				}
 			} else {
-				return Merge(localSettings, settings), nil
+				merged := typeutils.MergeMaps(localSettingsMap, settingsMap)
+				return loadSettingsSection(merged)
 			}
 		}
 	} else {
 		//load non-local file only.
-		settings, err := loadJsonFile(jsonFile, verbose)
-		return settings, err
+		settingsMap, err := loadJsonFileAsMap(jsonFile, verbose)
+		if err != nil {
+			return Settings{}, err
+		}
+		return loadSettingsSection(settingsMap)
 	}
 	//unreachable but required by go compiler
 	//return localSettings.Settings, err
@@ -91,28 +97,6 @@ func printErrorDetails(rawJson []byte, err error) {
 			}
 		}
 	}
-}
-
-//beginnings of taskSettings merging
-func getTaskSettings(rawJson []byte, fileName string) (map[string]interface{}, error) {
-	var f interface{}
-	err := json.Unmarshal(rawJson, &f)
-	if err != nil {
-		log.Printf("ERROR (%s): invalid json!", fileName)
-		printErrorDetails(rawJson, err)
-		return nil, err
-	}
-	m := f.(map[string]interface{})
-	if s, keyExists := m["Settings"]; keyExists {
-		settings := s.(map[string]interface{})
-		if taskSettings, keyExists := settings["TaskSettings"]; keyExists {
-			log.Printf("Found TaskSettings field %+v", taskSettings)
-			return taskSettings.(map[string]interface{}), err
-		} else {
-			log.Printf("No TaskSettings field")
-		}
-	}
-	return nil, fmt.Errorf("No TaskSettings defined")
 }
 
 func validateRawJson(rawJson []byte, fileName string) []error {
@@ -190,61 +174,67 @@ func loadFile(jsonFile string, verbose bool) ([]byte, error) {
 	return file, err
 }
 
-// load json file. Glob for goxc
-//0.5.6 parse from an interface{} instead of JsonSettings.
-//More flexible & better error reporting possible.
-func loadJsonFile(jsonFile string, verbose bool) (Settings, error) {
-	var settings Settings
+func loadJsonFileAsMap(jsonFile string, verbose bool) (map[string]interface{}, error) {
+	var f map[string]interface{}
 	rawJson, err := loadFile(jsonFile, verbose)
 	if err != nil {
-		return settings, err
+		return f, err
 	}
 	errs := validateRawJson(rawJson, jsonFile)
 	if errs != nil && len(errs) > 0 {
-		return settings, errs[0]
+		return f, errs[0]
 	}
 	//TODO: super-verbose option for logging file content? log.Printf("%s\n", string(file))
-	var f interface{}
 	err = json.Unmarshal(rawJson, &f)
 	if err != nil {
 		log.Printf("ERROR (%s): invalid json!", jsonFile)
 		printErrorDetails(rawJson, err)
-		return settings, err
+		return f, err
 	} else {
 		//fill all the way down.
-		m := f.(map[string]interface{})
-		if fv, keyExists := m["FormatVersion"]; keyExists {
-			if s, keyExists := m["Settings"]; keyExists {
+		if fv, keyExists := f["FormatVersion"]; keyExists {
+			if s, keyExists := f["Settings"]; keyExists {
 				//Support for old versions, up until version 0.5.
 				settingsSection, err := typeutils.ToMap(s, "Settings")
 				if err != nil {
-					return settings, err
+					return f, err
 				}
 				if _, keyExists = settingsSection["FormatVersion"]; !keyExists {
 					//set from jsonSettings
 					formatVersion, err := typeutils.ToString(fv, "FormatVersion")
 					if err != nil {
-						return settings, err
+						return f, err
 					}
 					settingsSection["FormatVersion"] = formatVersion
 				}
-				settings, err := loadSettingsSection(settingsSection)
-				return settings, err
+				return settingsSection, err
+				//settings, err := loadSettingsSection(settingsSection)
+				//return settings, err
 			} else {
 				//0.6 has no '{ Settings {} }' level. Just use the top level.
-				return loadSettingsSection(m)
+				return f, err
 			}
-
 		} else {
-			return settings, errors.New("File format version not specified!")
+			return f, errors.New("File format version not specified!")
 		}
-		//settings.Settings.TaskSettings, err= getTaskSettings(rawJson, jsonFile)
 		if verbose {
 			log.Printf("unmarshalled settings OK")
 		}
 	}
-	//TODO: verbosity here? log.Printf("Results: %v", settings)
-	return settings, nil
+
+	return f, err
+}
+
+// load json file. Glob for goxc
+//0.5.6 parse from an interface{} instead of JsonSettings.
+//More flexible & better error reporting possible.
+// 0.6.4 deprecated in favour of loadJsonFileAsMap
+func loadJsonFile(jsonFile string, verbose bool) (Settings, error) {
+	m, err := loadJsonFileAsMap(jsonFile, verbose)
+	if err != nil {
+		return Settings{}, err
+	}
+	return loadSettingsSection(m)
 }
 
 func loadSettingsSection(settingsSection map[string]interface{}) (settings Settings, err error) {

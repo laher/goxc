@@ -31,7 +31,7 @@ func init() {
 		map[string]interface{}{"dir": "./..."}})
 }
 
-func runTaskGoVet(tp taskParams) error {
+func runTaskGoVet(tp TaskParams) error {
 	dir := tp.settings.GetTaskSettingString(TASK_GO_VET, "dir")
 	args := []string{"vet", dir}
 	err := executils.InvokeGo(tp.workingDirectory, args, []string{}, tp.settings.IsVerbose())

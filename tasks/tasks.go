@@ -68,7 +68,7 @@ var (
 	TASKS_ALL      = append(append([]string{}, TASKS_OTHER...), TASKS_DEFAULT...)
 )
 
-type taskParams struct {
+type TaskParams struct {
 	destPlatforms                 [][]string
 	appName                       string
 	workingDirectory, outDestRoot string
@@ -78,7 +78,7 @@ type taskParams struct {
 type Task struct {
 	Name            string
 	Description     string
-	f               func(taskParams) error
+	f               func(TaskParams) error
 	DefaultSettings map[string]interface{}
 }
 
@@ -97,6 +97,8 @@ func register(task Task) {
 	allTasks[task.Name] = task
 }
 
+// resolve aliases into tasks
+// TODO recurse. (currently aliases are only lists of tasks, not of aliases). Recursion would enable the extra flexibility
 func ResolveAliases(tasks []string) []string {
 	ret := []string{}
 	for _, taskName := range tasks {
@@ -109,6 +111,7 @@ func ResolveAliases(tasks []string) []string {
 	return ret
 }
 
+// list all available tasks
 func ListTasks() []Task {
 	tasks := []Task{}
 	for _, t := range allTasks {
@@ -117,6 +120,7 @@ func ListTasks() []Task {
 	return tasks
 }
 
+// run all given tasks
 func RunTasks(workingDirectory string, destPlatforms [][]string, settings config.Settings) {
 	if settings.IsVerbose() {
 		log.Printf("looping through each platform")
@@ -159,9 +163,10 @@ func RunTasks(workingDirectory string, destPlatforms [][]string, settings config
 	}
 }
 
+// run named task
 func runTask(taskName string, destPlatforms [][]string, appName, workingDirectory, outDestRoot string, settings config.Settings) error {
 	if taskV, keyExists := allTasks[taskName]; keyExists {
-		tp := taskParams{destPlatforms, appName, workingDirectory, outDestRoot, settings}
+		tp := TaskParams{destPlatforms, appName, workingDirectory, outDestRoot, settings}
 		return taskV.f(tp)
 	}
 	log.Printf("Unrecognised task '%s'", taskName)

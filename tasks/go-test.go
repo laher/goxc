@@ -31,7 +31,7 @@ func init() {
 		map[string]interface{}{"dir": "./..."}})
 }
 
-func runTaskGoTest(tp taskParams) error {
+func runTaskGoTest(tp TaskParams) error {
 	dir := tp.settings.GetTaskSettingString(TASK_GO_TEST, "dir")
 	args := []string{"test", dir}
 	args = append(args, executils.GetLdFlagVersionArgs(tp.settings.GetFullVersionName())...)

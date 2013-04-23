@@ -31,7 +31,7 @@ func init() {
 		map[string]interface{}{"dir": "./..."}})
 }
 
-func runTaskGoFmt(tp taskParams) error {
+func runTaskGoFmt(tp TaskParams) error {
 	dir := tp.settings.GetTaskSettingString(TASK_GO_FMT, "dir")
 	err := executils.InvokeGo(tp.workingDirectory, []string{"fmt", dir}, []string{}, tp.settings.IsVerbose())
 	return err

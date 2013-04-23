@@ -40,7 +40,7 @@ func init() {
 		map[string]interface{}{"metadata": map[string]interface{}{"maintainer": "unknown"}, "metadata-deb": map[string]interface{}{"Depends": ""}, "rmtemp": true}})
 }
 
-func runTaskPkgBuild(tp taskParams) (err error) {
+func runTaskPkgBuild(tp TaskParams) (err error) {
 	for _, platformArr := range tp.destPlatforms {
 		destOs := platformArr[0]
 		destArch := platformArr[1]
@@ -52,7 +52,7 @@ func runTaskPkgBuild(tp taskParams) (err error) {
 	return
 }
 
-func pkgBuildPlat(destOs, destArch string, tp taskParams) (err error) {
+func pkgBuildPlat(destOs, destArch string, tp TaskParams) (err error) {
 	if destOs == platforms.LINUX {
 		//TODO rpm
 		//TODO sdeb
@@ -93,7 +93,7 @@ func getDebArch(destArch string) string {
 	return architecture
 }
 
-func debBuild(destOs, destArch string, tp taskParams) (err error) {
+func debBuild(destOs, destArch string, tp TaskParams) (err error) {
 	metadata := tp.settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata")
 	metadataDeb := tp.settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata-deb")
 	rmtemp := tp.settings.GetTaskSettingBool(TASK_PKG_BUILD, "rmtemp")

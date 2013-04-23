@@ -30,19 +30,16 @@ import (
 // NOTE: in future this task may produce preferred types of archive for each OS (e.g. .tar.gz for Linux)
 // TaskSettings should dictate this behaviour.
 
-var archiveTask = Task{
-	"archive",
-	"Create a compressed archive. Currently 'zip' format is used for all platforms except Linux (tar.gz)",
-	runTaskArchive,
-
-	map[string]interface{}{"os": map[string]interface{}{platforms.LINUX: "TarGz"}}}
-
 //runs automatically
 func init() {
-	register(archiveTask)
+	register(Task{
+		"archive",
+		"Create a compressed archive. Currently 'zip' format is used for all platforms except Linux (tar.gz)",
+		runTaskArchive,
+		map[string]interface{}{"os": map[string]interface{}{platforms.LINUX: "TarGz"}}})
 }
 
-func runTaskArchive(tp taskParams) error {
+func runTaskArchive(tp TaskParams) error {
 	for _, platformArr := range tp.destPlatforms {
 		destOs := platformArr[0]
 		destArch := platformArr[1]

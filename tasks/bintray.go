@@ -49,7 +49,7 @@ func init() {
 			"downloadspage": "bintray.md"}})
 }
 
-func runTaskBintray(tp taskParams) error {
+func runTaskBintray(tp TaskParams) error {
 	subject := tp.settings.GetTaskSettingString(TASK_BINTRAY, "subject")
 	apikey := tp.settings.GetTaskSettingString(TASK_BINTRAY, "apikey")
 	repository := tp.settings.GetTaskSettingString(TASK_BINTRAY, "repository")
@@ -210,9 +210,10 @@ func createVersion(apihost, apikey, subject, repository, pkg, version string) er
 	}
 	return err
 }
+
 type httpError struct {
 	statusCode int
-	message string
+	message    string
 }
 
 func (e httpError) Error() string {

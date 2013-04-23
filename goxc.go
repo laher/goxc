@@ -111,7 +111,7 @@ func printHelpTopic(flagSet *flag.FlagSet, topic string) {
 			if topic == task.Name {
 				fmt.Fprintf(os.Stderr, "Task:\n '%s'\nDescription:\n  %s\n", task.Name, task.Description)
 				if task.DefaultSettings != nil {
-					out, err := json.MarshalIndent(map[string]map[string]interface{}{ task.Name : task.DefaultSettings }, "", "\t")
+					out, err := json.MarshalIndent(map[string]map[string]interface{}{task.Name: task.DefaultSettings}, "", "\t")
 					if err != nil {
 						fmt.Fprintf(os.Stderr, "Error displaying TaskConfig info %v\n", err)
 					} else {

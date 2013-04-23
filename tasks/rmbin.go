@@ -26,18 +26,16 @@ import (
 	"path/filepath"
 )
 
-var rmBinTask = Task{
-	"rmbin",
-	"delete binary. Normally runs after 'archive' task to reduce size of output dir.",
-	runTaskRmBin,
-	nil}
-
 //runs automatically
 func init() {
-	register(rmBinTask)
+	register(Task{
+		"rmbin",
+		"delete binary. Normally runs after 'archive' task to reduce size of output dir.",
+		runTaskRmBin,
+		nil})
 }
 
-func runTaskRmBin(tp taskParams) error {
+func runTaskRmBin(tp TaskParams) error {
 	for _, platformArr := range tp.destPlatforms {
 		destOs := platformArr[0]
 		destArch := platformArr[1]

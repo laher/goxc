@@ -39,7 +39,7 @@ func init() {
 	register(codesignTask)
 }
 
-func runTaskCodesign(tp taskParams) error {
+func runTaskCodesign(tp TaskParams) error {
 	//func runTaskCodesign(destPlatforms [][]string, outDestRoot string, appName string, settings config.Settings) error {
 	for _, platformArr := range tp.destPlatforms {
 		destOs := platformArr[0]

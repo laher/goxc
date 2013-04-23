@@ -16,12 +16,14 @@ package typeutils
    limitations under the License.
 */
 
+// deletes a given index
 func StringSliceDelIndex(a []string, i int) []string {
 	a = append(a[:i], a[i+1:]...)
 	// OR  a = a[:i+copy(a[i:], a[i+1:])]
 	return a
 }
 
+// deletes first occurence of a given string
 func StringSliceDel(slice []string, value string) []string {
 	p := StringSlicePos(slice, value)
 	if p > -1 {
@@ -30,6 +32,7 @@ func StringSliceDel(slice []string, value string) []string {
 	return slice
 }
 
+// returns first index of a given string
 func StringSlicePos(slice []string, value string) int {
 	for p, v := range slice {
 		if v == value {
@@ -37,4 +40,9 @@ func StringSlicePos(slice []string, value string) int {
 		}
 	}
 	return -1
+}
+
+// returns true if a slice contains given string
+func StringSliceContains(slice []string, value string) bool {
+	return StringSlicePos(slice, value) > -1
 }

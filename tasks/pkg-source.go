@@ -47,7 +47,7 @@ func init() {
 }
 
 
-func runTaskPkgSource(tp taskParams) (err error) {
+func runTaskPkgSource(tp TaskParams) (err error) {
 	var makeSourceDeb bool
 	for _, platformArr := range tp.destPlatforms {
 		destOs := platformArr[0]
@@ -64,7 +64,7 @@ func runTaskPkgSource(tp taskParams) (err error) {
 }
 
 
-func debSourceBuild(tp taskParams) (err error) {
+func debSourceBuild(tp TaskParams) (err error) {
 	metadata := tp.settings.GetTaskSettingMap(TASK_PKG_SOURCE, "metadata")
 	metadataDeb := tp.settings.GetTaskSettingMap(TASK_PKG_SOURCE, "metadata-deb")
 	rmtemp := tp.settings.GetTaskSettingBool(TASK_PKG_SOURCE, "rmtemp")

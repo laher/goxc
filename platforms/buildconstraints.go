@@ -24,7 +24,7 @@ import (
 	"strings"
 )
 
-// parse and filter
+// parse and filter list of platforms
 func ApplyBuildConstraints(buildConstraints string, unfilteredPlatforms [][]string) [][]string {
 	ret := [][]string{}
 	items := strings.FieldsFunc(buildConstraints, func(r rune) bool { return r == ' ' })
@@ -61,10 +61,12 @@ func ApplyBuildConstraints(buildConstraints string, unfilteredPlatforms [][]stri
 	return ret
 }
 
+// check if a string is a valid architecture name
 func IsArch(part string) bool {
 	return typeutils.StringSlicePos(ARCHS, part) > -1
 }
 
+// check if a string is a valid OS name
 func IsOs(part string) bool {
 	return typeutils.StringSlicePos(OSES, part) > -1
 }

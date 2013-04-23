@@ -28,18 +28,16 @@ import (
 	"path/filepath"
 )
 
-var xcTask = Task{
-	"xc",
-	"Cross compile. Builds executables for other platforms.",
-	runTaskXC,
-	nil}
-
 //runs automatically
 func init() {
-	register(xcTask)
+	register(Task{
+		"xc",
+		"Cross compile. Builds executables for other platforms.",
+		runTaskXC,
+		nil})
 }
 
-func runTaskXC(tp taskParams) error {
+func runTaskXC(tp TaskParams) error {
 	if len(tp.destPlatforms) == 0 {
 		return errors.New("No valid platforms specified")
 	}

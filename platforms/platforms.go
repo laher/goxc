@@ -76,6 +76,7 @@ func getSupportedPlatforms() [][]string {
 	return SUPPORTED_PLATFORMS_1_1
 }
 
+// interpret list of destination platforms (based on os & arch settings)
 //0.5 add support for space delimiters (similar to BuildConstraints)
 //0.5 add support for different oses/services
 func GetDestPlatforms(specifiedOses string, specifiedArches string) [][]string {

@@ -33,6 +33,8 @@ import (
 
 const ()
 
+// get the path to the 'make' batch script within the GO source tree.
+// i.e. runtime.GOOS / src / make.bat|bash
 func GetMakeScriptPath(goroot string) string {
 	gohostos := runtime.GOOS
 	var scriptname string
@@ -44,6 +46,8 @@ func GetMakeScriptPath(goroot string) string {
 	return filepath.Join(goroot, "src", scriptname)
 }
 
+// Basic system sanity check. Checks GOROOT is set and 'make' batch script exists.
+// TODO: in future this could check for existence of gcc/mingw/alternative
 func SanityCheck(goroot string) error {
 	if goroot == "" {
 		return errors.New("GOROOT environment variable is NOT set.")
@@ -60,6 +64,7 @@ func SanityCheck(goroot string) error {
 	return nil
 }
 
+// simple fileExists method which inspects the error from os.Stat
 func fileExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
@@ -71,6 +76,8 @@ func fileExists(path string) (bool, error) {
 	return false, err
 }
 
+// Glob parser for 'Include resources'
+// TODO generalise for exclude resources and any other globs.
 func ParseIncludeResources(basedir string, includeResources string, isVerbose bool) []string {
 	allMatches := []string{}
 	if includeResources != "" {
@@ -91,6 +98,7 @@ func ParseIncludeResources(basedir string, includeResources string, isVerbose bo
 
 }
 
+// Get application name (uses dirname)
 func GetAppName(workingDirectory string) string {
 	appDirname, err := filepath.Abs(workingDirectory)
 	if err != nil {
@@ -100,6 +108,9 @@ func GetAppName(workingDirectory string) string {
 	return appName
 }
 
+// Tries to find the most relevant GOPATH element.
+// First, tries to find an element which is a parent of the current directory.
+// If not, it uses the first one.
 func GetGoPathElement(workingDirectory string) string {
 	//build.Import(path, srcDir string, mode ImportMode) (*Package, error)
 	var gopath string
@@ -147,6 +158,7 @@ func GetGoPathElement(workingDirectory string) string {
 	return gopath
 }
 
+// Get output folder
 func GetOutDestRoot(appName string, artifactsDestSetting string, workingDirectory string) string {
 	var outDestRoot string
 	if artifactsDestSetting != "" {
@@ -163,6 +175,7 @@ func GetOutDestRoot(appName string, artifactsDestSetting string, workingDirector
 	return outDestRoot
 }
 
+// get relative path for the binary.
 func GetRelativeBin(goos, arch string, appName string, isForMarkdown bool, fullVersionName string) string {
 	var ending = ""
 	if goos == WINDOWS {
@@ -175,6 +188,8 @@ func GetRelativeBin(goos, arch string, appName string, isForMarkdown bool, fullV
 	return filepath.Join(relativeDir, appName+ending)
 }
 
+// Check if slice contains a string.
+// DEPRECATED: use equivalent func inside typeutils.
 func ContainsString(h []string, n string) bool {
 	for _, e := range h {
 		if e == n {

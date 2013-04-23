@@ -29,7 +29,8 @@ import (
 	"strings"
 )
 
-// ldflags relate to any build task ...
+// get list of args to be used in variable interpolation
+// ldflags are used in any to any build-related go task (install,build,test)
 func GetLdFlagVersionArgs(fullVersionName string) []string {
 	if fullVersionName != "" {
 		return []string{"-ldflags", "-X main.VERSION " + fullVersionName + ""}
@@ -37,6 +38,7 @@ func GetLdFlagVersionArgs(fullVersionName string) []string {
 	return []string{}
 }
 
+// invoke the go command via the os/exec package
 // 0.3.1
 func InvokeGo(workingDirectory string, args []string, envExtra []string, isVerbose bool) error {
 	cmd := exec.Command("go")
@@ -75,6 +77,7 @@ func InvokeGo(workingDirectory string, args []string, envExtra []string, isVerbo
 	return nil
 }
 
+// returns a list of printable args
 func PrintableArgs(args []string) string {
 	ret := ""
 	for _, arg := range args {
@@ -91,6 +94,7 @@ func PrintableArgs(args []string) string {
 }
 
 // this function copied from 'https://github.com/laher/mkdo'
+// perhaps overkill for this project, but never mind.
 func RedirectIO(cmd *exec.Cmd) (*os.File, error) {
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -107,7 +111,9 @@ func RedirectIO(cmd *exec.Cmd) (*os.File, error) {
 	return nil, err
 }
 
+// check if cgoEnabled is required.
 //0.2.4 refactored this out
+// TODO not needed for go1.1+. Remove this once go1.0 reaches end of life. (when is that?)
 func CgoEnabled(goos, arch string) string {
 	var cgoEnabled string
 	if goos == runtime.GOOS && arch == runtime.GOARCH {

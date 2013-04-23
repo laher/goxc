@@ -31,7 +31,7 @@ func init() {
 		nil})
 }
 
-func runTaskGoClean(tp taskParams) error {
+func runTaskGoClean(tp TaskParams) error {
 	err := executils.InvokeGo(tp.workingDirectory, []string{"clean"}, []string{}, tp.settings.IsVerbose())
 	return err
 }

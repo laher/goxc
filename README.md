@@ -85,6 +85,7 @@ goxc performs a number of operations, defined as tasks. You can specify tasks wi
  * You can specify one or more tasks, such as `goxc -tasks=go-fmt,xc`
  * You can skip tasks with '-tasks-='. Skip the 'package' stage with `goxc -tasks-=package`
  * For a list of tasks and 'task aliases', run `goxc -h tasks`
+ * For more info on a particular taks, run `goxc -h <taskname>`. This will also show you the configuration options available for that task.
 
 Outcome
 -------

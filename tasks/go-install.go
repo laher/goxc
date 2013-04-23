@@ -31,7 +31,7 @@ func init() {
 		nil})
 }
 
-func runTaskGoInstall(tp taskParams) error {
+func runTaskGoInstall(tp TaskParams) error {
 	args := []string{"install"}
 	args = append(args, executils.GetLdFlagVersionArgs(tp.settings.GetFullVersionName())...)
 	err := executils.InvokeGo(tp.workingDirectory, args, []string{}, tp.settings.IsVerbose())
