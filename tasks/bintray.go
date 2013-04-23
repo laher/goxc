@@ -46,7 +46,8 @@ func init() {
 		map[string]interface{}{"subject": "", "apikey": "", "repository": "",
 			"apihost":       "https://api.bintray.com/",
 			"downloadshost": "https://dl.bintray.com/",
-			"downloadspage": "bintray.md"}})
+			"downloadspage": "bintray.md",
+			"fileheader": "---\nlayout: default\ntitle: Downloads\n---\nFiles hosted at [bintray.com](http://bintray.com)\n\n"}})
 }
 
 func runTaskBintray(tp TaskParams) error {
@@ -91,7 +92,7 @@ func runTaskBintray(tp TaskParams) error {
 		return err
 	}
 	defer f.Close()
-	fileheader := tp.settings.GetTaskSettingString(TASK_DOWNLOADS_PAGE, "fileheader")
+	fileheader := tp.settings.GetTaskSettingString(TASK_BINTRAY, "fileheader")
 	if fileheader != "" {
 		_, err = fmt.Fprintf(f, "%s\n\n", fileheader)
 	}
