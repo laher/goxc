@@ -145,7 +145,7 @@ func runTaskBintray(tp TaskParams) error {
 						}
 					}
 
-					log.Printf("File uploaded. %v", resp)
+					log.Printf("File uploaded. (expected empty map[]): %v", resp)
 					commaIfRequired := ""
 					if first {
 						first = false

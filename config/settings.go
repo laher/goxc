@@ -171,8 +171,8 @@ func (settings Settings) GetFullVersionName() string {
 	return versionName
 }
 
-// Merge settings together with priority.
-// TODO: deprecate in favour of a map merge
+// DEPRECATED!! Merge settings together with priority.
+// TODO: deprecate in favour of map merge.
 func Merge(high Settings, low Settings) Settings {
 	if high.ArtifactsDest == "" {
 		high.ArtifactsDest = low.ArtifactsDest

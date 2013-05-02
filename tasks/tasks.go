@@ -88,7 +88,7 @@ type Task struct {
 var (
 	allTasks = make(map[string]Task)
 	//Aliases are one or more tasks, in a specific order.
-	Aliases  = map[string][]string{
+	Aliases = map[string][]string{
 		TASKALIAS_CLEAN:    TASKS_CLEAN,
 		TASKALIAS_VALIDATE: TASKS_VALIDATE,
 		TASKALIAS_COMPILE:  TASKS_COMPILE,

@@ -223,6 +223,11 @@ func interpretSettings(call []string) (string, config.Settings) {
 		log.Printf("Error parsing arguments: %s", err)
 		os.Exit(1)
 	} else {
+		/* TODO: normalize flags for merging with config settings
+		specifiedFlags := make(map[string]interface{})
+		flagSet.Visit(func(flg *flag.Flag) { specifiedFlags[flg.Name] = flg.Value  })
+		log.Printf("Specified cli flags: %s", specifiedFlags)
+		*/
 		if isVerbose {
 			settings.Verbosity = core.VERBOSITY_VERBOSE
 		}
