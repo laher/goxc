@@ -1,7 +1,7 @@
 goxc
 ====
 
-[goxc](http://www.laher.net.nz/goxc) is a build tool for Go, with a focus on cross-compiling and packaging.
+[goxc](http://laher.github.com/goxc) is a build tool for Go, with a focus on cross-compiling and packaging.
 
 By default, goxc [g]zips (& .debs for Linux) the programs, and generates a 'downloads page' in markdown (with a Jekyll header). Goxc also provides integration with [bintray.com](https://bintray.com) for simple uploads.
 
