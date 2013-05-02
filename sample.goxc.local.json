@@ -1,4 +1,11 @@
 {
 	"PrereleaseInfo" : "alpha",
-	"BranchName" : "mybranch"
+	"BranchName" : "mybranch",
+	"TaskSettings": {
+		"bintray": {
+			"apihost": "http://localhost:2020/",
+			"apikey": "12d312314235afe56090932ea13234"
+		}
+	},
+	"FormatVersion": "0.6"
 }

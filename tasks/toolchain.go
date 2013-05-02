@@ -58,11 +58,9 @@ func runTaskToolchain(tp TaskParams) error {
 		go g()
 		success := 0
 		var err error
-		for _, platformArr := range tp.destPlatforms {
+		for _, dest := range tp.destPlatforms {
 			busy = true
-			destOs := platformArr[0]
-			destArch := platformArr[1]
-			err = buildToolchain(destOs, destArch, tp.settings)
+			err = buildToolchain(dest.Os, dest.Arch, tp.settings)
 			if err != nil {
 				log.Printf("Error: %v", err)
 			} else {

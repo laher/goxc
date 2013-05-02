@@ -23,6 +23,7 @@ import (
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/platforms"
 	"log"
 	"strings"
 )
@@ -69,7 +70,7 @@ var (
 )
 
 type TaskParams struct {
-	destPlatforms                 [][]string
+	destPlatforms                 []platforms.Platform
 	appName                       string
 	workingDirectory, outDestRoot string
 	settings                      config.Settings
@@ -121,7 +122,7 @@ func ListTasks() []Task {
 }
 
 // run all given tasks
-func RunTasks(workingDirectory string, destPlatforms [][]string, settings config.Settings) {
+func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, settings config.Settings) {
 	if settings.IsVerbose() {
 		log.Printf("looping through each platform")
 	}
@@ -164,7 +165,7 @@ func RunTasks(workingDirectory string, destPlatforms [][]string, settings config
 }
 
 // run named task
-func runTask(taskName string, destPlatforms [][]string, appName, workingDirectory, outDestRoot string, settings config.Settings) error {
+func runTask(taskName string, destPlatforms []platforms.Platform, appName, workingDirectory, outDestRoot string, settings config.Settings) error {
 	if taskV, keyExists := allTasks[taskName]; keyExists {
 		tp := TaskParams{destPlatforms, appName, workingDirectory, outDestRoot, settings}
 		return taskV.f(tp)

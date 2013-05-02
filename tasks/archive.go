@@ -40,10 +40,8 @@ func init() {
 }
 
 func runTaskArchive(tp TaskParams) error {
-	for _, platformArr := range tp.destPlatforms {
-		destOs := platformArr[0]
-		destArch := platformArr[1]
-		err := archivePlat(destOs, destArch, tp.appName, tp.workingDirectory, tp.outDestRoot, tp.settings)
+	for _, dest := range tp.destPlatforms {
+		err := archivePlat(dest.Os, dest.Arch, tp.appName, tp.workingDirectory, tp.outDestRoot, tp.settings)
 		if err != nil {
 			//TODO - 'force' option
 			//return err

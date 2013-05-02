@@ -7,11 +7,11 @@ import (
 
 func Test1(t *testing.T) {
 	testBCs := map[string]string{
-		"freebsd linux,!arm": "[[freebsd 386] [freebsd amd64] [linux 386] [linux amd64]]",
-		"windows":            "[[windows 386] [windows amd64]]",
-		"windows,!386":       "[[windows amd64]]",
-		"!386":               "[[darwin amd64] [darwin amd64] [linux amd64] [linux arm] [linux amd64] [linux arm] [linux amd64] [linux arm] [freebsd amd64] [freebsd amd64] [openbsd amd64] [openbsd amd64] [windows amd64] [windows amd64]]",
-		"":                   "[[darwin 386] [darwin amd64] [linux 386] [linux amd64] [linux arm] [freebsd 386] [freebsd amd64] [openbsd 386] [openbsd amd64] [windows 386] [windows amd64]]",
+		"freebsd linux,!arm": "[{freebsd 386} {freebsd amd64} {linux 386} {linux amd64}]",
+		"windows":            "[{windows 386} {windows amd64}]",
+		"windows,!386":       "[{windows amd64}]",
+		"!386":               "[{darwin amd64} {darwin amd64} {linux amd64} {linux arm} {linux amd64} {linux arm} {linux amd64} {linux arm} {freebsd amd64} {freebsd amd64} {openbsd amd64} {openbsd amd64} {windows amd64} {windows amd64}]",
+		"":                   "[{darwin 386} {darwin amd64} {linux 386} {linux amd64} {linux arm} {freebsd 386} {freebsd amd64} {openbsd 386} {openbsd amd64} {windows 386} {windows amd64}]",
 	}
 	for buildConstraints, expectedPlatforms := range testBCs {
 		targets := ApplyBuildConstraints(buildConstraints, SUPPORTED_PLATFORMS_1_0)

@@ -43,10 +43,8 @@ func runTaskXC(tp TaskParams) error {
 	}
 	success := 0
 	var err error
-	for _, platformArr := range tp.destPlatforms {
-		destOs := platformArr[0]
-		destArch := platformArr[1]
-		err = xcPlat(destOs, destArch, tp.workingDirectory, tp.settings)
+	for _, dest := range tp.destPlatforms {
+		err = xcPlat(dest.Os, dest.Arch, tp.workingDirectory, tp.settings)
 		if err != nil {
 			log.Printf("Error: %v", err)
 		} else {

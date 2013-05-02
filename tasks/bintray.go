@@ -41,13 +41,13 @@ const TASK_BINTRAY = "bintray"
 func init() {
 	register(Task{
 		TASK_BINTRAY,
-		"Upload artifacts to bintray (bintray registration details required in goxc config)",
+		"Upload artifacts to bintray.com, and generate a local markdown page of links (bintray registration details required in goxc config. See `goxc -h bintray`)",
 		runTaskBintray,
 		map[string]interface{}{"subject": "", "apikey": "", "repository": "",
 			"apihost":       "https://api.bintray.com/",
 			"downloadshost": "https://dl.bintray.com/",
 			"downloadspage": "bintray.md",
-			"fileheader": "---\nlayout: default\ntitle: Downloads\n---\nFiles hosted at [bintray.com](http://bintray.com)\n\n"}})
+			"fileheader":    "---\nlayout: default\ntitle: Downloads\n---\nFiles hosted at [bintray.com](https://bintray.com)\n\n"}})
 }
 
 func runTaskBintray(tp TaskParams) error {

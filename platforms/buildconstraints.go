@@ -25,8 +25,8 @@ import (
 )
 
 // parse and filter list of platforms
-func ApplyBuildConstraints(buildConstraints string, unfilteredPlatforms [][]string) [][]string {
-	ret := [][]string{}
+func ApplyBuildConstraints(buildConstraints string, unfilteredPlatforms []Platform) []Platform {
+	ret := []Platform{}
 	items := strings.FieldsFunc(buildConstraints, func(r rune) bool { return r == ' ' })
 	if len(items) == 0 {
 		return unfilteredPlatforms
@@ -79,8 +79,8 @@ func isNegative(part string) (bool, string) {
 	return false, part
 }
 
-func resolveItem(itemOses, itemNegOses, itemArchs, itemNegArchs []string, unfilteredPlatforms [][]string) [][]string {
-	ret := [][]string{}
+func resolveItem(itemOses, itemNegOses, itemArchs, itemNegArchs []string, unfilteredPlatforms []Platform) []Platform {
+	ret := []Platform{}
 	if len(itemOses) == 0 {
 		//none specified: add all
 		itemOses = getOses(unfilteredPlatforms)
@@ -100,25 +100,25 @@ func resolveItem(itemOses, itemNegOses, itemArchs, itemNegArchs []string, unfilt
 			itemArchsThisOs = typeutils.StringSliceDel(itemArchsThisOs, itemNegArch)
 		}
 		for _, itemArch := range itemArchsThisOs {
-			ret = append(ret, []string{itemOs, itemArch})
+			ret = append(ret, Platform{itemOs, itemArch})
 		}
 	}
 	return ret
 }
 
-func getArchsForOs(sp [][]string, os string) []string {
+func getArchsForOs(sp []Platform, os string) []string {
 	archs := []string{}
 	for _, p := range sp {
-		if p[0] == os {
-			archs = append(archs, p[1])
+		if p.Os == os {
+			archs = append(archs, p.Arch)
 		}
 	}
 	return archs
 }
-func getOses(sp [][]string) []string {
+func getOses(sp []Platform) []string {
 	oses := []string{}
 	for _, p := range sp {
-		oses = append(oses, p[0])
+		oses = append(oses, p.Os)
 	}
 	return oses
 }

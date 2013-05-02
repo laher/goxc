@@ -1,9 +1,9 @@
 goxc
 ====
 
-[goxc](http://www.laher.net.nz/goxc) is a build tool for Go, focussing on cross-compiling and packaging.
+[goxc](http://www.laher.net.nz/goxc) is a build tool for Go, with a focus on cross-compiling and packaging.
 
-By default, goxc [g]zips (& .debs for Linux) the programs, and generates a 'downloads page' in markdown (with a Jekyll header).
+By default, goxc [g]zips (& .debs for Linux) the programs, and generates a 'downloads page' in markdown (with a Jekyll header). Goxc also provides integration with [bintray.com](https://bintray.com) for simple uploads.
 
 goxc is written in Go but uses *os.exec* to call 'go build' with the appropriate flags & env variables for each supported platform.
 
@@ -104,7 +104,7 @@ e.g.
 
       goxc -pv=0.1.1 -d=/home/me/myuser-github-pages/myapp/downloads/
 
-**NOTE: it's not a good idea to use project-level github-pages - your repo will become huge. User-level gh-pages are an option.**
+*NOTE: it's **bad idea** to use project-level github-pages - your repo will become huge. User-level gh-pages are an option, but it's better to use the 'bintray' tasks.*:
 
 If non-archived, artifacts generated into a directory structure as follows:
 

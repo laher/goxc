@@ -46,3 +46,15 @@ func StringSlicePos(slice []string, value string) int {
 func StringSliceContains(slice []string, value string) bool {
 	return StringSlicePos(slice, value) > -1
 }
+
+func StringSliceEquals(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, c := range a {
+		if c != b[i] {
+			return false
+		}
+	}
+	return true
+}

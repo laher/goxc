@@ -41,11 +41,9 @@ func init() {
 
 func runTaskCodesign(tp TaskParams) error {
 	//func runTaskCodesign(destPlatforms [][]string, outDestRoot string, appName string, settings config.Settings) error {
-	for _, platformArr := range tp.destPlatforms {
-		destOs := platformArr[0]
-		destArch := platformArr[1]
-		relativeBin := core.GetRelativeBin(destOs, destArch, tp.appName, false, tp.settings.GetFullVersionName())
-		codesignPlat(destOs, destArch, tp.outDestRoot, relativeBin, tp.settings)
+	for _, dest := range tp.destPlatforms {
+		relativeBin := core.GetRelativeBin(dest.Os, dest.Arch, tp.appName, false, tp.settings.GetFullVersionName())
+		codesignPlat(dest.Os, dest.Arch, tp.outDestRoot, relativeBin, tp.settings)
 	}
 	//TODO return error
 	return nil

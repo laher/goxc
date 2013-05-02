@@ -41,10 +41,8 @@ func init() {
 }
 
 func runTaskPkgBuild(tp TaskParams) (err error) {
-	for _, platformArr := range tp.destPlatforms {
-		destOs := platformArr[0]
-		destArch := platformArr[1]
-		err := pkgBuildPlat(destOs, destArch, tp)
+	for _, dest := range tp.destPlatforms {
+		err := pkgBuildPlat(dest.Os, dest.Arch, tp)
 		if err != nil {
 			log.Printf("Error: %v", err)
 		}

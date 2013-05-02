@@ -40,53 +40,60 @@ const (
 	PLAN9   = "plan9"
 )
 
+type Platform struct {
+	Os   string
+	Arch string
+}
+
 var (
 	OSES                    = []string{DARWIN, LINUX, FREEBSD, NETBSD, OPENBSD, PLAN9, WINDOWS}
 	ARCHS                   = []string{X86, AMD64, ARM}
-	SUPPORTED_PLATFORMS_1_0 = [][]string{
-		{DARWIN, X86},
-		{DARWIN, AMD64},
-		{LINUX, X86},
-		{LINUX, AMD64},
-		{LINUX, ARM},
-		{FREEBSD, X86},
-		{FREEBSD, AMD64},
-		// {FREEBSD, ARM},
+	SUPPORTED_PLATFORMS_1_0 = []Platform{
+		Platform{DARWIN, X86},
+		Platform{DARWIN, AMD64},
+		Platform{LINUX, X86},
+		Platform{LINUX, AMD64},
+		Platform{LINUX, ARM},
+		Platform{FREEBSD, X86},
+		Platform{FREEBSD, AMD64},
+		// Platform{FREEBSD, ARM},
 		// couldnt build toolchain for netbsd using a linux 386 host: 2013-02-19
-		//	{NETBSD, X86},
-		//	{NETBSD, AMD64},
-		{OPENBSD, X86},
-		{OPENBSD, AMD64},
-		{WINDOWS, X86},
-		{WINDOWS, AMD64}}
-	NEW_PLATFORMS_1_1 = [][]string{
-		{FREEBSD, ARM},
-		{NETBSD, X86},
-		{NETBSD, AMD64},
-		{NETBSD, ARM},
-		{PLAN9, X86}}
+		//	Platform{NETBSD, X86},
+		//	Platform{NETBSD, AMD64},
+		Platform{OPENBSD, X86},
+		Platform{OPENBSD, AMD64},
+		Platform{WINDOWS, X86},
+		Platform{WINDOWS, AMD64}}
+	NEW_PLATFORMS_1_1 = []Platform{
+		Platform{FREEBSD, ARM},
+		Platform{NETBSD, X86},
+		Platform{NETBSD, AMD64},
+		Platform{NETBSD, ARM},
+		Platform{PLAN9, X86}}
 
-	SUPPORTED_PLATFORMS_1_1 = append(append([][]string{}, SUPPORTED_PLATFORMS_1_0...), NEW_PLATFORMS_1_1...)
+	SUPPORTED_PLATFORMS_1_1 = append(append([]Platform{}, SUPPORTED_PLATFORMS_1_0...), NEW_PLATFORMS_1_1...)
 )
 
-func getSupportedPlatforms() [][]string {
+func getSupportedPlatforms() []Platform {
 	if strings.HasPrefix(runtime.Version(), "go1.0") {
 		return SUPPORTED_PLATFORMS_1_0
 	}
 	return SUPPORTED_PLATFORMS_1_1
 }
 
+
+
 // interpret list of destination platforms (based on os & arch settings)
 //0.5 add support for space delimiters (similar to BuildConstraints)
 //0.5 add support for different oses/services
-func GetDestPlatforms(specifiedOses string, specifiedArches string) [][]string {
+func GetDestPlatforms(specifiedOses string, specifiedArches string) []Platform {
 	destOses := strings.FieldsFunc(specifiedOses, func(r rune) bool { return r == ',' || r == ' ' })
 	destArchs := strings.FieldsFunc(specifiedArches, func(r rune) bool { return r == ',' || r == ' ' })
 
 	for _, o := range destOses {
 		supported := false
 		for _, supportedPlatformArr := range getSupportedPlatforms() {
-			supportedOs := supportedPlatformArr[0]
+			supportedOs := supportedPlatformArr.Os
 			if o == supportedOs {
 				supported = true
 			}
@@ -98,7 +105,7 @@ func GetDestPlatforms(specifiedOses string, specifiedArches string) [][]string {
 	for _, o := range destArchs {
 		supported := false
 		for _, supportedPlatformArr := range getSupportedPlatforms() {
-			supportedArch := supportedPlatformArr[1]
+			supportedArch := supportedPlatformArr.Arch
 			if o == supportedArch {
 				supported = true
 			}
@@ -113,10 +120,10 @@ func GetDestPlatforms(specifiedOses string, specifiedArches string) [][]string {
 	if len(destArchs) == 0 {
 		destArchs = []string{""}
 	}
-	var destPlatforms [][]string
+	var destPlatforms []Platform
 	for _, supportedPlatformArr := range getSupportedPlatforms() {
-		supportedOs := supportedPlatformArr[0]
-		supportedArch := supportedPlatformArr[1]
+		supportedOs := supportedPlatformArr.Os
+		supportedArch := supportedPlatformArr.Arch
 		for _, destOs := range destOses {
 			if destOs == "" || supportedOs == destOs {
 				for _, destArch := range destArchs {
