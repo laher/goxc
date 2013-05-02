@@ -148,7 +148,8 @@ License
 
 See also
 --------
- * [TODOs](https://github.com/laher/goxc/wiki/todo)
  * [Changelog](https://github.com/laher/goxc/wiki/changelog)
  * [Package Versioning](https://github.com/laher/goxc/wiki/versioning)
- * [Upgrading to v0.5](https://github.com/laher/goxc/wiki/upgrading-0.5)
+ * [Wiki home](https://github.com/laher/goxc/wiki)
+ * [Contributions](https://github.com/laher/goxc/wiki/contributions)
+ * [TODOs](https://github.com/laher/goxc/wiki/todo)
