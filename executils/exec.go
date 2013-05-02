@@ -1,4 +1,4 @@
-// GOXC IS NOT READY FOR USE AS AN API - function names and packages will continue to change until version 1.0
+// Utilities for invoking exec. Mainly focused on 'go build' and cross-compilation
 package executils
 
 /*

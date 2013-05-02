@@ -30,7 +30,7 @@ import (
 
 //runs automatically
 func init() {
-	register(Task{
+	Register(Task{
 		"xc",
 		"Cross compile. Builds executables for other platforms.",
 		runTaskXC,

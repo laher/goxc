@@ -1,4 +1,4 @@
-// GOXC IS NOT READY FOR USE AS AN API - function names and packages will continue to change until version 1.0
+// tasks are units of work performed by goxc.
 package tasks
 
 /*
@@ -69,6 +69,7 @@ var (
 	TASKS_ALL      = append(append([]string{}, TASKS_OTHER...), TASKS_DEFAULT...)
 )
 
+// Parameter object passed to a task.
 type TaskParams struct {
 	destPlatforms                 []platforms.Platform
 	appName                       string
@@ -76,6 +77,7 @@ type TaskParams struct {
 	settings                      config.Settings
 }
 
+// A task is basically a user-defined function given a unique name, plus some 'default settings'
 type Task struct {
 	Name            string
 	Description     string
@@ -85,6 +87,7 @@ type Task struct {
 
 var (
 	allTasks = make(map[string]Task)
+	//Aliases are one or more tasks, in a specific order.
 	Aliases  = map[string][]string{
 		TASKALIAS_CLEAN:    TASKS_CLEAN,
 		TASKALIAS_VALIDATE: TASKS_VALIDATE,
@@ -94,7 +97,8 @@ var (
 		TASKALIAS_ALL:      TASKS_ALL}
 )
 
-func register(task Task) {
+// Register a task for use by goxc. Call from an 'init' function
+func Register(task Task) {
 	allTasks[task.Name] = task
 }
 
@@ -146,7 +150,10 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 			if strings.HasPrefix(taskName, ".") {
 				log.Printf("'%s' looks like a directory, not a task - specify 'working directory' with -wd option", taskName)
 			}
-			log.Printf("Task %s does NOT exist! [specify 'working directory' with -wd option]", taskName)
+			if e, _ := core.FileExists(taskName); e {
+				log.Printf("'%s' looks like a directory, not a task - specify 'working directory' with -wd option", taskName)
+			}
+			log.Printf("Task %s does NOT exist!", taskName)
 			return
 		}
 	}

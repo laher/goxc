@@ -23,7 +23,7 @@ import (
 )
 
 //TODO: folder support
-func Zip(zipFilename string, items [][]string) error {
+func Zip(zipFilename string, itemsToArchive []ArchiveItem) error {
 	zf, err := os.Create(zipFilename)
 	if err != nil {
 		return err
@@ -34,7 +34,7 @@ func Zip(zipFilename string, items [][]string) error {
 	defer zw.Close()
 
 	//resources
-	for _, item := range items {
+	for _, item := range itemsToArchive {
 		err = addFileToZIP(zw, item)
 		if err != nil {
 			return err
@@ -44,8 +44,8 @@ func Zip(zipFilename string, items [][]string) error {
 	return err
 }
 
-func addFileToZIP(zw *zip.Writer, item []string) (err error) {
-	binfo, err := os.Stat(item[0])
+func addFileToZIP(zw *zip.Writer, item ArchiveItem) (err error) {
+	binfo, err := os.Stat(item.FileSystemPath)
 	if err != nil {
 		return
 	}
@@ -54,13 +54,13 @@ func addFileToZIP(zw *zip.Writer, item []string) (err error) {
 		return
 	}
 	header.Method = zip.Deflate
-	header.Name = item[1]
+	header.Name = item.ArchivePath
 	w, err := zw.CreateHeader(header)
 	if err != nil {
 		zw.Close()
 		return
 	}
-	bf, err := os.Open(item[0])
+	bf, err := os.Open(item.FileSystemPath)
 	if err != nil {
 		return
 	}

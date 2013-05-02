@@ -24,7 +24,7 @@ import (
 
 //runs automatically
 func init() {
-	register(Task{
+	Register(Task{
 		TASK_GO_FMT,
 		"runs `go fmt ./...`.",
 		runTaskGoFmt,

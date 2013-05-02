@@ -1,4 +1,4 @@
-// GOXC IS NOT READY FOR USE AS AN API - function names and packages will continue to change until version 1.0
+// goxc is a build tool with a focus on cross-compilation, plus packaging and deployment features.
 package main
 
 /*
@@ -38,19 +38,16 @@ const (
 	MSG_HELP               = "Usage: goxc [<option(s)>] [<task(s)>]\n"
 	MSG_HELP_TOPICS        = "goxc -h <topic>\n"
 	MSG_HELP_TOPICS_EG     = "More help:\n\tgoxc -h options\nor\n\tgoxc -h tasks\n"
-	MSG_HELP_LINK          = "Please see https://github.com/laher/goxc/wiki for full details.\n"
 	MSG_HELP_UNKNOWN_TOPIC = "Unknown topic '%s'. Try 'options' or 'tasks'\n"
-	MSG_HELP_DESC          = "goxc cross-compiles go programs to multiple platforms at once.\n"
-	MSG_HELP_TC            = "NOTE: You need to run `goxc -t` first. See https://github.com/laher/goxc/ for more details!\n"
 )
 
-// settings for this invocation of goxc
 var (
 	// VERSION is initialised by the linker during compilation if the appropriate flag is specified:
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION              = "0.6.x"
+	VERSION = "0.6.x"
+	// settings for this invocation of goxc
 	settings             config.Settings
 	configName           string
 	isVersion            bool
@@ -171,7 +168,7 @@ func fillDefaults(settings config.Settings) config.Settings {
 		settings.PackageVersion = core.PACKAGE_VERSION_DEFAULT
 	}
 	if len(settings.Tasks) == 0 {
-		settings.Tasks = tasks.TASKS_DEFAULT
+		settings.Tasks = tasks.Aliases[tasks.TASKALIAS_DEFAULT]
 	}
 	if settings.TaskSettings == nil {
 		settings.TaskSettings = make(map[string]map[string]interface{})

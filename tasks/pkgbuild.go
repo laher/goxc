@@ -33,7 +33,7 @@ import (
 
 //runs automatically
 func init() {
-	register(Task{
+	Register(Task{
 		TASK_PKG_BUILD,
 		"Build a binary package. Currently only supports .deb format for Debian/Ubuntu Linux.",
 		runTaskPkgBuild,
@@ -129,13 +129,13 @@ func debBuild(destOs, destArch string, tp TaskParams) (err error) {
 	if err != nil {
 		return err
 	}
-	err = archive.TarGz(filepath.Join(tmpDir, "control.tar.gz"), [][]string{[]string{filepath.Join(tmpDir, "control"), "control"}})
+	err = archive.TarGz(filepath.Join(tmpDir, "control.tar.gz"), []archive.ArchiveItem{archive.ArchiveItem{FileSystemPath: filepath.Join(tmpDir, "control"), ArchivePath: "control"}})
 	if err != nil {
 		return err
 	}
 	//build
 	//TODO add resources to /usr/share
-	err = archive.TarGz(filepath.Join(tmpDir, "data.tar.gz"), [][]string{[]string{appPath, "/usr/bin/" + tp.appName}})
+	err = archive.TarGz(filepath.Join(tmpDir, "data.tar.gz"), []archive.ArchiveItem{archive.ArchiveItem{FileSystemPath: appPath, ArchivePath: "/usr/bin/" + tp.appName}})
 	if err != nil {
 		return err
 	}

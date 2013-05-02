@@ -24,7 +24,7 @@ import (
 
 //runs automatically
 func init() {
-	register(Task{
+	Register(Task{
 		TASK_GO_TEST,
 		"runs `go test ./...`. (dir is configurable).",
 		runTaskGoTest,

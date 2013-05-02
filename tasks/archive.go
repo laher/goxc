@@ -32,7 +32,7 @@ import (
 
 //runs automatically
 func init() {
-	register(Task{
+	Register(Task{
 		"archive",
 		"Create a compressed archive. Currently 'zip' format is used for all platforms except Linux (tar.gz)",
 		runTaskArchive,

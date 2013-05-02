@@ -3,7 +3,7 @@
 	"Resources": {
 		"Include": "README.md"
 	},
-	"PackageVersion": "0.6.6",
+	"PackageVersion": "0.7.0",
 	"TaskSettings": {
 		"codesign": {
 			"id": "goxc"

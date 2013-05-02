@@ -29,7 +29,7 @@ import (
 
 //runs automatically
 func init() {
-	register(Task{
+	Register(Task{
 		TASK_COPY_RESOURCES,
 		"Copy resources",
 		runTaskCopyResources,

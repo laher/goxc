@@ -1,4 +1,4 @@
-// GOXC IS NOT READY FOR USE AS AN API - function names and packages will continue to change until version 1.0
+// Limited support for parsing Go source.
 package source
 
 /*

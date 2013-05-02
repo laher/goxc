@@ -32,7 +32,7 @@ import (
 
 //runs automatically
 func init() {
-	register(Task{
+	Register(Task{
 		"toolchain",
 		"Build toolchain. Make sure to run this each time you update go source.",
 		runTaskToolchain,

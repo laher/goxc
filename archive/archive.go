@@ -1,4 +1,4 @@
-// GOXC IS NOT READY FOR USE AS AN API - function names and packages will continue to change until version 1.0
+// archive features for goxc. Limited support for zip, tar.gz and ar archiving
 package archive
 
 /*
@@ -25,9 +25,16 @@ import (
 	"github.com/laher/goxc/core"
 )
 
-// function definition
-type Archiver func(archiveFilename string, items [][]string) error
+// type definition representing a file to be archived. Details location on filesystem and destination filename inside archive.
+type ArchiveItem struct {
+	FileSystemPath string
+	ArchivePath    string
+}
 
+// type definition for different archiving implementations
+type Archiver func(archiveFilename string, itemsToArchive []ArchiveItem) error
+
+// goxc function to archive a binary along with supporting files (e.g. README or LICENCE).
 func ArchiveBinaryAndResources(outDir, binPath, appName string, resources []string, settings config.Settings, archiver Archiver, ending string) (zipFilename string, err error) {
 	if settings.PackageVersion != "" && settings.PackageVersion != core.PACKAGE_VERSION_DEFAULT {
 		//0.1.6 using appname_version_platform. See issue 3
@@ -35,9 +42,9 @@ func ArchiveBinaryAndResources(outDir, binPath, appName string, resources []stri
 	} else {
 		zipFilename = appName + "_" + filepath.Base(filepath.Dir(binPath)) + "." + ending
 	}
-	toArchive := [][]string{[]string{binPath, filepath.Base(binPath)}}
+	toArchive := []ArchiveItem{ArchiveItem{binPath, filepath.Base(binPath)}}
 	for _, resource := range resources {
-		toArchive = append(toArchive, []string{resource, resource})
+		toArchive = append(toArchive, ArchiveItem{resource, resource})
 	}
 	err = archiver(filepath.Join(outDir, zipFilename), toArchive)
 	return

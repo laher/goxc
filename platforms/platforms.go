@@ -1,4 +1,4 @@
-// GOXC IS NOT READY FOR USE AS AN API - function names and packages will continue to change until version 1.0
+// Support for different target platforms (Operating Systems and Architectures) supported by the Go compiler
 package platforms
 
 /*
@@ -40,6 +40,7 @@ const (
 	PLAN9   = "plan9"
 )
 
+// represents a target compilation platform
 type Platform struct {
 	Os   string
 	Arch string
@@ -80,8 +81,6 @@ func getSupportedPlatforms() []Platform {
 	}
 	return SUPPORTED_PLATFORMS_1_1
 }
-
-
 
 // interpret list of destination platforms (based on os & arch settings)
 //0.5 add support for space delimiters (similar to BuildConstraints)

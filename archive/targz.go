@@ -24,7 +24,8 @@ import (
 	"path/filepath"
 )
 
-func TarGz(archiveFilename string, items [][]string) error {
+// TarGz implementation of Archiver.
+func TarGz(archiveFilename string, itemsToArchive []ArchiveItem) error {
 	// file write
 	fw, err := os.Create(archiveFilename)
 	if err != nil {
@@ -40,7 +41,7 @@ func TarGz(archiveFilename string, items [][]string) error {
 	tw := tar.NewWriter(gw)
 	defer tw.Close()
 
-	for _, item := range items {
+	for _, item := range itemsToArchive {
 		err = addItemToTarGz(item, tw)
 		if err != nil {
 			return err
@@ -50,13 +51,14 @@ func TarGz(archiveFilename string, items [][]string) error {
 	return err
 }
 
-func TarGzWrite(fileparts []string, tw *tar.Writer, fi os.FileInfo) error {
-	fr, err := os.Open(fileparts[0])
+// Write a single file to TarGz
+func TarGzWrite(item ArchiveItem, tw *tar.Writer, fi os.FileInfo) error {
+	fr, err := os.Open(item.FileSystemPath)
 	if err == nil {
 		defer fr.Close()
 
 		h := new(tar.Header)
-		h.Name = fileparts[1]
+		h.Name = item.ArchivePath
 		h.Size = fi.Size()
 		h.Mode = int64(fi.Mode())
 		h.ModTime = fi.ModTime()
@@ -70,18 +72,18 @@ func TarGzWrite(fileparts []string, tw *tar.Writer, fi os.FileInfo) error {
 	return err
 }
 
-func addItemToTarGz(fileparts []string, tw *tar.Writer) error {
-	fi, err := os.Stat(fileparts[0])
+func addItemToTarGz(item ArchiveItem, tw *tar.Writer) error {
+	fi, err := os.Stat(item.FileSystemPath)
 	if err != nil {
 		return err
 	}
 	if fi.IsDir() {
-		err = addDirectoryToTarGz(fileparts, tw)
+		err = addDirectoryToTarGz(item, tw)
 		if err != nil {
 			return err
 		}
 	} else {
-		err = TarGzWrite(fileparts, tw, fi)
+		err = TarGzWrite(item, tw, fi)
 		if err != nil {
 			return err
 		}
@@ -89,14 +91,14 @@ func addItemToTarGz(fileparts []string, tw *tar.Writer) error {
 	return err
 }
 
-func addDirectoryToTarGz(dirPath []string, tw *tar.Writer) error {
-	dir, err := os.Open(dirPath[0])
+func addDirectoryToTarGz(dirPath ArchiveItem, tw *tar.Writer) error {
+	dir, err := os.Open(dirPath.FileSystemPath)
 	if err == nil {
 		defer dir.Close()
 		fis, err := dir.Readdir(0)
 		if err == nil {
 			for _, fi := range fis {
-				curPath := []string{filepath.Join(dirPath[0], fi.Name()), filepath.Join(dirPath[1], fi.Name())}
+				curPath := ArchiveItem{filepath.Join(dirPath.FileSystemPath, fi.Name()), filepath.Join(dirPath.ArchivePath, fi.Name())}
 				addItemToTarGz(curPath, tw)
 			}
 		}

@@ -29,7 +29,7 @@ import (
 
 //runs automatically
 func init() {
-	register(Task{
+	Register(Task{
 		TASK_DOWNLOADS_PAGE,
 		"Generate a downloads page. Currently only supports Markdown format.",
 		runTaskDownloadsPage,

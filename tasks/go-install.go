@@ -24,7 +24,7 @@ import (
 
 //runs automatically
 func init() {
-	register(Task{
+	Register(Task{
 		TASK_GO_INSTALL,
 		"runs `go install`. installs a version consistent with goxc-built binaries.",
 		runTaskGoInstall,

@@ -39,7 +39,7 @@ const (
 
 //runs automatically
 func init() {
-	register(Task{
+	Register(Task{
 		TASK_PKG_SOURCE,
 		"Build a source package. Currently only supports 'source deb' format for Debian/Ubuntu Linux.",
 		runTaskPkgSource,

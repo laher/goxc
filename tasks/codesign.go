@@ -36,7 +36,7 @@ var codesignTask = Task{
 
 //runs automatically
 func init() {
-	register(codesignTask)
+	Register(codesignTask)
 }
 
 func runTaskCodesign(tp TaskParams) error {

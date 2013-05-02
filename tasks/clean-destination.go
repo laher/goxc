@@ -23,7 +23,7 @@ import (
 
 //runs automatically
 func init() {
-	register(Task{
+	Register(Task{
 		"clean-destination",
 		"Delete the output directory for this version of the artifact.",
 		runTaskCleanDestination,

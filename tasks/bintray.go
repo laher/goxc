@@ -39,7 +39,7 @@ const TASK_BINTRAY = "bintray"
 
 //runs automatically
 func init() {
-	register(Task{
+	Register(Task{
 		TASK_BINTRAY,
 		"Upload artifacts to bintray.com, and generate a local markdown page of links (bintray registration details required in goxc config. See `goxc -h bintray`)",
 		runTaskBintray,

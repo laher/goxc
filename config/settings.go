@@ -1,4 +1,4 @@
-// GOXC IS NOT READY FOR USE AS AN API - function names and packages will continue to change until version 1.0
+// config package handles invocation settings for goxc, which can be set using a combination of cli flags plus json-based config files.
 package config
 
 /*
@@ -23,11 +23,13 @@ import (
 	"log"
 )
 
+// Resources are files which a user might want to include or exclude from their package or archive
 type Resources struct {
 	Include string `json:",omitempty"`
 	Exclude string `json:",omitempty"`
 }
 
+// Invocation settings
 type Settings struct {
 	ArtifactsDest string
 	//0.2.0 ArtifactTypes replaces ZipArchives bool
@@ -147,6 +149,9 @@ func (s Settings) GetTaskSettingBool(taskName, settingName string) bool {
 	return ret
 }
 
+//Builds version name from PackageVersion, BranchName, PrereleaseInfo, BuildName
+//This breakdown is mainly based on 'semantic versioning' See http://semver.org/
+//The difference being that you can specify a branch name (which becomes part of the 'prerelease info' as named by semver)
 func (settings Settings) GetFullVersionName() string {
 	versionName := settings.PackageVersion
 	if settings.BranchName != "" {
@@ -167,7 +172,7 @@ func (settings Settings) GetFullVersionName() string {
 }
 
 // Merge settings together with priority.
-// TODO: is there a cleverer way to do this? Reflection, maybe. Maybe not.
+// TODO: deprecate in favour of a map merge
 func Merge(high Settings, low Settings) Settings {
 	if high.ArtifactsDest == "" {
 		high.ArtifactsDest = low.ArtifactsDest

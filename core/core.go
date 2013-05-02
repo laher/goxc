@@ -1,4 +1,4 @@
-// GOXC IS NOT READY FOR USE AS AN API - function names and packages will continue to change until version 1.0
+//Some general utility functions for goxc
 package core
 
 /*
@@ -65,7 +65,7 @@ func SanityCheck(goroot string) error {
 }
 
 // simple fileExists method which inspects the error from os.Stat
-func fileExists(path string) (bool, error) {
+func FileExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
 		return true, nil
