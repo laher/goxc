@@ -28,7 +28,7 @@ import (
 
 //TODO: unfinished: need to discover root dir to determine which dirs to pre-make.
 
-func sdebCopySourceRecurse(codeDir, destDir string) (err error) {
+func SdebCopySourceRecurse(codeDir, destDir string) (err error) {
 	log.Printf("Globbing %s", codeDir)
 	//get all files and copy into destDir
 	matches, err := filepath.Glob(filepath.Join(codeDir, "*.go"))
@@ -73,7 +73,7 @@ func sdebCopySourceRecurse(codeDir, destDir string) (err error) {
 	fis, err := ioutil.ReadDir(codeDir)
 	for _, fi := range fis {
 		if fi.IsDir() && fi.Name() != DIRNAME_TEMP {
-			err = sdebCopySourceRecurse(filepath.Join(codeDir, fi.Name()), filepath.Join(destDir, fi.Name()))
+			err = SdebCopySourceRecurse(filepath.Join(codeDir, fi.Name()), filepath.Join(destDir, fi.Name()))
 			if err != nil {
 				return err
 			}
@@ -84,7 +84,7 @@ func sdebCopySourceRecurse(codeDir, destDir string) (err error) {
 
 // prepare folders and debian/ files.
 // (everything except copying source)
-func sdebPrepare(workingDirectory, appName, maintainer, version, arches, description, buildDepends string, metadataDeb map[string]interface{}) (err error) {
+func SdebPrepare(workingDirectory, appName, maintainer, version, arches, description, buildDepends string, metadataDeb map[string]interface{}) (err error) {
 	//make temp dir & subfolders
 	tmpDir := filepath.Join(workingDirectory, DIRNAME_TEMP)
 	debianDir := filepath.Join(tmpDir, "debian")

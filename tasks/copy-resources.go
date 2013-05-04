@@ -37,13 +37,13 @@ func init() {
 }
 
 func runTaskCopyResources(tp TaskParams) error {
-	resources := core.ParseIncludeResources(tp.workingDirectory, tp.settings.Resources.Include, tp.settings.IsVerbose())
-	destFolder := filepath.Join(tp.outDestRoot, tp.settings.GetFullVersionName())
+	resources := core.ParseIncludeResources(tp.WorkingDirectory, tp.Settings.Resources.Include, tp.Settings.IsVerbose())
+	destFolder := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
 	for _, resource := range resources {
-		if strings.HasPrefix(resource, tp.workingDirectory) {
-			resource = resource[len(tp.workingDirectory)+1:]
+		if strings.HasPrefix(resource, tp.WorkingDirectory) {
+			resource = resource[len(tp.WorkingDirectory)+1:]
 		}
-		_, err := copyFile(filepath.Join(destFolder, resource), filepath.Join(tp.workingDirectory, resource))
+		_, err := copyFile(filepath.Join(destFolder, resource), filepath.Join(tp.WorkingDirectory, resource))
 		if err != nil {
 			return err
 		}

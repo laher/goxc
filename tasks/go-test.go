@@ -32,9 +32,9 @@ func init() {
 }
 
 func runTaskGoTest(tp TaskParams) error {
-	dir := tp.settings.GetTaskSettingString(TASK_GO_TEST, "dir")
+	dir := tp.Settings.GetTaskSettingString(TASK_GO_TEST, "dir")
 	args := []string{"test", dir}
-	args = append(args, executils.GetLdFlagVersionArgs(tp.settings.GetFullVersionName())...)
-	err := executils.InvokeGo(tp.workingDirectory, args, []string{}, tp.settings.IsVerbose())
+	args = append(args, executils.GetLdFlagVersionArgs(tp.Settings.GetFullVersionName())...)
+	err := executils.InvokeGo(tp.WorkingDirectory, args, []string{}, tp.Settings.IsVerbose())
 	return err
 }

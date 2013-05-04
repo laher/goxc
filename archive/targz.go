@@ -52,41 +52,49 @@ func TarGz(archiveFilename string, itemsToArchive []ArchiveItem) error {
 }
 
 // Write a single file to TarGz
-func TarGzWrite(item ArchiveItem, tw *tar.Writer, fi os.FileInfo) error {
-	fr, err := os.Open(item.FileSystemPath)
-	if err == nil {
-		defer fr.Close()
+func TarGzWrite(item ArchiveItem, tw *tar.Writer, fi os.FileInfo) (err error) {
+	if item.FileSystemPath != "" {
+		fr, err := os.Open(item.FileSystemPath)
+		if err == nil {
+			defer fr.Close()
 
+			h := new(tar.Header)
+			h.Name = item.ArchivePath
+			h.Size = fi.Size()
+			h.Mode = int64(fi.Mode())
+			h.ModTime = fi.ModTime()
+
+			err = tw.WriteHeader(h)
+
+			if err == nil {
+				_, err = io.Copy(tw, fr)
+			}
+		}
+	} else {
 		h := new(tar.Header)
 		h.Name = item.ArchivePath
-		h.Size = fi.Size()
-		h.Mode = int64(fi.Mode())
-		h.ModTime = fi.ModTime()
-
+		h.Size = int64(len(item.Data))
 		err = tw.WriteHeader(h)
-
 		if err == nil {
-			_, err = io.Copy(tw, fr)
+			_, err = tw.Write(item.Data)
 		}
 	}
 	return err
 }
 
-func addItemToTarGz(item ArchiveItem, tw *tar.Writer) error {
-	fi, err := os.Stat(item.FileSystemPath)
-	if err != nil {
-		return err
-	}
-	if fi.IsDir() {
-		err = addDirectoryToTarGz(item, tw)
+func addItemToTarGz(item ArchiveItem, tw *tar.Writer) (err error) {
+	if item.FileSystemPath != "" {
+		fi, err := os.Stat(item.FileSystemPath)
 		if err != nil {
 			return err
 		}
-	} else {
+		if fi.IsDir() {
+			err = addDirectoryToTarGz(item, tw)
+			return err
+		}
 		err = TarGzWrite(item, tw, fi)
-		if err != nil {
-			return err
-		}
+	} else {
+		err = TarGzWrite(item, tw, nil)
 	}
 	return err
 }
@@ -98,7 +106,7 @@ func addDirectoryToTarGz(dirPath ArchiveItem, tw *tar.Writer) error {
 		fis, err := dir.Readdir(0)
 		if err == nil {
 			for _, fi := range fis {
-				curPath := ArchiveItem{filepath.Join(dirPath.FileSystemPath, fi.Name()), filepath.Join(dirPath.ArchivePath, fi.Name())}
+				curPath := ArchiveItemFromFileSystem(filepath.Join(dirPath.FileSystemPath, fi.Name()), filepath.Join(dirPath.ArchivePath, fi.Name()))
 				addItemToTarGz(curPath, tw)
 			}
 		}

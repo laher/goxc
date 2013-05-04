@@ -41,7 +41,7 @@ func init() {
 }
 
 func runTaskPkgBuild(tp TaskParams) (err error) {
-	for _, dest := range tp.destPlatforms {
+	for _, dest := range tp.DestPlatforms {
 		err := pkgBuildPlat(dest.Os, dest.Arch, tp)
 		if err != nil {
 			log.Printf("Error: %v", err)
@@ -92,11 +92,11 @@ func getDebArch(destArch string) string {
 }
 
 func debBuild(destOs, destArch string, tp TaskParams) (err error) {
-	metadata := tp.settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata")
-	metadataDeb := tp.settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata-deb")
-	rmtemp := tp.settings.GetTaskSettingBool(TASK_PKG_BUILD, "rmtemp")
-	relativeBin := core.GetRelativeBin(destOs, destArch, tp.appName, false, tp.settings.GetFullVersionName())
-	appPath := filepath.Join(tp.outDestRoot, relativeBin)
+	metadata := tp.Settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata")
+	metadataDeb := tp.Settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata-deb")
+	rmtemp := tp.Settings.GetTaskSettingBool(TASK_PKG_BUILD, "rmtemp")
+	relativeBin := core.GetRelativeBin(destOs, destArch, tp.AppName, false, tp.Settings.GetFullVersionName())
+	appPath := filepath.Join(tp.OutDestRoot, relativeBin)
 	debDir := filepath.Dir(appPath)
 	tmpDir := filepath.Join(debDir, ".goxc-temp")
 	if rmtemp {
@@ -121,8 +121,8 @@ func debBuild(destOs, destArch string, tp TaskParams) (err error) {
 			return err
 		}
 	}
-	controlContent := getDebControlFileContent(tp.appName, maintainer, tp.settings.GetFullVersionName(), destArch, description, metadataDeb)
-	if tp.settings.IsVerbose() {
+	controlContent := getDebControlFileContent(tp.AppName, maintainer, tp.Settings.GetFullVersionName(), destArch, description, metadataDeb)
+	if tp.Settings.IsVerbose() {
 		log.Printf("Control file:\n%s", string(controlContent))
 	}
 	err = ioutil.WriteFile(filepath.Join(tmpDir, "control"), controlContent, 0644)
@@ -135,11 +135,11 @@ func debBuild(destOs, destArch string, tp TaskParams) (err error) {
 	}
 	//build
 	//TODO add resources to /usr/share
-	err = archive.TarGz(filepath.Join(tmpDir, "data.tar.gz"), []archive.ArchiveItem{archive.ArchiveItem{FileSystemPath: appPath, ArchivePath: "/usr/bin/" + tp.appName}})
+	err = archive.TarGz(filepath.Join(tmpDir, "data.tar.gz"), []archive.ArchiveItem{archive.ArchiveItem{FileSystemPath: appPath, ArchivePath: "/usr/bin/" + tp.AppName}})
 	if err != nil {
 		return err
 	}
-	targetFile := filepath.Join(debDir, fmt.Sprintf("%s_%s_%s.deb", tp.appName, tp.settings.GetFullVersionName(), getDebArch(destArch))) //goxc_0.5.2_i386.deb")
+	targetFile := filepath.Join(debDir, fmt.Sprintf("%s_%s_%s.deb", tp.AppName, tp.Settings.GetFullVersionName(), getDebArch(destArch))) //goxc_0.5.2_i386.deb")
 	inputs := [][]string{
 		[]string{filepath.Join(tmpDir, "debian-binary"), "debian-binary"},
 		[]string{filepath.Join(tmpDir, "control.tar.gz"), "control.tar.gz"},

@@ -39,27 +39,27 @@ func init() {
 }
 
 func runTaskDownloadsPage(tp TaskParams) error {
-	filename := tp.settings.GetTaskSettingString(TASK_DOWNLOADS_PAGE, "filename")
-	reportFilename := filepath.Join(tp.outDestRoot, tp.settings.GetFullVersionName(), filename)
+	filename := tp.Settings.GetTaskSettingString(TASK_DOWNLOADS_PAGE, "filename")
+	reportFilename := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName(), filename)
 	flags := os.O_WRONLY | os.O_TRUNC | os.O_CREATE
 	f, err := os.OpenFile(reportFilename, flags, 0600)
 	if err == nil {
 		defer f.Close()
-		fileheader := tp.settings.GetTaskSettingString(TASK_DOWNLOADS_PAGE, "fileheader")
+		fileheader := tp.Settings.GetTaskSettingString(TASK_DOWNLOADS_PAGE, "fileheader")
 		if fileheader != "" {
 			_, err = fmt.Fprintf(f, "%s\n\n", fileheader)
 		}
-		_, err = fmt.Fprintf(f, "%s downloads (version %s)\n-------------\n", tp.appName, tp.settings.GetFullVersionName())
-		versionDir := filepath.Join(tp.outDestRoot, tp.settings.GetFullVersionName())
+		_, err = fmt.Fprintf(f, "%s downloads (version %s)\n-------------\n", tp.AppName, tp.Settings.GetFullVersionName())
+		versionDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
 		fileInfos, err := ioutil.ReadDir(versionDir)
 		if err == nil {
-			if tp.settings.IsVerbose() {
+			if tp.Settings.IsVerbose() {
 				log.Printf("Read directory %s", versionDir)
 			}
 			for _, fi := range fileInfos {
 				if fi.IsDir() {
 					folderName := filepath.Join(versionDir, fi.Name())
-					if tp.settings.IsVerbose() {
+					if tp.Settings.IsVerbose() {
 						log.Printf("Read directory %s", folderName)
 					}
 					fileInfos2, err := ioutil.ReadDir(folderName)
@@ -75,7 +75,7 @@ func runTaskDownloadsPage(tp TaskParams) error {
 								text = "deb"
 							} else if strings.HasSuffix(fi2.Name(), ".tar.gz") {
 								text = "tar.gz"
-							} else if fi2.Name() == tp.appName || fi2.Name() == tp.appName+".exe" {
+							} else if fi2.Name() == tp.AppName || fi2.Name() == tp.AppName+".exe" {
 								text = "executable"
 							}
 							_, err = fmt.Fprintf(f, " [[%s](%s)]", text, relativeLink)

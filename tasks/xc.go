@@ -38,13 +38,13 @@ func init() {
 }
 
 func runTaskXC(tp TaskParams) error {
-	if len(tp.destPlatforms) == 0 {
+	if len(tp.DestPlatforms) == 0 {
 		return errors.New("No valid platforms specified")
 	}
 	success := 0
 	var err error
-	for _, dest := range tp.destPlatforms {
-		err = xcPlat(dest.Os, dest.Arch, tp.workingDirectory, tp.settings)
+	for _, dest := range tp.DestPlatforms {
+		err = xcPlat(dest.Os, dest.Arch, tp.WorkingDirectory, tp.Settings)
 		if err != nil {
 			log.Printf("Error: %v", err)
 		} else {

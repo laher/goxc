@@ -40,7 +40,7 @@ func init() {
 }
 
 func runTaskToolchain(tp TaskParams) error {
-	if len(tp.destPlatforms) < 1 {
+	if len(tp.DestPlatforms) < 1 {
 		return errors.New("No valid platforms specified")
 	} else {
 		log.Printf("Please do NOT try to quit during a build-toolchain. This can leave your Go toolchain in a non-working state.")
@@ -58,9 +58,9 @@ func runTaskToolchain(tp TaskParams) error {
 		go g()
 		success := 0
 		var err error
-		for _, dest := range tp.destPlatforms {
+		for _, dest := range tp.DestPlatforms {
 			busy = true
-			err = buildToolchain(dest.Os, dest.Arch, tp.settings)
+			err = buildToolchain(dest.Os, dest.Arch, tp.Settings)
 			if err != nil {
 				log.Printf("Error: %v", err)
 			} else {

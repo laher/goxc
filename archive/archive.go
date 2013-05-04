@@ -27,8 +27,18 @@ import (
 
 // type definition representing a file to be archived. Details location on filesystem and destination filename inside archive.
 type ArchiveItem struct {
+	//if FileSystemPath is empty, use Data instead
 	FileSystemPath string
 	ArchivePath    string
+	Data           []byte
+}
+
+func ArchiveItemFromFileSystem(fileSystemPath, archivePath string) ArchiveItem {
+	return ArchiveItem{fileSystemPath, archivePath, nil}
+}
+
+func ArchiveItemFromBytes(data []byte, archivePath string) ArchiveItem {
+	return ArchiveItem{"", archivePath, data}
 }
 
 // type definition for different archiving implementations
@@ -42,9 +52,9 @@ func ArchiveBinaryAndResources(outDir, binPath, appName string, resources []stri
 	} else {
 		zipFilename = appName + "_" + filepath.Base(filepath.Dir(binPath)) + "." + ending
 	}
-	toArchive := []ArchiveItem{ArchiveItem{binPath, filepath.Base(binPath)}}
+	toArchive := []ArchiveItem{ArchiveItemFromFileSystem(binPath, filepath.Base(binPath))}
 	for _, resource := range resources {
-		toArchive = append(toArchive, ArchiveItem{resource, resource})
+		toArchive = append(toArchive, ArchiveItemFromFileSystem(resource, resource))
 	}
 	err = archiver(filepath.Join(outDir, zipFilename), toArchive)
 	return

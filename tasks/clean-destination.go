@@ -31,5 +31,5 @@ func init() {
 }
 
 func runTaskCleanDestination(tp TaskParams) error {
-	return os.RemoveAll(filepath.Join(tp.outDestRoot, tp.settings.GetFullVersionName()))
+	return os.RemoveAll(filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName()))
 }

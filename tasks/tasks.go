@@ -71,10 +71,10 @@ var (
 
 // Parameter object passed to a task.
 type TaskParams struct {
-	destPlatforms                 []platforms.Platform
-	appName                       string
-	workingDirectory, outDestRoot string
-	settings                      config.Settings
+	DestPlatforms                 []platforms.Platform
+	AppName                       string
+	WorkingDirectory, OutDestRoot string
+	Settings                      config.Settings
 }
 
 // A task is basically a user-defined function given a unique name, plus some 'default settings'

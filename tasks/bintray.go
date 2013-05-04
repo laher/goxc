@@ -51,13 +51,13 @@ func init() {
 }
 
 func runTaskBintray(tp TaskParams) error {
-	subject := tp.settings.GetTaskSettingString(TASK_BINTRAY, "subject")
-	apikey := tp.settings.GetTaskSettingString(TASK_BINTRAY, "apikey")
-	repository := tp.settings.GetTaskSettingString(TASK_BINTRAY, "repository")
-	pkg := tp.settings.GetTaskSettingString(TASK_BINTRAY, "package")
-	apiHost := tp.settings.GetTaskSettingString(TASK_BINTRAY, "apihost")
-	downloadsHost := tp.settings.GetTaskSettingString(TASK_BINTRAY, "downloadshost")
-	versionDir := filepath.Join(tp.outDestRoot, tp.settings.GetFullVersionName())
+	subject := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "subject")
+	apikey := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "apikey")
+	repository := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "repository")
+	pkg := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "package")
+	apiHost := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "apihost")
+	downloadsHost := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "downloadshost")
+	versionDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
 
 	missing := []string{}
 
@@ -79,8 +79,8 @@ func runTaskBintray(tp TaskParams) error {
 	if len(missing) > 0 {
 		return errors.New(fmt.Sprintf("bintray configuration missing (%v)", missing))
 	}
-	filename := tp.settings.GetTaskSettingString(TASK_BINTRAY, "downloadspage")
-	reportFilename := filepath.Join(tp.outDestRoot, tp.settings.GetFullVersionName(), filename)
+	filename := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "downloadspage")
+	reportFilename := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName(), filename)
 	flags := os.O_WRONLY | os.O_TRUNC | os.O_CREATE
 	f, err := os.OpenFile(reportFilename, flags, 0600)
 	if err != nil {
@@ -92,18 +92,18 @@ func runTaskBintray(tp TaskParams) error {
 		return err
 	}
 	defer f.Close()
-	fileheader := tp.settings.GetTaskSettingString(TASK_BINTRAY, "fileheader")
+	fileheader := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "fileheader")
 	if fileheader != "" {
 		_, err = fmt.Fprintf(f, "%s\n\n", fileheader)
 	}
-	_, err = fmt.Fprintf(f, "%s downloads (version %s)\n-------------\n", tp.appName, tp.settings.GetFullVersionName())
-	if tp.settings.IsVerbose() {
+	_, err = fmt.Fprintf(f, "%s downloads (version %s)\n-------------\n", tp.AppName, tp.Settings.GetFullVersionName())
+	if tp.Settings.IsVerbose() {
 		log.Printf("Read directory %s", versionDir)
 	}
 	for _, fi := range fileInfos {
 		if fi.IsDir() {
 			folderName := filepath.Join(versionDir, fi.Name())
-			if tp.settings.IsVerbose() {
+			if tp.Settings.IsVerbose() {
 				log.Printf("Read directory %s", folderName)
 			}
 			fileInfos2, err := ioutil.ReadDir(folderName)
@@ -121,10 +121,10 @@ func runTaskBintray(tp TaskParams) error {
 						text = "deb"
 					} else if strings.HasSuffix(fi2.Name(), ".tar.gz") {
 						text = "tar.gz"
-					} else if fi2.Name() == tp.appName || fi2.Name() == tp.appName+".exe" {
+					} else if fi2.Name() == tp.AppName || fi2.Name() == tp.AppName+".exe" {
 						text = "executable"
 					}
-					url := apiHost + "/content/" + subject + "/" + repository + "/" + pkg + "/" + tp.settings.GetFullVersionName() + "/" + relativePath
+					url := apiHost + "/content/" + subject + "/" + repository + "/" + pkg + "/" + tp.Settings.GetFullVersionName() + "/" + relativePath
 					// for some reason there's no /pkg/ level in the downloads url.
 					downloadsUrl := downloadsHost + "/content/" + subject + "/" + repository + "/" + relativePath + "?direct"
 					resp, err := uploadFile("PUT", url, subject, apikey, fullPath, relativePath)
@@ -156,7 +156,7 @@ func runTaskBintray(tp TaskParams) error {
 					if err != nil {
 						return err
 					}
-					err = publish(apiHost, apikey, subject, repository, pkg, tp.settings.GetFullVersionName())
+					err = publish(apiHost, apikey, subject, repository, pkg, tp.Settings.GetFullVersionName())
 					if err != nil {
 						return err
 					}

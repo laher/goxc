@@ -39,26 +39,28 @@ func init() {
 	Register(codesignTask)
 }
 
-func runTaskCodesign(tp TaskParams) error {
-	//func runTaskCodesign(destPlatforms [][]string, outDestRoot string, appName string, settings config.Settings) error {
-	for _, dest := range tp.destPlatforms {
-		relativeBin := core.GetRelativeBin(dest.Os, dest.Arch, tp.appName, false, tp.settings.GetFullVersionName())
-		codesignPlat(dest.Os, dest.Arch, tp.outDestRoot, relativeBin, tp.settings)
+func runTaskCodesign(tp TaskParams) (err error) {
+	for _, dest := range tp.DestPlatforms {
+		relativeBin := core.GetRelativeBin(dest.Os, dest.Arch, tp.AppName, false, tp.Settings.GetFullVersionName())
+		err = codesignPlat(dest.Os, dest.Arch, tp.OutDestRoot, relativeBin, tp.Settings)
 	}
 	//TODO return error
-	return nil
+	return err
 }
 
-func codesignPlat(goos, arch string, outDestRoot string, relativeBin string, settings config.Settings) {
+func codesignPlat(goos, arch string, outDestRoot string, relativeBin string, settings config.Settings) error {
 	// settings.codesign only works on OS X for binaries generated for OS X.
 	id := settings.GetTaskSettingString("codesign", "id")
 	if id != "" && runtime.GOOS == platforms.DARWIN && goos == platforms.DARWIN {
 		if err := signBinary(filepath.Join(outDestRoot, relativeBin), id); err != nil {
 			log.Printf("codesign failed: %s", err)
+			return err
 		} else {
 			log.Printf("Signed with ID: %q", id)
+			return nil
 		}
 	}
+	return nil
 }
 
 func signBinary(binPath string, id string) error {

@@ -32,8 +32,8 @@ func init() {
 }
 
 func runTaskGoVet(tp TaskParams) error {
-	dir := tp.settings.GetTaskSettingString(TASK_GO_VET, "dir")
+	dir := tp.Settings.GetTaskSettingString(TASK_GO_VET, "dir")
 	args := []string{"vet", dir}
-	err := executils.InvokeGo(tp.workingDirectory, args, []string{}, tp.settings.IsVerbose())
+	err := executils.InvokeGo(tp.WorkingDirectory, args, []string{}, tp.Settings.IsVerbose())
 	return err
 }

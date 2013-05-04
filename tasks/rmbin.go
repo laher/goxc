@@ -36,8 +36,8 @@ func init() {
 }
 
 func runTaskRmBin(tp TaskParams) error {
-	for _, dest := range tp.destPlatforms {
-		err := rmBinPlat(dest.Os, dest.Arch, tp.appName, tp.outDestRoot, tp.settings)
+	for _, dest := range tp.DestPlatforms {
+		err := rmBinPlat(dest.Os, dest.Arch, tp.AppName, tp.OutDestRoot, tp.Settings)
 		if err != nil {
 			//todo - add a force option?
 			log.Printf("%v", err)
