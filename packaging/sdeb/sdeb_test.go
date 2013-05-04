@@ -12,14 +12,14 @@ func TestSdebBuild(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	err = sdebPrepare(workingDirectory, "my-app-x", "A L", "1.2.3-alpha", "platform-x", "This package does x", "", *new(map[string]interface{}))
+	err = SdebPrepare(workingDirectory, "my-app-x", "A L", "1.2.3-alpha", "platform-x", "This package does x", "", *new(map[string]interface{}))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	tmpDir := filepath.Join(workingDirectory, DIRNAME_TEMP)
 	destDir := filepath.Join(tmpDir, "src")
 	workingDirectory = "../.."
-	err = sdebCopySourceRecurse(workingDirectory, destDir)
+	err = SdebCopySourceRecurse(workingDirectory, destDir)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
