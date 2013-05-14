@@ -18,6 +18,7 @@ package sdeb
 
 import (
 	"fmt"
+	"github.com/laher/goxc/archive"
 	"io"
 	"io/ioutil"
 	"log"
@@ -27,6 +28,27 @@ import (
 )
 
 //TODO: unfinished: need to discover root dir to determine which dirs to pre-make.
+func SdebGetSourcesAsArchiveItems(codeDir, prefix string) (sources []archive.ArchiveItem, err error) {
+	//log.Printf("Globbing %s", codeDir)
+	matches, err := filepath.Glob(filepath.Join(codeDir, "*.go"))
+	if err != nil {
+		return sources, err
+	}
+	for _, match := range matches {
+		sources = append(sources, archive.ArchiveItemFromFileSystem(match, filepath.Join(prefix, match)))
+	}
+	fis, err := ioutil.ReadDir(codeDir)
+	for _, fi := range fis {
+		if fi.IsDir() && fi.Name() != DIRNAME_TEMP {
+			additionalItems, err := SdebGetSourcesAsArchiveItems(filepath.Join(codeDir, fi.Name()), prefix)
+			sources = append(sources, additionalItems...)
+			if err != nil {
+				return sources, err
+			}
+		}
+	}
+	return sources, err
+}
 
 func SdebCopySourceRecurse(codeDir, destDir string) (err error) {
 	log.Printf("Globbing %s", codeDir)

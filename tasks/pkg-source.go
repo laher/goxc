@@ -21,6 +21,7 @@ package tasks
 import (
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
+	"fmt"
 	"github.com/laher/goxc/archive"
 	"github.com/laher/goxc/packaging/sdeb"
 	"github.com/laher/goxc/platforms"
@@ -36,7 +37,6 @@ const (
 )
 
 //runs automatically
-/* Disabled for now
 func init() {
 	Register(Task{
 		TASK_PKG_SOURCE,
@@ -44,7 +44,6 @@ func init() {
 		runTaskPkgSource,
 		map[string]interface{}{"metadata": map[string]interface{}{"maintainer": "unknown"}, "metadata-deb": map[string]interface{}{"Depends": "", "Build-Depends": "debhelper (>=4.0.0), golang-go, gcc"}, "rmtemp": true}})
 }
-*/
 
 func runTaskPkgSource(tp TaskParams) (err error) {
 	var makeSourceDeb bool
@@ -56,6 +55,9 @@ func runTaskPkgSource(tp TaskParams) (err error) {
 	//TODO rpm
 	if makeSourceDeb {
 		err = debSourceBuild(tp)
+		if err != nil {
+			return
+		}
 	}
 	//OK
 	return
@@ -64,11 +66,13 @@ func runTaskPkgSource(tp TaskParams) (err error) {
 func debSourceBuild(tp TaskParams) (err error) {
 	metadata := tp.Settings.GetTaskSettingMap(TASK_PKG_SOURCE, "metadata")
 	metadataDeb := tp.Settings.GetTaskSettingMap(TASK_PKG_SOURCE, "metadata-deb")
-	rmtemp := tp.Settings.GetTaskSettingBool(TASK_PKG_SOURCE, "rmtemp")
-	tmpDir := filepath.Join(tp.OutDestRoot, ".goxc-temp")
-	if rmtemp {
-		defer os.RemoveAll(tmpDir)
-	}
+	//rmtemp := tp.Settings.GetTaskSettingBool(TASK_PKG_SOURCE, "rmtemp")
+	/*
+		tmpDir := filepath.Join(tp.OutDestRoot, ".goxc-temp")
+		if rmtemp {
+			defer os.RemoveAll(tmpDir)
+		}
+	*/
 	description := ""
 	if desc, keyExists := metadata["description"]; keyExists {
 		description, err = typeutils.ToString(desc, "description")
@@ -85,17 +89,11 @@ func debSourceBuild(tp TaskParams) (err error) {
 	}
 	version := tp.Settings.GetFullVersionName()
 	arches := "any"
-	buildDepends := "golang, debhelper"
-	err = sdeb.SdebPrepare(tp.WorkingDirectory, tp.AppName, maintainer, version, arches, description, buildDepends, metadataDeb)
+	items, err := sdeb.SdebGetSourcesAsArchiveItems(tp.WorkingDirectory, tp.AppName+"-"+tp.Settings.GetFullVersionName())
+	if err != nil {
+		return err
+	}
 
-	if err != nil {
-		return err
-	}
-	destDir := filepath.Join(tmpDir, "src")
-	err = sdeb.SdebCopySourceRecurse(tp.WorkingDirectory, destDir)
-	if err != nil {
-		return err
-	}
 	//if tp.Settings.IsVerbose() {
 	//log.Printf("Control file:\n%s", string(controlContent))
 	//}
@@ -113,16 +111,21 @@ func debSourceBuild(tp TaskParams) (err error) {
 	//build
 	//1. generate orig.tar.gz
 	//memcached_1.2.5.orig.tar.gz
-
+	destDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName(), "sdeb")
+	err = os.MkdirAll(destDir, 0777)
+	if err != nil {
+		return err
+	}
 	//TODO add/exclude resources to /usr/share
-	err = archive.TarGz(filepath.Join(tmpDir, tp.AppName+"_"+version+".orig.tar.gz"), []archive.ArchiveItem{archive.ArchiveItemFromFileSystem(tp.WorkingDirectory, "/usr/bin/"+tp.AppName)})
+	err = archive.TarGz(filepath.Join(destDir, tp.AppName+"_"+version+".orig.tar.gz"), items)
+	// []archive.ArchiveItem{archive.ArchiveItemFromFileSystem(tp.WorkingDirectory, "/usr/bin/"+tp.AppName)})
 	if err != nil {
 		return err
 	}
 
 	//2. generate .debian.tar.gz (just containing debian/ directory)
 	//generate debian/control
-	controlData := getDebControlFileContent(tp.AppName, maintainer, tp.Settings.GetFullVersionName(), "all", description, metadataDeb)
+	controlData := getSourceDebControlFileContent(tp.AppName, maintainer, tp.Settings.GetFullVersionName(), arches, description, metadataDeb)
 	//generate debian/rules
 	rulesData := []byte(sdeb.FILETEMPLATE_DEBIAN_RULES)
 	sourceFormatData := []byte(sdeb.FILECONTENT_DEBIAN_SOURCE_FORMAT)
@@ -132,20 +135,38 @@ func debSourceBuild(tp TaskParams) (err error) {
 	copyrightData := []byte{}
 	//generate debian/README.Debian
 	readmeData := []byte{}
-	err = archive.TarGz(filepath.Join(tmpDir, tp.AppName+"_"+version+".debian.tar.gz"),
+	err = archive.TarGz(filepath.Join(destDir, tp.AppName+"_"+version+".debian.tar.gz"),
 		[]archive.ArchiveItem{
-			archive.ArchiveItemFromBytes(changelogData, "/debian/changelog"),
-			archive.ArchiveItemFromBytes(copyrightData, "/debian/copyright"),
-			archive.ArchiveItemFromBytes(controlData, "/debian/control"),
-			archive.ArchiveItemFromBytes(readmeData, "/debian/README.Debian"),
-			archive.ArchiveItemFromBytes(rulesData, "/debian/rules"),
-			archive.ArchiveItemFromBytes(sourceFormatData, "/debian/source/format")})
+			archive.ArchiveItemFromBytes(changelogData, "debian/changelog"),
+			archive.ArchiveItemFromBytes(copyrightData, "debian/copyright"),
+			archive.ArchiveItemFromBytes(controlData, "debian/control"),
+			archive.ArchiveItemFromBytes(readmeData, "debian/README.Debian"),
+			archive.ArchiveItemFromBytes(rulesData, "debian/rules"),
+			archive.ArchiveItemFromBytes(sourceFormatData, "debian/source/format")})
 	if err != nil {
 		return err
 	}
 
 	//3. generate .dsc file
-	err = ioutil.WriteFile(filepath.Join(tmpDir, tp.AppName+"_"+version+".dsc"), controlData, 0644)
+	err = ioutil.WriteFile(filepath.Join(destDir, tp.AppName+"_"+version+".dsc"), controlData, 0644)
 
 	return err
+}
+
+func getSourceDebControlFileContent(appName, maintainer, version, arch, description string, metadataDeb map[string]interface{}) []byte {
+	control := fmt.Sprintf("Source: %s\nPriority: optional\n", appName)
+	if maintainer != "" {
+		control = fmt.Sprintf("%sMaintainer: %s\n", control, maintainer)
+	}
+	//mandatory
+	control = fmt.Sprintf("%sStandards-Version: %s\n", control, version)
+
+	control = fmt.Sprintf("%s\nPackage: %s\nArchitecture: any\n", control, appName)
+	control = fmt.Sprintf("%sArchitecture: %s\n", control, arch)
+	//must include Depends and Build-Depends
+	for k, v := range metadataDeb {
+		control = fmt.Sprintf("%s%s: %s\n", control, k, v)
+	}
+	control = fmt.Sprintf("%sDescription: %s\n", control, description)
+	return []byte(control)
 }

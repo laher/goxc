@@ -244,6 +244,8 @@ func loadSettingsSection(settingsSection map[string]interface{}) (settings Setti
 		switch k {
 		case "Tasks":
 			settings.Tasks, err = typeutils.ToStringSlice(v, k)
+		case "TasksExclude":
+			settings.TasksExclude, err = typeutils.ToStringSlice(v, k)
 		case "TasksAppend":
 			settings.TasksAppend, err = typeutils.ToStringSlice(v, k)
 		case "ArtifactsDest":
