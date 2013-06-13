@@ -40,7 +40,7 @@ func GetLdFlagVersionArgs(fullVersionName string) []string {
 
 // invoke the go command via the os/exec package
 // 0.3.1
-func InvokeGo(workingDirectory string, args []string, envExtra []string, isVerbose bool, prependCurrentEnv string) error {
+func InvokeGo(workingDirectory string, args []string, env []string, isVerbose bool) error {
 	cmd := exec.Command("go")
 	cmd.Args = append(cmd.Args, args...)
 	cmd.Dir = workingDirectory
@@ -51,24 +51,29 @@ func InvokeGo(workingDirectory string, args []string, envExtra []string, isVerbo
 	if f != nil {
 		defer f.Close()
 	}
-	if prependCurrentEnv == "prepend" || prependCurrentEnv == "" {
-		cmd.Env = append([]string{}, os.Environ()...)
-	} else if prependCurrentEnv != "append" {
-		if prependCurrentEnv != "no" {
-			//specified env here
-			envVarsSlice := strings.FieldsFunc(prependCurrentEnv, func(r rune) bool { return r == ':' || r == ';' })
-			cmd.Env = append([]string{}, envVarsSlice...)
+	//0.7.4 env replaces os.Environ
+	cmd.Env = append(cmd.Env, env...)
+	for _, thisProcessEnvItem := range os.Environ() {
+		thisProcessEnvItemSplit := strings.Split(thisProcessEnvItem, "=")
+		key := thisProcessEnvItemSplit[0]
+		exists := false
+		for _, specifiedEnvItem := range env {
+			specifiedEnvItemSplit := strings.Split(specifiedEnvItem, "=")
+			specifiedEnvKey := specifiedEnvItemSplit[0]
+			if specifiedEnvKey == key {
+				log.Printf("Overriding ENV variable (%s replaces %s)", specifiedEnvItem, thisProcessEnvItem)
+				exists = true
+			}
+		}
+		if !exists {
+			cmd.Env = append(cmd.Env, thisProcessEnvItem)
 		}
 	}
-	cmd.Env = append(cmd.Env, envExtra...)
-	if prependCurrentEnv == "append" {
-		cmd.Env = append(cmd.Env, os.Environ()...)
-	}
 	if isVerbose {
-		log.Printf("(verbose!) 'go' all env vars: %s", cmd.Env)
+		log.Printf("(verbose!) all env vars for 'go': %s", cmd.Env)
 	}
-	if envExtra != nil && len(envExtra) > 0 {
-		log.Printf("'go' extra env vars: %s", envExtra)
+	if env != nil && len(env) > 0 {
+		log.Printf("specified env vars for 'go': %s", env)
 	}
 	log.Printf("invoking 'go %v' from '%s'", PrintableArgs(args), workingDirectory)
 	err = cmd.Start()
@@ -78,11 +83,11 @@ func InvokeGo(workingDirectory string, args []string, envExtra []string, isVerbo
 	} else {
 		err = cmd.Wait()
 		if err != nil {
-			log.Printf("Go returned error: %s", err)
+			log.Printf("'go' returned error: %s", err)
 			return err
 		} else {
 			if isVerbose {
-				log.Printf("go succeeded")
+				log.Printf("'go' completed successfully")
 			}
 		}
 	}

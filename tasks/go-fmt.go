@@ -33,6 +33,6 @@ func init() {
 
 func runTaskGoFmt(tp TaskParams) error {
 	dir := tp.Settings.GetTaskSettingString(TASK_GO_FMT, "dir")
-	err := executils.InvokeGo(tp.WorkingDirectory, []string{"fmt", dir}, []string{}, tp.Settings.IsVerbose(), tp.Settings.PrependCurrentEnv)
+	err := executils.InvokeGo(tp.WorkingDirectory, []string{"fmt", dir}, []string{}, tp.Settings.IsVerbose())
 	return err
 }
