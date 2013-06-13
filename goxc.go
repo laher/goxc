@@ -61,6 +61,7 @@ var (
 	codesignId           string
 	isWriteConfig        bool
 	isVerbose            bool
+	isPrependEnvToGoCmds bool
 	workingDirectoryFlag string
 )
 
@@ -367,6 +368,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.ArtifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
 	flagSet.StringVar(&codesignId, "codesign", "", "identity to sign darwin binaries with (only applied when host OS is 'darwin')")
 
+	flagSet.StringVar(&settings.PrependCurrentEnv, "prependcurrentenv", "", "Env option (experimental). Whether to forward current env to go commands. 'prepend'/'append'/'no' OR specify it here.")
 	flagSet.StringVar(&settings.Resources.Include, "include", "", "Include resources in archives (default="+core.RESOURCES_INCLUDE_DEFAULT+")") //TODO: Add resources to non-zips & downloads.md
 
 	//0.2.0 Not easy to 'merge' boolean config items. More flexible to translate them to string options anyway

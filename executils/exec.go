@@ -40,7 +40,7 @@ func GetLdFlagVersionArgs(fullVersionName string) []string {
 
 // invoke the go command via the os/exec package
 // 0.3.1
-func InvokeGo(workingDirectory string, args []string, envExtra []string, isVerbose bool) error {
+func InvokeGo(workingDirectory string, args []string, envExtra []string, isVerbose bool, prependCurrentEnv string) error {
 	cmd := exec.Command("go")
 	cmd.Args = append(cmd.Args, args...)
 	cmd.Dir = workingDirectory
@@ -51,10 +51,22 @@ func InvokeGo(workingDirectory string, args []string, envExtra []string, isVerbo
 	if f != nil {
 		defer f.Close()
 	}
-
-	cmd.Env = append([]string{}, os.Environ()...)
+	if prependCurrentEnv == "prepend" || prependCurrentEnv == "" {
+		cmd.Env = append([]string{}, os.Environ()...)
+	} else if prependCurrentEnv != "append" {
+		if prependCurrentEnv != "no" {
+			//specified env here
+			envVarsSlice := strings.FieldsFunc(prependCurrentEnv, func(r rune) bool { return r == ':' || r == ';' })
+			cmd.Env = append([]string{}, envVarsSlice...)
+		}
+	}
 	cmd.Env = append(cmd.Env, envExtra...)
-
+	if prependCurrentEnv == "append" {
+		cmd.Env = append(cmd.Env, os.Environ()...)
+	}
+	if isVerbose {
+		log.Printf("(verbose!) 'go' all env vars: %s", cmd.Env)
+	}
 	if envExtra != nil && len(envExtra) > 0 {
 		log.Printf("'go' extra env vars: %s", envExtra)
 	}

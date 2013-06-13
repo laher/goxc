@@ -54,6 +54,9 @@ type Settings struct {
 	//NEW 0.5.5 - implemented 0.5.7
 	BuildConstraints string `json:",omitempty"`
 
+	//0.7.x experimental option
+	PrependCurrentEnv string `json:",omitempty"`
+
 	Resources Resources `json:",omitempty"`
 
 	//versioning
@@ -230,6 +233,9 @@ func Merge(high Settings, low Settings) Settings {
 		high.TaskSettings = low.TaskSettings
 	} else {
 		high.TaskSettings = typeutils.MergeMapsStringMapStringInterface(high.TaskSettings, low.TaskSettings)
+	}
+	if high.PrependCurrentEnv == "" {
+		high.PrependCurrentEnv = low.PrependCurrentEnv
 	}
 	return high
 }
