@@ -9,7 +9,7 @@
 	"Resources": {
 		"Include": "README.md"
 	},
-	"PackageVersion": "0.7.4",
+	"PackageVersion": "0.7.5",
 	"TaskSettings": {
 		"bintray": {
 			"downloadspage": "bintray.md",

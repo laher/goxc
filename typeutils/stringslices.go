@@ -31,6 +31,16 @@ func StringSliceDel(slice []string, value string) []string {
 	}
 	return slice
 }
+// deletes all occurences of a given string
+func StringSliceDelAll(slice []string, value string) []string {
+	p := StringSlicePos(slice, value)
+	for p > -1 {
+		slice = StringSliceDelIndex(slice, p)
+		p = StringSlicePos(slice, value)
+	}
+	return slice
+}
+
 
 // returns first index of a given string
 func StringSlicePos(slice []string, value string) int {

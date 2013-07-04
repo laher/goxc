@@ -86,9 +86,11 @@ func resolveItem(itemOses, itemNegOses, itemArchs, itemNegArchs []string, unfilt
 		itemOses = getOses(unfilteredPlatforms)
 	}
 	for _, itemNegOs := range itemNegOses {
-		typeutils.StringSliceDel(itemOses, itemNegOs)
+		log.Printf("negos "+itemNegOs)
+		itemOses = typeutils.StringSliceDelAll(itemOses, itemNegOs)
 	}
 
+	log.Printf("oses %v", itemOses)
 	for _, itemOs := range itemOses {
 		itemArchsThisOs := make([]string, len(itemArchs))
 		copy(itemArchsThisOs, itemArchs)
@@ -97,7 +99,7 @@ func resolveItem(itemOses, itemNegOses, itemArchs, itemNegArchs []string, unfilt
 			itemArchsThisOs = getArchsForOs(unfilteredPlatforms, itemOs)
 		}
 		for _, itemNegArch := range itemNegArchs {
-			itemArchsThisOs = typeutils.StringSliceDel(itemArchsThisOs, itemNegArch)
+			itemArchsThisOs = typeutils.StringSliceDelAll(itemArchsThisOs, itemNegArch)
 		}
 		for _, itemArch := range itemArchsThisOs {
 			ret = append(ret, Platform{itemOs, itemArch})
