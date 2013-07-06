@@ -52,7 +52,7 @@ func runTaskArchive(tp TaskParams) error {
 }
 
 func archivePlat(goos, arch, appName, workingDirectory, outDestRoot string, settings config.Settings) error {
-	resources := core.ParseIncludeResources(workingDirectory, settings.Resources.Include, settings.IsVerbose())
+	resources := core.ParseIncludeResources(workingDirectory, settings.Resources.Include, settings.Resources.Exclude, settings.IsVerbose())
 
 	// Create ZIP archive.
 	relativeBin := core.GetRelativeBin(goos, arch, appName, false, settings.GetFullVersionName())

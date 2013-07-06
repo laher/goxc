@@ -37,13 +37,32 @@ func init() {
 }
 
 func runTaskCopyResources(tp TaskParams) error {
-	resources := core.ParseIncludeResources(tp.WorkingDirectory, tp.Settings.Resources.Include, tp.Settings.IsVerbose())
+	resources := core.ParseIncludeResources(tp.WorkingDirectory, tp.Settings.Resources.Include, tp.Settings.Resources.Exclude, tp.Settings.IsVerbose())
 	destFolder := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
+	log.Printf("resources: %v", resources)
 	for _, resource := range resources {
 		if strings.HasPrefix(resource, tp.WorkingDirectory) {
 			resource = resource[len(tp.WorkingDirectory)+1:]
 		}
-		_, err := copyFile(filepath.Join(destFolder, resource), filepath.Join(tp.WorkingDirectory, resource))
+		//_, resourcebase := filepath.Split(resource)
+		sourcePath := filepath.Join(tp.WorkingDirectory, resource)
+		destPath := filepath.Join(destFolder, resource)
+		finfo, err := os.Lstat(sourcePath)
+		if err != nil {
+			return err
+		}
+		if finfo.IsDir() {
+			err = os.MkdirAll(destPath, 0777)
+			if err != nil && !os.IsExist(err) {
+				return err
+			}
+		} else {
+			err = os.MkdirAll(filepath.Dir(destPath), 0777)
+			if err != nil && !os.IsExist(err) {
+				return err
+			}
+			_, err = copyFile(sourcePath, destPath)
+		}
 		if err != nil {
 			return err
 		}
@@ -51,7 +70,33 @@ func runTaskCopyResources(tp TaskParams) error {
 	return nil
 }
 
-func copyFile(dstName, srcName string) (written int64, err error) {
+func copyDir(srcDir, destDir string) (fileCount int, err error) {
+	fileCount = 0
+	err = os.MkdirAll(destDir, 0777)
+	if err != nil && !os.IsExist(err) {
+		return fileCount, err
+	}
+	err = filepath.Walk(srcDir, func(path string, fi os.FileInfo, err error) error {
+		fileCount++
+		base := strings.Replace(path, srcDir, "", 1)
+		dest := filepath.Join(destDir, base)
+		if fi.IsDir() {
+			err := os.Mkdir(dest, 0777)
+			if os.IsExist(err) {
+				return nil
+			} else {
+				return err
+			}
+		} else {
+			log.Printf("path: %s, base: %s", path, base)
+			_, err := copyFile(path, dest)
+			return err
+		}
+	})
+	return
+}
+
+func copyFile(srcName, dstName string) (written int64, err error) {
 	log.Printf("Copying file %s to %s", srcName, dstName)
 	src, err := os.Open(srcName)
 	if err != nil {

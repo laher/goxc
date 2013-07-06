@@ -76,18 +76,87 @@ func FileExists(path string) (bool, error) {
 	return false, err
 }
 
+func parseCommaGlobs(commaGlob string) []string {
+	globs := strings.Split(commaGlob, ",")
+	//normalize
+	//treat slashes/backslashes as the same thing ...
+	for i, glob := range globs {
+		glob := strings.Replace(glob, "/", string(os.PathSeparator), -1)
+		glob = strings.Replace(glob, "\\", string(os.PathSeparator), -1)
+		globs[i] = glob
+	}
+	return globs
+}
+func resolveToFiles(item string) ([]string, error) {
+	fi, err := os.Lstat(item)
+	if err != nil {
+		return []string{}, err
+	}
+	if fi.IsDir() {
+		files, err := dirToFiles(item)
+		return files, err
+	} else {
+		return []string{item}, nil
+	}
+}
+func dirToFiles(dir string) ([]string, error) {
+	files := []string{}
+	err := filepath.Walk(dir, func(path string, fi os.FileInfo, err error) error {
+		if !fi.IsDir() {
+			files = append(files, path)
+		}
+		return nil
+	})
+	return files, err
+}
+
 // Glob parser for 'Include resources'
 // TODO generalise for exclude resources and any other globs.
-func ParseIncludeResources(basedir string, includeResources string, isVerbose bool) []string {
+func ParseIncludeResources(basedir, includeResources, excludeResources string, isVerbose bool) []string {
 	allMatches := []string{}
 	if includeResources != "" {
-		resourceGlobs := strings.Split(includeResources, ",")
+		resourceGlobs := parseCommaGlobs(includeResources)
+		excludeGlobs := parseCommaGlobs(excludeResources)
+		//log.Printf("ExcludeGlobs: %v", excludeGlobs)
 		for _, resourceGlob := range resourceGlobs {
 			matches, err := filepath.Glob(filepath.Join(basedir, resourceGlob))
-			if err == nil {
-				allMatches = append(allMatches, matches...)
-			} else {
+			if err != nil {
+				//ignore this inclusion glob
 				log.Printf("GLOB error: %s: %s", resourceGlob, err)
+			} else {
+				for _, match := range matches {
+					files, err := resolveToFiles(match)
+
+					if err != nil {
+						//ignore this match
+						log.Printf("dir lookup error: %s: %s", match, err)
+					} else {
+						for _, file := range files {
+							exclude := false
+							for _, excludeGlob := range excludeGlobs {
+								//incomplete!!
+								if !strings.Contains(excludeGlob, string(os.PathSeparator)) {
+									excludeGlob = filepath.Join(filepath.Dir(file), excludeGlob)
+								}
+								excludedThisTime, err := filepath.Match(excludeGlob, file)
+								if isVerbose {
+									log.Printf("Globbing %s for exclusion %s", file, excludeGlob)
+								}
+								if err != nil {
+									//ignore this exclusion glob
+									log.Printf("Exclude-GLOB error: %s: %s", excludeGlob, err)
+								}
+								if excludedThisTime {
+									log.Printf("Excluded: %s with %s", file, excludeGlob)
+									exclude = true
+								}
+							}
+							if !exclude {
+								allMatches = append(allMatches, file)
+							}
+						}
+					}
+				}
 			}
 		}
 	}
