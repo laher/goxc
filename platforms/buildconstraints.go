@@ -86,7 +86,7 @@ func resolveItem(itemOses, itemNegOses, itemArchs, itemNegArchs []string, unfilt
 		itemOses = getOses(unfilteredPlatforms)
 	}
 	for _, itemNegOs := range itemNegOses {
-		log.Printf("negos "+itemNegOs)
+		log.Printf("negos " + itemNegOs)
 		itemOses = typeutils.StringSliceDelAll(itemOses, itemNegOs)
 	}
 
