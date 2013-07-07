@@ -45,7 +45,10 @@ const (
 	//ARTIFACT_TYPE_ZIP = "zip"
 	//ARTIFACT_TYPE_BIN = "bin"
 
-	CONFIG_NAME_DEFAULT = ""
+	GOXC_FILE_EXT           = ".goxc.json"
+	GOXC_LOCAL_FILE_EXT     = ".goxc.local.json"
+	GOXC_CONFIGNAME_DEFAULT = "default"
+	GOXC_CONFIGNAME_BASE    = ""
 
 	//taskname required by config/json
 	TASK_BUILD_TOOLCHAIN = "toolchain"

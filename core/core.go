@@ -26,6 +26,7 @@ import (
 	//"github.com/laher/goxc/config"
 	"log"
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -241,7 +242,20 @@ func GetOutDestRoot(appName string, artifactsDestSetting string, workingDirector
 		}
 		outDestRoot = filepath.Join(gobin, appName+"-xc")
 	}
+	if strings.HasPrefix(outDestRoot, "~/") {
+		outDestRoot = strings.Replace(outDestRoot, "~", UserHomeDir(), 1)
+	}
 	return outDestRoot
+}
+
+func UserHomeDir() string {
+	usr, err := user.Current()
+	if err != nil {
+		log.Printf("Could not get home directory: %s", err)
+		return os.Getenv("HOME")
+	}
+	log.Printf("user dir: %s", usr.HomeDir)
+	return usr.HomeDir
 }
 
 // get relative path for the binary.

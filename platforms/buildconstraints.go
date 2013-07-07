@@ -120,7 +120,9 @@ func getArchsForOs(sp []Platform, os string) []string {
 func getOses(sp []Platform) []string {
 	oses := []string{}
 	for _, p := range sp {
-		oses = append(oses, p.Os)
+		if !typeutils.StringSliceContains(oses, p.Os) {
+			oses = append(oses, p.Os)
+		}
 	}
 	return oses
 }

@@ -28,15 +28,47 @@ import (
 )
 
 const (
-	GOXC_CONFIG_VERSION = "0.6"
-	GOXC_FILE_EXT       = ".goxc.json"
-	GOXC_LOCAL_FILE_EXT = ".goxc.local.json"
+	GOXC_CONFIG_VERSION = "0.8"
 )
 
-var GOXC_CONFIG_SUPPORTED = []string{"0.5.0", "0.6"}
+var GOXC_CONFIG_SUPPORTED = []string{"0.5.0", "0.6", "0.8"}
 
 //0.6 REMOVED JsonSettings struct.
 
+//Loads a config file and merges results with any 'override' files.
+//0.8 using new inheritance rules. More flexibility, particular for people wanting different rules for different platforms
+func LoadJsonConfigOverrideable(dir string, configName string, isRead bool, verbose bool) (Settings, error) {
+	var configs []string
+	if isRead {
+		configs = []string{configName + core.GOXC_LOCAL_FILE_EXT, configName + core.GOXC_FILE_EXT,
+			core.GOXC_CONFIGNAME_BASE + core.GOXC_LOCAL_FILE_EXT,
+			core.GOXC_CONFIGNAME_BASE + core.GOXC_FILE_EXT}
+	} else {
+		configs = []string{configName + core.GOXC_FILE_EXT}
+	}
+	return LoadJsonConfigs(dir, configs, verbose)
+}
+
+func LoadJsonConfigs(dir string, configs []string, verbose bool) (Settings, error) {
+	//most-important first
+	mergedSettingsMap := map[string]interface{}{}
+	for _, jsonFile := range configs {
+		settingsMap, err := loadJsonFileAsMap(jsonFile, verbose)
+		if err != nil {
+			if os.IsNotExist(err) {
+				//continue onto next file
+			} else {
+				//parse error. Stop right there.
+				return Settings{}, err
+			}
+		} else {
+			mergedSettingsMap = typeutils.MergeMaps(mergedSettingsMap, settingsMap)
+		}
+	}
+	return loadSettingsSection(mergedSettingsMap)
+}
+
+/*
 //Loads a config file and merges results with any 'override' files.
 func LoadJsonConfigOverrideable(dir string, configName string, useLocal bool, verbose bool) (Settings, error) {
 	jsonFile := filepath.Join(dir, configName+GOXC_FILE_EXT)
@@ -77,7 +109,7 @@ func LoadJsonConfigOverrideable(dir string, configName string, useLocal bool, ve
 	//return localSettings.Settings, err
 	return Settings{}, err
 }
-
+*/
 //0.5.6 provide more detail about errors (syntax errors for now)
 func printErrorDetails(rawJson []byte, err error) {
 	switch typedErr := err.(type) {
@@ -189,7 +221,6 @@ func loadJsonFileAsMap(jsonFile string, verbose bool) (map[string]interface{}, e
 	if err != nil {
 		log.Printf("ERROR (%s): invalid json!", jsonFile)
 		printErrorDetails(rawJson, err)
-		return f, err
 	} else {
 		//fill all the way down.
 		if fv, keyExists := f["FormatVersion"]; keyExists {
@@ -198,27 +229,22 @@ func loadJsonFileAsMap(jsonFile string, verbose bool) (map[string]interface{}, e
 				settingsSection, err := typeutils.ToMap(s, "Settings")
 				if err != nil {
 					return f, err
-				}
-				if _, keyExists = settingsSection["FormatVersion"]; !keyExists {
-					//set from jsonSettings
-					formatVersion, err := typeutils.ToString(fv, "FormatVersion")
-					if err != nil {
-						return f, err
+				} else {
+					if _, keyExists = settingsSection["FormatVersion"]; !keyExists {
+						//set from jsonSettings
+						formatVersion, err := typeutils.ToString(fv, "FormatVersion")
+						if err != nil {
+							return f, err
+						}
+						settingsSection["FormatVersion"] = formatVersion
 					}
-					settingsSection["FormatVersion"] = formatVersion
+					return settingsSection, err
 				}
-				return settingsSection, err
 				//settings, err := loadSettingsSection(settingsSection)
 				//return settings, err
-			} else {
-				//0.6 has no '{ Settings {} }' level. Just use the top level.
-				return f, err
 			}
 		} else {
 			return f, errors.New("File format version not specified!")
-		}
-		if verbose {
-			log.Printf("unmarshalled settings OK")
 		}
 	}
 
@@ -292,10 +318,10 @@ func loadSettingsSection(settingsSection map[string]interface{}) (settings Setti
 func WriteJsonConfig(dir string, settings Settings, configName string, isLocal bool) error {
 	settings.GoxcConfigVersion = GOXC_CONFIG_VERSION
 	if isLocal {
-		jsonFile := filepath.Join(dir, configName+GOXC_LOCAL_FILE_EXT)
+		jsonFile := filepath.Join(dir, configName+core.GOXC_LOCAL_FILE_EXT)
 		return writeJsonFile(settings, jsonFile)
 	}
-	jsonFile := filepath.Join(dir, configName+GOXC_FILE_EXT)
+	jsonFile := filepath.Join(dir, configName+core.GOXC_FILE_EXT)
 	return writeJsonFile(settings, jsonFile)
 }
 

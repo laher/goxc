@@ -92,9 +92,10 @@ Outcome
 
 By default, artifacts are generated and then immediately archived into (outputdir).
 
-e.g.1 /my/outputdir/0.1.1/linux_arm/myapp_0.1.1_linux_arm.tar.gz
-e.g.2 /my/outputdir/0.1.1/windows_386/myapp_0.1.1_windows_386.zip
-e.g.3 /my/outputdir/0.1.1/linux_386/myapp_0.1.1_linux_386.deb
+Examples:
+ * /my/outputdir/0.1.1/linux_arm/myapp_0.1.1_linux_arm.tar.gz
+ * /my/outputdir/0.1.1/windows_386/myapp_0.1.1_windows_386.zip
+ * /my/outputdir/0.1.1/linux_386/myapp_0.1.1_linux_386.deb
 
 The version number is specified with -pv=0.1.1 .
 
@@ -113,13 +114,15 @@ If non-archived, artifacts generated into a directory structure as follows:
 Configuration file
 -----------------
 
-For repeatable builds (and some extra options), it is recomended to use goxc can use a configuration file to save and re-run compilations.
+For repeatable builds (and some extra options), it is recomended to use goxc can use a configuration file(s) to save and re-run compilations.
 
 To create a config file, just use the -wc (write config) option.
 
 	goxc -d=../site/downloads -os="linux windows" -wc
 
-The configuration file is documented in much more detail in [the wiki](https://github.com/laher/goxc/wiki/config)
+You can also use multiple config files to support different paremeters for each platform.
+
+The configuration file(s) feature is documented in much more detail in [the wiki](https://github.com/laher/goxc/wiki/config)
 
 Limitations
 -----------

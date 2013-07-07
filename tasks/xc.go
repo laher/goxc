@@ -47,6 +47,7 @@ func runTaskXC(tp TaskParams) error {
 		err = xcPlat(dest.Os, dest.Arch, tp.WorkingDirectory, tp.Settings)
 		if err != nil {
 			log.Printf("Error: %v", err)
+			log.Printf("Have you run `goxc -t` for this platform???")
 		} else {
 			success = success + 1
 		}

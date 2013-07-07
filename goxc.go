@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/user"
 	"runtime"
 	"strings"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
@@ -46,7 +45,7 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION = "0.7.x"
+	VERSION = "0.8.x"
 	// settings for this invocation of goxc
 	settings             config.Settings
 	configName           string
@@ -286,6 +285,17 @@ func interpretSettings(call []string) (string, config.Settings) {
 		log.Printf(core.MSG_INSTALL_GO_FROM_SOURCE)
 		os.Exit(1)
 	}
+	//0.8 change default name due to new config inheritance rules
+	if configName == "" {
+		if isWriteConfig {
+			//for writing, default to the 'base' file.
+			configName = core.GOXC_CONFIGNAME_BASE
+		} else {
+			//for reading, default to 'default'
+			configName = core.GOXC_CONFIGNAME_DEFAULT
+		}
+	}
+
 	//0.6 do NOT use args[0]
 	var workingDirectory string
 	if workingDirectoryFlag != "" {
@@ -294,7 +304,7 @@ func interpretSettings(call []string) (string, config.Settings) {
 		if isBuildToolchain {
 			//default to HOME dir
 			log.Printf("Building toolchain, so getting config from HOME directory. To use current directory's config, use the wd option (i.e. goxc -t -wd=.)")
-			workingDirectory = userHomeDir()
+			workingDirectory = core.UserHomeDir()
 		} else {
 			if isVerbose {
 				log.Printf("Using config from current directory")
@@ -346,7 +356,7 @@ func remove(arr []string, v string) []string {
 // This is done to make merging options from configuration files easier.
 func setupFlags() *flag.FlagSet {
 	flagSet := flag.NewFlagSet("goxc", flag.ContinueOnError)
-	flagSet.StringVar(&configName, "c", core.CONFIG_NAME_DEFAULT, "config name (default='')")
+	flagSet.StringVar(&configName, "c", "", "config name")
 
 	//TODO deprecate?
 	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (default is all - \"linux darwin windows freebsd openbsd\")")
@@ -466,17 +476,6 @@ func printFlag(flag *flag.Flag, isBool bool) {
 		format := "  -%s= %s%s\n"
 		fmt.Printf(format, flag.Name, padding, flag.Usage)
 	}
-}
-
-//TODO user-level config file.
-func userHomeDir() string {
-	usr, err := user.Current()
-	if err != nil {
-		log.Printf("Could not get home directory: %s", err)
-		return os.Getenv("HOME")
-	}
-	log.Printf("user dir: %s", usr.HomeDir)
-	return usr.HomeDir
 }
 
 func main() {

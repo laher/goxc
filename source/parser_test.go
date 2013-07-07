@@ -1,7 +1,5 @@
 package source
 
-// +build ignore
-
 import (
 	"path/filepath"
 	"testing"
