@@ -168,9 +168,10 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 			log.Printf("Warning: could not establish list of main dirs. Using working directory")
 			mainDirs = []string{workingDirectory}
 		}
-		if len(mainDirs) > 1 {
-			log.Printf("Multiple main dirs: %v", mainDirs)
-		}
+		log.Printf("'main package' dirs: %v", mainDirs)
+	}
+	if len(mainDirs)<1 {
+		mainDirs = []string{workingDirectory}
 	}
 	log.Printf("Running tasks: %v", tasksToRun)
 	for _, taskName := range tasksToRun {
