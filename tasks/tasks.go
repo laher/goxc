@@ -24,6 +24,7 @@ import (
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
 	"github.com/laher/goxc/platforms"
+	"github.com/laher/goxc/source"
 	"log"
 	"strings"
 )
@@ -72,6 +73,7 @@ var (
 // Parameter object passed to a task.
 type TaskParams struct {
 	DestPlatforms                 []platforms.Platform
+	MainDirs                      []string
 	AppName                       string
 	WorkingDirectory, OutDestRoot string
 	Settings                      config.Settings
@@ -130,8 +132,15 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 	if settings.IsVerbose() {
 		log.Printf("looping through each platform")
 	}
-
 	appName := core.GetAppName(workingDirectory)
+	mainDirs, err := source.FindMainDirs(workingDirectory)
+	if err != nil {
+		log.Printf("Warning: could not establish list of main dirs. Using working directory")
+		mainDirs = []string{workingDirectory}
+	}
+	if len(mainDirs) > 1 {
+		log.Printf("Multiple main dirs: %v", mainDirs)
+	}
 	outDestRoot := core.GetOutDestRoot(appName, settings.ArtifactsDest, workingDirectory)
 	defer log.SetPrefix("[goxc] ")
 	exclusions := ResolveAliases(settings.TasksExclude)
@@ -160,7 +169,7 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 	log.Printf("Running tasks: %v", tasksToRun)
 	for _, taskName := range tasksToRun {
 		log.SetPrefix("[goxc:" + taskName + "] ")
-		err := runTask(taskName, destPlatforms, appName, workingDirectory, outDestRoot, settings)
+		err := runTask(taskName, destPlatforms, mainDirs, appName, workingDirectory, outDestRoot, settings)
 		if err != nil {
 			// TODO: implement 'force' option.
 			log.Printf("Stopping after '%s' failed with error '%v'", taskName, err)
@@ -172,9 +181,9 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 }
 
 // run named task
-func runTask(taskName string, destPlatforms []platforms.Platform, appName, workingDirectory, outDestRoot string, settings config.Settings) error {
+func runTask(taskName string, destPlatforms []platforms.Platform, mainDirs []string, appName, workingDirectory, outDestRoot string, settings config.Settings) error {
 	if taskV, keyExists := allTasks[taskName]; keyExists {
-		tp := TaskParams{destPlatforms, appName, workingDirectory, outDestRoot, settings}
+		tp := TaskParams{destPlatforms, mainDirs, appName, workingDirectory, outDestRoot, settings}
 		return taskV.f(tp)
 	}
 	log.Printf("Unrecognised task '%s'", taskName)

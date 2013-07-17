@@ -95,9 +95,7 @@ func debBuild(destOs, destArch string, tp TaskParams) (err error) {
 	metadata := tp.Settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata")
 	metadataDeb := tp.Settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata-deb")
 	rmtemp := tp.Settings.GetTaskSettingBool(TASK_PKG_BUILD, "rmtemp")
-	relativeBin := core.GetRelativeBin(destOs, destArch, tp.AppName, false, tp.Settings.GetFullVersionName())
-	appPath := filepath.Join(tp.OutDestRoot, relativeBin)
-	debDir := filepath.Dir(appPath)
+	debDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName()) //v0.8.1 dont use platform dir
 	tmpDir := filepath.Join(debDir, ".goxc-temp")
 	if rmtemp {
 		defer os.RemoveAll(tmpDir)
@@ -134,8 +132,15 @@ func debBuild(destOs, destArch string, tp TaskParams) (err error) {
 		return err
 	}
 	//build
-	//TODO add resources to /usr/share
-	err = archive.TarGz(filepath.Join(tmpDir, "data.tar.gz"), []archive.ArchiveItem{archive.ArchiveItem{FileSystemPath: appPath, ArchivePath: "/usr/bin/" + tp.AppName}})
+	items := []archive.ArchiveItem{}
+
+	for _, mainDir := range tp.MainDirs {
+		exeName := filepath.Base(mainDir)
+		relativeBin := core.GetRelativeBin(destOs, destArch, exeName, false, tp.Settings.GetFullVersionName())
+		items = append(items, archive.ArchiveItem{FileSystemPath: filepath.Join(tp.OutDestRoot, relativeBin), ArchivePath: "/usr/bin/" + exeName})
+	}
+	//TODO add resources to /usr/share/appName/
+	err = archive.TarGz(filepath.Join(tmpDir, "data.tar.gz"), items)
 	if err != nil {
 		return err
 	}

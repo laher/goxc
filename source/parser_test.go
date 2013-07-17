@@ -23,3 +23,12 @@ func TestLearning(t *testing.T) {
 		}
 	}
 }
+
+func TestMainDirs(t *testing.T) {
+	mds, err := FindMainDirs("..")
+	if err != nil {
+		t.Logf("%v", err)
+		return
+	}
+	t.Logf("mainDirs: %s", mds)
+}

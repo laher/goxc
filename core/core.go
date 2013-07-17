@@ -245,7 +245,13 @@ func GetOutDestRoot(appName string, artifactsDestSetting string, workingDirector
 	if strings.HasPrefix(outDestRoot, "~/") {
 		outDestRoot = strings.Replace(outDestRoot, "~", UserHomeDir(), 1)
 	}
-	return outDestRoot
+	outDestRootAbs, err := filepath.Abs(outDestRoot)
+	if err != nil {
+		log.Printf("Error resolving absolute filename")
+		return outDestRoot
+	} else {
+		return outDestRootAbs
+	}
 }
 
 func UserHomeDir() string {

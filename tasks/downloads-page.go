@@ -43,6 +43,7 @@ func runTaskDownloadsPage(tp TaskParams) error {
 	reportFilename := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName(), filename)
 	flags := os.O_WRONLY | os.O_TRUNC | os.O_CREATE
 	f, err := os.OpenFile(reportFilename, flags, 0600)
+	entryCount := 0
 	if err == nil {
 		defer f.Close()
 		fileheader := tp.Settings.GetTaskSettingString(TASK_DOWNLOADS_PAGE, "fileheader")
@@ -79,6 +80,7 @@ func runTaskDownloadsPage(tp TaskParams) error {
 								text = "executable"
 							}
 							_, err = fmt.Fprintf(f, " [[%s](%s)]", text, relativeLink)
+							entryCount++
 						}
 					}
 				}
@@ -91,7 +93,9 @@ func runTaskDownloadsPage(tp TaskParams) error {
 					if fi.Name() != filename {
 						if first == true {
 							first = false
-							fmt.Fprintf(f, "\n### Resources\n")
+							if entryCount > 0 {
+								fmt.Fprintf(f, "\n### Other files\n")
+							}
 						}
 						relativeLink := fi.Name()
 						_, err = fmt.Fprintf(f, " * [%s](%s)\n", relativeLink, relativeLink)

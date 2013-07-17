@@ -21,6 +21,7 @@ import (
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -37,19 +38,34 @@ func init() {
 
 func runTaskRmBin(tp TaskParams) error {
 	for _, dest := range tp.DestPlatforms {
-		err := rmBinPlat(dest.Os, dest.Arch, tp.AppName, tp.OutDestRoot, tp.Settings)
-		if err != nil {
-			//todo - add a force option?
-			log.Printf("%v", err)
+		for _, mainDir := range tp.MainDirs {
+			exeName := filepath.Base(mainDir)
+			err := rmBinPlat(dest.Os, dest.Arch, exeName, tp.OutDestRoot, tp.Settings)
+			if err != nil {
+				//todo - add a force option?
+				log.Printf("%v", err)
+			}
 		}
 	}
 	//TODO return error
 	return nil
 }
 
-func rmBinPlat(goos, arch, appName, outDestRoot string, settings config.Settings) error {
-	relativeBin := core.GetRelativeBin(goos, arch, appName, false, settings.GetFullVersionName())
+func rmBinPlat(goos, arch, exeName, outDestRoot string, settings config.Settings) error {
+	relativeBin := core.GetRelativeBin(goos, arch, exeName, false, settings.GetFullVersionName())
 	binPath := filepath.Join(outDestRoot, relativeBin)
 	err := os.Remove(binPath)
+	if err != nil {
+		return err
+	}
+	//if empty, remove dir
+	binDir := filepath.Dir(binPath)
+	files, err := ioutil.ReadDir(binDir)
+	if err != nil {
+		return err
+	}
+	if len(files) < 1 {
+		err = os.Remove(binDir)
+	}
 	return err
 }
