@@ -30,12 +30,35 @@ import (
 func FindMainDirs(root string) ([]string, error) {
 	mainDirs := []string{}
 	sourceFiles := []string{}
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	root, err := filepath.Abs(root)
+	if err != nil {
+		log.Printf("Error resolving root dir: %v", err)
+		return []string{}, err
+	}
+	err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		//find files ending with .go
 		//check for 'package main'
-		if strings.HasSuffix(path, ".go") {
-			//read file and check package
-			sourceFiles = append(sourceFiles, path)
+		//if strings.Contains(path, string(filepath.Separator) + ".") {
+		//skip '.hidden' dirs
+		if strings.HasPrefix(filepath.Base(path), ".") {
+			finfo, err := os.Stat(path)
+			if err != nil {
+				return err
+			}
+			if finfo.IsDir() {
+				log.Printf("Ignoring '.hidden' dir %s", path)
+				return filepath.SkipDir
+			} else {
+				//only log if it's a go file
+				if strings.HasSuffix(path, ".go") {
+					log.Printf("Ignoring '.hidden' file %s", path)
+				}
+			}
+		} else {
+			if strings.HasSuffix(path, ".go") {
+				//read file and check package
+				sourceFiles = append(sourceFiles, path)
+			}
 		}
 		return err
 	})

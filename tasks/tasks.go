@@ -133,14 +133,7 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 		log.Printf("looping through each platform")
 	}
 	appName := core.GetAppName(workingDirectory)
-	mainDirs, err := source.FindMainDirs(workingDirectory)
-	if err != nil {
-		log.Printf("Warning: could not establish list of main dirs. Using working directory")
-		mainDirs = []string{workingDirectory}
-	}
-	if len(mainDirs) > 1 {
-		log.Printf("Multiple main dirs: %v", mainDirs)
-	}
+
 	outDestRoot := core.GetOutDestRoot(appName, settings.ArtifactsDest, workingDirectory)
 	defer log.SetPrefix("[goxc] ")
 	exclusions := ResolveAliases(settings.TasksExclude)
@@ -164,6 +157,19 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 			}
 			log.Printf("Task %s does NOT exist!", taskName)
 			return
+		}
+	}
+	var mainDirs []string
+	if len(tasksToRun) == 1 && tasksToRun[0] == "toolchain" {
+		mainDirs = []string{workingDirectory}
+	} else {
+		mainDirs, err := source.FindMainDirs(workingDirectory)
+		if err != nil {
+			log.Printf("Warning: could not establish list of main dirs. Using working directory")
+			mainDirs = []string{workingDirectory}
+		}
+		if len(mainDirs) > 1 {
+			log.Printf("Multiple main dirs: %v", mainDirs)
 		}
 	}
 	log.Printf("Running tasks: %v", tasksToRun)
