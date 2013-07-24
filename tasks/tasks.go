@@ -170,7 +170,7 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 		}
 		log.Printf("'main package' dirs: %v", mainDirs)
 	}
-	if len(mainDirs)<1 {
+	if len(mainDirs) < 1 {
 		mainDirs = []string{workingDirectory}
 	}
 	log.Printf("Running tasks: %v", tasksToRun)

@@ -27,9 +27,6 @@ import (
 	"path/filepath"
 )
 
-// NOTE: in future this task may produce preferred types of archive for each OS (e.g. .tar.gz for Linux)
-// TaskSettings should dictate this behaviour.
-
 //runs automatically
 func init() {
 	Register(Task{
@@ -44,7 +41,7 @@ func runTaskArchive(tp TaskParams) error {
 		err := archivePlat(dest.Os, dest.Arch, tp.MainDirs, tp.AppName, tp.WorkingDirectory, tp.OutDestRoot, tp.Settings)
 		if err != nil {
 			//TODO - 'force' option
-			//return err
+			return err
 		}
 	}
 	//TODO return error?

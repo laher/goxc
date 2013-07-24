@@ -316,7 +316,7 @@ func interpretSettings(call []string) (string, config.Settings) {
 	}
 	workingDirectoryAbs, err := filepath.Abs(workingDirectory)
 	if err != nil {
-		log.Printf("Could NOT resolve working directory %s", workingDirectory)	
+		log.Printf("Could NOT resolve working directory %s", workingDirectory)
 	} else {
 		workingDirectory = workingDirectoryAbs
 	}
