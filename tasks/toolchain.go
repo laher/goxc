@@ -83,15 +83,15 @@ func buildToolchain(goos string, arch string, settings config.Settings) error {
 	cmd := exec.Command(scriptpath)
 	cmd.Dir = filepath.Join(goroot, "src")
 	cmd.Args = append(cmd.Args, "--no-clean")
-	cgoEnabled := executils.CgoEnabled(goos, arch)
+	//0.8.1: no longer using cgoEnabled
 	cmd.Env = append([]string{}, os.Environ()...)
-	cmd.Env = append(cmd.Env, "GOOS="+goos, "CGO_ENABLED="+cgoEnabled, "GOARCH="+arch)
+	cmd.Env = append(cmd.Env, "GOOS="+goos, "GOARCH="+arch)
 	if goos == platforms.LINUX && arch == platforms.ARM {
 		// see http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go
 		cmd.Env = append(cmd.Env, "GOARM=5")
 	}
 	if settings.IsVerbose() {
-		log.Printf("'make' env: GOOS=%s CGO_ENABLED=%s GOARCH=%s GOROOT=%s", goos, cgoEnabled, arch, goroot)
+		log.Printf("'make' env: GOOS=%s GOARCH=%s GOROOT=%s", goos, arch, goroot)
 	}
 	log.Printf("Invoking '%v' from %s", executils.PrintableArgs(cmd.Args), cmd.Dir)
 	f, err := executils.RedirectIO(cmd)
