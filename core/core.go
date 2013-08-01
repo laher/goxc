@@ -117,8 +117,13 @@ func ParseIncludeResources(basedir, includeResources, excludeResources string, i
 	allMatches := []string{}
 	if includeResources != "" {
 		resourceGlobs := parseCommaGlobs(includeResources)
+		if isVerbose {
+			log.Printf("IncludeGlobs: %v", resourceGlobs)
+		}
 		excludeGlobs := parseCommaGlobs(excludeResources)
-		//log.Printf("ExcludeGlobs: %v", excludeGlobs)
+		if isVerbose {
+			log.Printf("ExcludeGlobs: %v", excludeGlobs)
+		}
 		for _, resourceGlob := range resourceGlobs {
 			matches, err := filepath.Glob(filepath.Join(basedir, resourceGlob))
 			if err != nil {
@@ -153,7 +158,14 @@ func ParseIncludeResources(basedir, includeResources, excludeResources string, i
 								}
 							}
 							if !exclude {
-								allMatches = append(allMatches, file)
+								//return relative filename
+								relativeFilename, err := filepath.Rel(basedir, file)
+								if err != nil {
+									log.Printf("Warning: file %s is not inside %s", file, basedir)
+									allMatches = append(allMatches, file)
+								} else {
+									allMatches = append(allMatches, relativeFilename)
+								}
 							}
 						}
 					}
@@ -245,7 +257,13 @@ func GetOutDestRoot(appName string, artifactsDestSetting string, workingDirector
 	if strings.HasPrefix(outDestRoot, "~/") {
 		outDestRoot = strings.Replace(outDestRoot, "~", UserHomeDir(), 1)
 	}
-	return outDestRoot
+	outDestRootAbs, err := filepath.Abs(outDestRoot)
+	if err != nil {
+		log.Printf("Error resolving absolute filename")
+		return outDestRoot
+	} else {
+		return outDestRootAbs
+	}
 }
 
 func UserHomeDir() string {

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
@@ -312,6 +313,12 @@ func interpretSettings(call []string) (string, config.Settings) {
 			//default to current directory
 			workingDirectory = "."
 		}
+	}
+	workingDirectoryAbs, err := filepath.Abs(workingDirectory)
+	if err != nil {
+		log.Printf("Could NOT resolve working directory %s", workingDirectory)
+	} else {
+		workingDirectory = workingDirectoryAbs
 	}
 	log.Printf("Working directory: '%s', Config name: '%s'", workingDirectory, configName)
 

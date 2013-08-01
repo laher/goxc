@@ -83,7 +83,7 @@ func buildToolchain(goos string, arch string, settings config.Settings) error {
 	cmd := exec.Command(scriptpath)
 	cmd.Dir = filepath.Join(goroot, "src")
 	cmd.Args = append(cmd.Args, "--no-clean")
-	//0.8.1: no longer using cgoEnabled
+	//0.8.5: no longer using cgoEnabled
 	cmd.Env = append([]string{}, os.Environ()...)
 	cmd.Env = append(cmd.Env, "GOOS="+goos, "GOARCH="+arch)
 	if goos == platforms.LINUX && arch == platforms.ARM {

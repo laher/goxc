@@ -43,13 +43,18 @@ func runTaskXC(tp TaskParams) error {
 	}
 	success := 0
 	var err error
+	appName := core.GetAppName(tp.WorkingDirectory)
+	outDestRoot := core.GetOutDestRoot(appName, tp.Settings.ArtifactsDest, tp.WorkingDirectory)
 	for _, dest := range tp.DestPlatforms {
-		err = xcPlat(dest.Os, dest.Arch, tp.WorkingDirectory, tp.Settings)
-		if err != nil {
-			log.Printf("Error: %v", err)
-			log.Printf("Have you run `goxc -t` for this platform???")
-		} else {
-			success = success + 1
+		for _, mainDir := range tp.MainDirs {
+			exeName := filepath.Base(mainDir)
+			err = xcPlat(dest.Os, dest.Arch, mainDir, tp.Settings, outDestRoot, exeName)
+			if err != nil {
+				log.Printf("Error: %v", err)
+				log.Printf("Have you run `goxc -t` for this platform???")
+			} else {
+				success = success + 1
+			}
 		}
 	}
 	//0.6 return error if no platforms succeeded.
@@ -62,21 +67,18 @@ func runTaskXC(tp TaskParams) error {
 
 // xcPlat: Cross compile for a particular platform
 // 0.3.0 - breaking change - changed 'call []string' to 'workingDirectory string'.
-func xcPlat(goos, arch string, workingDirectory string, settings config.Settings) error {
+func xcPlat(goos, arch string, workingDirectory string, settings config.Settings, outDestRoot string, exeName string) error {
 	log.Printf("building for platform %s_%s.", goos, arch)
 	relativeDir := filepath.Join(settings.GetFullVersionName(), goos+"_"+arch)
 
-	appName := core.GetAppName(workingDirectory)
-
-	outDestRoot := core.GetOutDestRoot(appName, settings.ArtifactsDest, workingDirectory)
 	outDir := filepath.Join(outDestRoot, relativeDir)
 	os.MkdirAll(outDir, 0755)
 
 	args := []string{"build"}
-	relativeBin := core.GetRelativeBin(goos, arch, appName, false, settings.GetFullVersionName())
+	relativeBin := core.GetRelativeBin(goos, arch, exeName, false, settings.GetFullVersionName())
 	args = append(args, executils.GetLdFlagVersionArgs(settings.GetFullVersionName())...)
 	args = append(args, "-o", filepath.Join(outDestRoot, relativeBin), ".")
-	//v0.8.1 no longer using CGO_ENABLED
+	//v0.8.5 no longer using CGO_ENABLED
 	envExtra := []string{"GOOS=" + goos, "GOARCH=" + arch}
 	err := executils.InvokeGo(workingDirectory, args, envExtra, settings.IsVerbose())
 	return err

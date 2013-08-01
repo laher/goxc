@@ -16,6 +16,7 @@ func TestFail(t *testing.T) {
 	t.Fatalf("FAIL")
 }
 */
+
 func TestGetGoPath(t *testing.T) {
 	orig := os.Getenv("GOPATH")
 	p1 := path.Join("a", "b")

@@ -20,6 +20,7 @@ import (
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/executils"
+	"log"
 )
 
 //runs automatically
@@ -35,5 +36,9 @@ func runTaskGoVet(tp TaskParams) error {
 	dir := tp.Settings.GetTaskSettingString(TASK_GO_VET, "dir")
 	args := []string{"vet", dir}
 	err := executils.InvokeGo(tp.WorkingDirectory, args, []string{}, tp.Settings.IsVerbose())
-	return err
+	//v0.8.3 treat this as a warning only.
+	if err != nil {
+		log.Printf("Go-vet failed (goxc just treats this as a warning now)")
+	}
+	return nil
 }

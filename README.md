@@ -31,6 +31,7 @@ Notable Features
  * Config file generation & upgrade (using -wc option).
  * go-test, go-vet, go-fmt, go-install, go-clean tasks.
  * version number interpolation during build/test/... (uses go's -ldflags compiler option)
+ * support for multiple binaries per project (goxc now searches subdirectories for 'main' packages)
 
 Installation
 --------------
@@ -79,7 +80,7 @@ Use `goxc -h options` to list all options.
 
 goxc performs a number of operations, defined as tasks. You can specify tasks with the '-tasks=' option.
 
- * `goxc -t` performs one task called 'toolchain'. It's the equivalent of `goxc -tasks=toolchain ~`
+ * `goxc -t` performs one task called 'toolchain'. It's the equivalent of `goxc -tasks=toolchain -d=~`
  * The *default* task is actually several tasks, which can be summarised as follows:
     * validate (tests the code) -> compile (cross-compiles code) -> package ([g]zips up the executables and builds a 'downloads' page)
  * You can specify one or more tasks, such as `goxc -tasks=go-fmt,xc`
@@ -93,9 +94,9 @@ Outcome
 By default, artifacts are generated and then immediately archived into (outputdir).
 
 Examples:
- * /my/outputdir/0.1.1/linux_arm/myapp_0.1.1_linux_arm.tar.gz
- * /my/outputdir/0.1.1/windows_386/myapp_0.1.1_windows_386.zip
- * /my/outputdir/0.1.1/linux_386/myapp_0.1.1_linux_386.deb
+ * /my/outputdir/0.1.1/myapp_0.1.1_linux_arm.tar.gz
+ * /my/outputdir/0.1.1/myapp_0.1.1_windows_386.zip
+ * /my/outputdir/0.1.1/myapp_0.1.1_linux_386.deb
 
 The version number is specified with -pv=0.1.1 .
 

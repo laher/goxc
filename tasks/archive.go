@@ -27,9 +27,6 @@ import (
 	"path/filepath"
 )
 
-// NOTE: in future this task may produce preferred types of archive for each OS (e.g. .tar.gz for Linux)
-// TaskSettings should dictate this behaviour.
-
 //runs automatically
 func init() {
 	Register(Task{
@@ -41,21 +38,24 @@ func init() {
 
 func runTaskArchive(tp TaskParams) error {
 	for _, dest := range tp.DestPlatforms {
-		err := archivePlat(dest.Os, dest.Arch, tp.AppName, tp.WorkingDirectory, tp.OutDestRoot, tp.Settings)
+		err := archivePlat(dest.Os, dest.Arch, tp.MainDirs, tp.AppName, tp.WorkingDirectory, tp.OutDestRoot, tp.Settings)
 		if err != nil {
 			//TODO - 'force' option
-			//return err
+			return err
 		}
 	}
 	//TODO return error?
 	return nil
 }
 
-func archivePlat(goos, arch, appName, workingDirectory, outDestRoot string, settings config.Settings) error {
+func archivePlat(goos, arch string, mainDirs []string, appName, workingDirectory, outDestRoot string, settings config.Settings) error {
 	resources := core.ParseIncludeResources(workingDirectory, settings.Resources.Include, settings.Resources.Exclude, settings.IsVerbose())
-
-	// Create ZIP archive.
-	relativeBin := core.GetRelativeBin(goos, arch, appName, false, settings.GetFullVersionName())
+	exes := []string{}
+	for _, mainDir := range mainDirs {
+		exeName := filepath.Base(mainDir)
+		relativeBin := core.GetRelativeBin(goos, arch, exeName, false, settings.GetFullVersionName())
+		exes = append(exes, filepath.Join(outDestRoot, relativeBin))
+	}
 
 	var archiver archive.Archiver
 	var ending string
@@ -75,14 +75,14 @@ func archivePlat(goos, arch, appName, workingDirectory, outDestRoot string, sett
 		archiver = archive.Zip
 	}
 
-	archivePath, err := archive.ArchiveBinaryAndResources(
-		filepath.Join(outDestRoot, settings.GetFullVersionName(), goos+"_"+arch),
-		filepath.Join(outDestRoot, relativeBin), appName, resources, settings, archiver, ending)
+	archivePath, err := archive.ArchiveBinariesAndResources(
+		filepath.Join(outDestRoot, settings.GetFullVersionName()), goos+"_"+arch,
+		exes, appName, resources, settings, archiver, ending)
 	if err != nil {
 		log.Printf("ZIP error: %s", err)
 		return err
 	} else {
-		log.Printf("Artifact %s archived to %s", relativeBin, archivePath)
+		log.Printf("Artifact(s) archived to %s", archivePath)
 	}
 	return nil
 }
