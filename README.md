@@ -10,10 +10,10 @@ goxc is written in Go but uses *os.exec* to call 'go build' with the appropriate
 goxc was inspired by Dave Cheney's Bash script [golang-crosscompile](https://github.com/davecheney/golang-crosscompile).
 BUT, goxc crosscompiles to all platforms at once. The artifacts are saved into a directory structure along with a markdown file of relative links.
 
-Thanks to [dchest](https://github.com/dchest) for the tidy-up and adding the zip feature, and [matrixik](https://bitbucket.org/matrixik) for his improvements and input.
+Thanks to [dchest](https://github.com/dchest) for the tidy-up and adding the zip feature, and [matrixik](https://bitbucket.org/matrixik) for his improvements and input. Thanks also to all the helpful issue reporters.
 
-**NOTE: Version 0.5.0 and 0.6.0 have significant changes, which may affect you in certain cases - especially if you are using config files.**
-**Please read about these changes [0.5](https://github.com/laher/goxc/wiki/upgrading-0.5) and [0.6](https://github.com/laher/goxc/issues/7)**
+**NOTE: Version 0.8.5 no longer supports go1.0. If you want go1.0 support please use goxc version 0.8.4 (see the git tag 'v0.8.4')**
+*the reason why I dropped go1.0 support is mentioned in issue #16*
 
 Notable Features
 ----------------
