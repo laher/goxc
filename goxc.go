@@ -46,7 +46,8 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION = "0.8.x"
+	VERSION    = "0.8.x"
+	BUILD_DATE = "unknown"
 	// settings for this invocation of goxc
 	settings             config.Settings
 	configName           string
@@ -67,7 +68,7 @@ var (
 func printHelp(flagSet *flag.FlagSet) {
 	args := flagSet.Args()
 	if len(args) < 1 {
-		fmt.Fprintf(os.Stderr, "goxc version '%s'\n", VERSION)
+		printVersion(os.Stderr)
 		printHelpTopic(flagSet, "options")
 	} else {
 		printHelpTopic(flagSet, args[0])
@@ -134,8 +135,9 @@ func printHelpTopic(flagSet *flag.FlagSet, topic string) {
 	fmt.Fprint(os.Stderr, MSG_HELP_TOPICS_EG)
 }
 
-func printVersion(flagSet *flag.FlagSet) {
-	fmt.Fprintf(os.Stderr, " goxc version: %s\n", VERSION)
+func printVersion(output *os.File) {
+	fmt.Fprintf(output, " goxc version: %s\n", VERSION)
+	fmt.Fprintf(output, "  build date: %s\n", BUILD_DATE)
 }
 
 //merge configuration file
@@ -276,7 +278,7 @@ func interpretSettings(call []string) (string, config.Settings) {
 	}
 
 	if isVersion {
-		printVersion(flagSet)
+		printVersion(os.Stderr)
 		os.Exit(0)
 	}
 	//sanity check

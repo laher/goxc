@@ -1,0 +1,8 @@
+{
+	"ArtifactsDest": "",
+	"BuildConstraints": "darwin",
+	"Resources": {
+		"Include": "myosxfile1,myosxfile2"
+	},
+	"FormatVersion": "0.8"
+}

@@ -18,6 +18,7 @@ package executils
 */
 
 import (
+	"bytes"
 	"io"
 	"log"
 	"os"
@@ -27,15 +28,31 @@ import (
 	"github.com/laher/goxc/platforms"
 	"runtime"
 	"strings"
+	"time"
 )
 
 // get list of args to be used in variable interpolation
 // ldflags are used in any to any build-related go task (install,build,test)
 func GetLdFlagVersionArgs(fullVersionName string) []string {
+	input := map[string]string{"main.BUILD_DATE": time.Now().Format(time.RFC1123)}
 	if fullVersionName != "" {
-		return []string{"-ldflags", "-X main.VERSION " + fullVersionName + ""}
+		input["main.VERSION"] = fullVersionName
 	}
-	return []string{}
+	return GetInterpolationLdFlags(input)
+}
+
+// get list of args to be used in variable interpolation
+// ldflags are used in any to any build-related go task (install,build,test)
+func GetInterpolationLdFlags(args map[string]string) []string {
+	if len(args) < 1 {
+		return []string{}
+	}
+	//ret := make([]string, len(args))
+	var buf bytes.Buffer
+	for k, v := range args {
+		buf.WriteString("-X " + k + " '" + v + "' ")
+	}
+	return []string{"-ldflags", buf.String()}
 }
 
 // invoke the go command via the os/exec package

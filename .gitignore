@@ -29,3 +29,4 @@ _testmain.go
 .goxc-temp
 *.local.json
 test.json
+goxc
