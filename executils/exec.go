@@ -34,7 +34,7 @@ import (
 // get list of args to be used in variable interpolation
 // ldflags are used in any to any build-related go task (install,build,test)
 func GetLdFlagVersionArgs(fullVersionName string) []string {
-	input := map[string]string{"main.BUILD_DATE": time.Now().Format(time.RFC1123)}
+	input := map[string]string{"main.BUILD_DATE": time.Now().Format(time.RFC3339)}
 	if fullVersionName != "" {
 		input["main.VERSION"] = fullVersionName
 	}
