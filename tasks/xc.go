@@ -45,6 +45,7 @@ func runTaskXC(tp TaskParams) error {
 	var err error
 	appName := core.GetAppName(tp.WorkingDirectory)
 	outDestRoot := core.GetOutDestRoot(appName, tp.Settings.ArtifactsDest, tp.WorkingDirectory)
+	log.Printf("mainDirs : %v", tp.MainDirs)
 	for _, dest := range tp.DestPlatforms {
 		for _, mainDir := range tp.MainDirs {
 			exeName := filepath.Base(mainDir)
@@ -68,7 +69,7 @@ func runTaskXC(tp TaskParams) error {
 // xcPlat: Cross compile for a particular platform
 // 0.3.0 - breaking change - changed 'call []string' to 'workingDirectory string'.
 func xcPlat(goos, arch string, workingDirectory string, settings config.Settings, outDestRoot string, exeName string) error {
-	log.Printf("building for platform %s_%s.", goos, arch)
+	log.Printf("building %s for platform %s_%s.", exeName, goos, arch)
 	relativeDir := filepath.Join(settings.GetFullVersionName(), goos+"_"+arch)
 
 	outDir := filepath.Join(outDestRoot, relativeDir)
@@ -78,6 +79,7 @@ func xcPlat(goos, arch string, workingDirectory string, settings config.Settings
 	relativeBin := core.GetRelativeBin(goos, arch, exeName, false, settings.GetFullVersionName())
 	args = append(args, executils.GetLdFlagVersionArgs(settings.GetFullVersionName())...)
 	args = append(args, "-o", filepath.Join(outDestRoot, relativeBin), ".")
+	//log.Printf("building %s", exeName)
 	//v0.8.5 no longer using CGO_ENABLED
 	envExtra := []string{"GOOS=" + goos, "GOARCH=" + arch}
 	err := executils.InvokeGo(workingDirectory, args, envExtra, settings.IsVerbose())

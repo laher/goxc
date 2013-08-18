@@ -1,7 +1,6 @@
 {
 	"ArtifactsDest": "../goxc-pages/dl",
 	"TasksAppend": [
-		"go-fmt"
 	],
 	"Resources": {
 		"Include": "README.md,.\\_test1/*",
