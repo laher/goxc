@@ -77,7 +77,7 @@ func FileExists(path string) (bool, error) {
 	return false, err
 }
 
-func parseCommaGlobs(commaGlob string) []string {
+func ParseCommaGlobs(commaGlob string) []string {
 	globs := strings.Split(commaGlob, ",")
 	//normalize
 	//treat slashes/backslashes as the same thing ...
@@ -116,11 +116,11 @@ func dirToFiles(dir string) ([]string, error) {
 func ParseIncludeResources(basedir, includeResources, excludeResources string, isVerbose bool) []string {
 	allMatches := []string{}
 	if includeResources != "" {
-		resourceGlobs := parseCommaGlobs(includeResources)
+		resourceGlobs := ParseCommaGlobs(includeResources)
 		if isVerbose {
 			log.Printf("IncludeGlobs: %v", resourceGlobs)
 		}
-		excludeGlobs := parseCommaGlobs(excludeResources)
+		excludeGlobs := ParseCommaGlobs(excludeResources)
 		if isVerbose {
 			log.Printf("ExcludeGlobs: %v", excludeGlobs)
 		}

@@ -24,6 +24,7 @@ import (
 	"fmt"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
+	"github.com/laher/goxc/core"
 	"github.com/laher/goxc/typeutils"
 	"io"
 	"io/ioutil"
@@ -47,7 +48,9 @@ func init() {
 			"apihost":       "https://api.bintray.com/",
 			"downloadshost": "https://dl.bintray.com/",
 			"downloadspage": "bintray.md",
-			"fileheader":    "---\nlayout: default\ntitle: Downloads\n---\nFiles hosted at [bintray.com](https://bintray.com)\n\n"}})
+			"fileheader":    "---\nlayout: default\ntitle: Downloads\n---\nFiles hosted at [bintray.com](https://bintray.com)\n\n",
+			"include":       "*.zip,*.tar.gz,*.deb",
+			"exclude":       "bintray.md"}})
 }
 
 func runTaskBintray(tp TaskParams) error {
@@ -56,7 +59,7 @@ func runTaskBintray(tp TaskParams) error {
 	repository := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "repository")
 	pkg := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "package")
 	apiHost := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "apihost")
-	downloadsHost := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "downloadshost")
+	//downloadsHost := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "downloadshost")
 	versionDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
 
 	missing := []string{}
@@ -81,13 +84,16 @@ func runTaskBintray(tp TaskParams) error {
 	}
 	filename := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "downloadspage")
 	reportFilename := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName(), filename)
+	_, err := os.Stat(filepath.Dir(reportFilename))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return errors.New("No artifacts built for this version yet. Please build some artifacts before running the 'bintray' task")
+		} else {
+			return err
+		}
+	}
 	flags := os.O_WRONLY | os.O_TRUNC | os.O_CREATE
 	f, err := os.OpenFile(reportFilename, flags, 0600)
-	if err != nil {
-		return err
-	}
-
-	fileInfos, err := ioutil.ReadDir(versionDir)
 	if err != nil {
 		return err
 	}
@@ -100,72 +106,122 @@ func runTaskBintray(tp TaskParams) error {
 	if tp.Settings.IsVerbose() {
 		log.Printf("Read directory %s", versionDir)
 	}
-	for _, fi := range fileInfos {
-		if fi.IsDir() {
-			folderName := filepath.Join(versionDir, fi.Name())
-			if tp.Settings.IsVerbose() {
-				log.Printf("Read directory %s", folderName)
-			}
-			fileInfos2, err := ioutil.ReadDir(folderName)
-			if err == nil {
-				platform := strings.Replace(fi.Name(), "_", "/", -1)
-				fmt.Fprintf(f, "\n * **%s**:", platform)
-				first := true
-				for _, fi2 := range fileInfos2 {
-					relativePath := fi.Name() + "/" + fi2.Name()
-					fullPath := filepath.Join(versionDir, relativePath)
-					text := strings.Replace(fi2.Name(), "_", "\\_", -1)
-					if strings.HasSuffix(fi2.Name(), ".zip") {
-						text = "zip"
-					} else if strings.HasSuffix(fi2.Name(), ".deb") {
-						text = "deb"
-					} else if strings.HasSuffix(fi2.Name(), ".tar.gz") {
-						text = "tar.gz"
-					} else if fi2.Name() == tp.AppName || fi2.Name() == tp.AppName+".exe" {
-						text = "executable"
-					}
-					url := apiHost + "/content/" + subject + "/" + repository + "/" + pkg + "/" + tp.Settings.GetFullVersionName() + "/" + relativePath
-					// for some reason there's no /pkg/ level in the downloads url.
-					downloadsUrl := downloadsHost + "/content/" + subject + "/" + repository + "/" + relativePath + "?direct"
-					resp, err := uploadFile("PUT", url, subject, apikey, fullPath, relativePath)
-					if err != nil {
-						if serr, ok := err.(httpError); ok {
-							if serr.statusCode == 409 {
-								//conflict. skip
-								//continue but dont publish.
-								//TODO - provide an option to replace existing artifact
-								//TODO - ?check exists before attempting upload?
-								log.Printf("WARNING - file already exists. Skipping. %v", resp)
-								return nil
-							} else {
-								return err
-							}
-						} else {
-							return err
-						}
-					}
+	//for 'first entry in dir' detection.
+	dirs := []string{}
+	err = filepath.Walk(versionDir, func(path string, info os.FileInfo, e error) error {
+		return walkFunc(path, info, e, f, dirs, tp)
+	})
+	if err != nil {
+		return err
+	}
+	//close explicitly for return value
+	return f.Close()
+}
 
-					log.Printf("File uploaded. (expected empty map[]): %v", resp)
-					commaIfRequired := ""
-					if first {
-						first = false
-					} else {
-						commaIfRequired = ","
-					}
-					_, err = fmt.Fprintf(f, "%s [[%s](%s)]", commaIfRequired, text, downloadsUrl)
-					if err != nil {
-						return err
-					}
-					err = publish(apiHost, apikey, subject, repository, pkg, tp.Settings.GetFullVersionName())
-					if err != nil {
-						return err
-					}
+func walkFunc(fullPath string, fi2 os.FileInfo, err error, f *os.File, dirs []string, tp TaskParams) error {
+	if fi2.IsDir() {
+		return nil
+	}
+	subject := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "subject")
+	apikey := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "apikey")
+	repository := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "repository")
+	pkg := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "package")
+	apiHost := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "apihost")
+	downloadsHost := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "downloadshost")
+	includeResources := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "include")
+	excludeResources := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "exclude")
+	versionDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
 
-				}
-			}
+	relativePath := strings.Replace(fullPath, versionDir, "", -1)
+	relativePath = strings.TrimPrefix(relativePath, "/")
+	fmt.Printf("relative path %s, full path %s\n", relativePath, fullPath)
 
+	resourceGlobs := core.ParseCommaGlobs(includeResources)
+	//log.Printf("IncludeGlobs: %v", resourceGlobs)
+	excludeGlobs := core.ParseCommaGlobs(excludeResources)
+	//log.Printf("ExcludeGlobs: %v", excludeGlobs)
+	matches := false
+	for _, resourceGlob := range resourceGlobs {
+		ok, err := filepath.Match(resourceGlob, fi2.Name())
+		if err != nil {
+			return err
+		}
+		if ok {
+			matches = true
 		}
 	}
+	if matches == false {
+		log.Printf("Not included: %s (pattern %v)", relativePath, includeResources)
+		return nil
+	}
+	for _, excludeGlob := range excludeGlobs {
+		ok, err := filepath.Match(excludeGlob, fi2.Name())
+		if err != nil {
+			return err
+		}
+		if ok {
+			log.Printf("Excluded: %s (pattern %v)", relativePath, excludeGlob)
+			return nil
+		}
+	}
+	first := true
+
+	parent := filepath.Dir(relativePath)
+	//platform := strings.Replace(parent, "_", "/", -1)
+	//fmt.Fprintf(f, "\n * **%s**:", platform)
+	for _, d := range dirs {
+		if d == parent {
+			first = false
+		}
+	}
+	if first {
+		dirs = append(dirs, parent)
+	}
+	//fmt.Printf("relative path %s, platform %s\n", relativePath, parent)
+
+	text := strings.Replace(fi2.Name(), "_", "\\_", -1)
+	if strings.HasSuffix(fi2.Name(), ".zip") {
+		text = "zip"
+	} else if strings.HasSuffix(fi2.Name(), ".deb") {
+		text = "deb"
+	} else if strings.HasSuffix(fi2.Name(), ".tar.gz") {
+		text = "tar.gz"
+	} else if fi2.Name() == tp.AppName || fi2.Name() == tp.AppName+".exe" {
+		text = "executable"
+	}
+	url := apiHost + "/content/" + subject + "/" + repository + "/" + pkg + "/" + tp.Settings.GetFullVersionName() + "/" + relativePath
+	// for some reason there's no /pkg/ level in the downloads url.
+	downloadsUrl := downloadsHost + "/content/" + subject + "/" + repository + "/" + relativePath + "?direct"
+	resp, err := uploadFile("PUT", url, subject, apikey, fullPath, relativePath)
+	if err != nil {
+		if serr, ok := err.(httpError); ok {
+			if serr.statusCode == 409 {
+				//conflict. skip
+				//continue but dont publish.
+				//TODO - provide an option to replace existing artifact
+				//TODO - ?check exists before attempting upload?
+				log.Printf("WARNING - file already exists. Skipping. %v", resp)
+				return nil
+			} else {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	log.Printf("File uploaded. (expected empty map[]): %v", resp)
+	commaIfRequired := ""
+	if first {
+		first = false
+	} else {
+		commaIfRequired = ","
+	}
+	_, err = fmt.Fprintf(f, "%s [[%s](%s)]", commaIfRequired, text, downloadsUrl)
+	if err != nil {
+		return err
+	}
+	err = publish(apiHost, apikey, subject, repository, pkg, tp.Settings.GetFullVersionName())
 	return err
 }
 
@@ -191,7 +247,6 @@ func uploadFile(method, url, subject, apikey, fullPath, relativePath string) (ma
 		return nil, err
 	}
 	resp, err := doHttp(method, url, subject, apikey, file, fi.Size())
-	//resp, err := doMultipartFile("PUT", url, subject, apikey, fullPath, relativePath)
 	return resp, err
 }
 
