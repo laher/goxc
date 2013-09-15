@@ -161,19 +161,25 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 	}
 	var mainDirs []string
 	if len(tasksToRun) == 1 && tasksToRun[0] == "toolchain" {
-		mainDirs = []string{workingDirectory}
+		log.Printf("Toolchain task only - not searching for main dirs")
+		//mainDirs = []string{workingDirectory}
 	} else {
-		mainDirs, err := source.FindMainDirs(workingDirectory)
-		if err != nil {
+		var err error
+		mainDirs, err = source.FindMainDirs(workingDirectory)
+		if err != nil || len(mainDirs) == 0 {
 			log.Printf("Warning: could not establish list of main dirs. Using working directory")
 			mainDirs = []string{workingDirectory}
+		} else {
+			log.Printf("Found 'main package' dirs (len %d): %v", len(mainDirs), mainDirs)
 		}
-		log.Printf("'main package' dirs: %v", mainDirs)
 	}
-	if len(mainDirs) < 1 {
-		mainDirs = []string{workingDirectory}
-	}
-	log.Printf("Running tasks: %v", tasksToRun)
+	/*
+		if len(mainDirs) == 0 {
+			mainDirs = []string{workingDirectory}
+			log.Printf("No 'main package' dirs found. Defaulting to %v", mainDirs)
+		}
+	*/
+	log.Printf("Running tasks: %v on packages %v", tasksToRun, mainDirs)
 	for _, taskName := range tasksToRun {
 		log.SetPrefix("[goxc:" + taskName + "] ")
 		err := runTask(taskName, destPlatforms, mainDirs, appName, workingDirectory, outDestRoot, settings)

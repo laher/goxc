@@ -43,6 +43,7 @@ func FindMainDirs(root string) ([]string, error) {
 		if strings.HasPrefix(filepath.Base(path), ".") {
 			finfo, err := os.Stat(path)
 			if err != nil {
+				log.Printf("Error stat'ing %s", path)
 				return err
 			}
 			if finfo.IsDir() {

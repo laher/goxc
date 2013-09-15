@@ -1,13 +1,12 @@
 {
 	"ArtifactsDest": "../goxc-pages/dl",
 	"TasksAppend": [
-		"go-fmt"
 	],
 	"Resources": {
 		"Include": "README.md,.\\_test1/*",
 		"Exclude": "*.go"
 	},
-	"PackageVersion": "0.8.8",
+        "PackageVersion": "0.8.9",
 	"TaskSettings": {
 		"bintray": {
 			"downloadspage": "bintray.md",
