@@ -47,7 +47,6 @@ func FindMainDirs(root string) ([]string, error) {
 				return err
 			}
 			if finfo.IsDir() {
-				log.Printf("Ignoring '.hidden' dir %s", path)
 				return filepath.SkipDir
 			} else {
 				//only log if it's a go file
