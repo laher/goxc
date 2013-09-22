@@ -103,9 +103,9 @@ func runTemplate(reportFilename, templateFile, templateText string, out *os.File
 	var htmpl *htemplate.Template
 	if templateFile != "" {
 		if format == "html" {
-			htmpl, err = htemplate.New(reportFilename).ParseGlob(templateFile)
+			htmpl, err = htemplate.New(templateFile).ParseGlob(templateFile)
 		} else {
-			tmpl, err = template.New(reportFilename).ParseGlob(templateFile)
+			tmpl, err = template.New(templateFile).ParseGlob(templateFile)
 		}
 	} else {
 		if format == "html" {

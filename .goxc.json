@@ -18,7 +18,7 @@
 			"id": "goxc"
 		},
 		"downloads-page": {
-			"fileheader": "---\nlayout: default\ntitle: Download goxc\n---\n\nNote: please use 'go get -u github.com/laher/goxc' instead of these binaries.",
+			"templateFile": "downloads.tpl",
 			"filename": "index.md"
 		},
 		"pkg-build": {
