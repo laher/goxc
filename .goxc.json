@@ -1,12 +1,10 @@
 {
 	"ArtifactsDest": "../goxc-pages/dl",
-	"TasksAppend": [
-	],
 	"Resources": {
 		"Include": "README.md,.\\_test1/*",
 		"Exclude": "*.go"
 	},
-        "PackageVersion": "0.8.11",
+	"PackageVersion": "0.8.12",
 	"TaskSettings": {
 		"bintray": {
 			"downloadspage": "bintray.md",
@@ -18,8 +16,8 @@
 			"id": "goxc"
 		},
 		"downloads-page": {
-			"templateFile": "downloads.tpl",
-			"filename": "index.md"
+			"filename": "index.md",
+			"templateFile": "downloads.tpl"
 		},
 		"pkg-build": {
 			"metadata": {
