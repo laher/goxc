@@ -1,0 +1,9 @@
+{
+	"FormatVersion": "0.8",
+	"TaskSettings": {
+		"downloads-page" : {
+			"filename" : "downloads.htm",
+			"templateFile" : "downloads.htpl"
+		}
+	}
+}

@@ -1,0 +1,22 @@
+<html>
+<head>
+	<title>{{.AppName}} downloads (version {{.Version}})</title>
+</head>
+<body>
+	<h1>{{.AppName}} downloads</h1>
+
+	<h2>Version {{.Version}}</h2>
+
+	<div>
+		<em>NOTE: don't use binaries for goxc. Please use `go get -u github.com/laher/goxc` instead.</em>
+
+{{range $k, $v := .Categories}}<h3>{{$k}}</h3>
+		<ul>
+{{range $v}}
+			<li><a href="{{.RelativeLink}}">{{.Text}}</a></li>{{end}}
+		</ul>
+{{end}}
+	</div>
+	<div class="footer">{{.ExtraVars.footer}}</div>
+</body>
+</html>
