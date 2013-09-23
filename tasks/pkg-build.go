@@ -37,7 +37,7 @@ func init() {
 		TASK_PKG_BUILD,
 		"Build a binary package. Currently only supports .deb format for Debian/Ubuntu Linux.",
 		runTaskPkgBuild,
-		map[string]interface{}{"metadata": map[string]interface{}{"maintainer": "unknown"}, "metadata-deb": map[string]interface{}{"Depends": ""}, "rmtemp": true}})
+		map[string]interface{}{"metadata": map[string]interface{}{"maintainer": "unknown"}, "metadata-deb": map[string]interface{}{"Depends": ""}, "rmtemp": true, "armarch": "armhf"}})
 }
 
 func runTaskPkgBuild(tp TaskParams) (err error) {
@@ -62,7 +62,7 @@ func pkgBuildPlat(destOs, destArch string, tp TaskParams) (err error) {
 	return nil
 }
 
-func getDebControlFileContent(appName, maintainer, version, arch, description string, metadataDeb map[string]interface{}) []byte {
+func getDebControlFileContent(appName, maintainer, version, arch, armArchName, description string, metadataDeb map[string]interface{}) []byte {
 	control := fmt.Sprintf("Package: %s\nPriority: Extra\n", appName)
 	if maintainer != "" {
 		control = fmt.Sprintf("%sMaintainer: %s\n", control, maintainer)
@@ -70,7 +70,7 @@ func getDebControlFileContent(appName, maintainer, version, arch, description st
 	//mandatory
 	control = fmt.Sprintf("%sVersion: %s\n", control, version)
 
-	control = fmt.Sprintf("%sArchitecture: %s\n", control, getDebArch(arch))
+	control = fmt.Sprintf("%sArchitecture: %s\n", control, getDebArch(arch, armArchName))
 	for k, v := range metadataDeb {
 		control = fmt.Sprintf("%s%s: %s\n", control, k, v)
 	}
@@ -78,13 +78,13 @@ func getDebControlFileContent(appName, maintainer, version, arch, description st
 	return []byte(control)
 }
 
-func getDebArch(destArch string) string {
+func getDebArch(destArch string, armArchName string) string {
 	architecture := "all"
 	switch destArch {
 	case platforms.X86:
 		architecture = "i386"
 	case platforms.ARM:
-		architecture = "armel"
+		architecture = armArchName
 	case platforms.AMD64:
 		architecture = "amd64"
 	}
@@ -93,6 +93,7 @@ func getDebArch(destArch string) string {
 
 func debBuild(destOs, destArch string, tp TaskParams) (err error) {
 	metadata := tp.Settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata")
+	armArchName := tp.Settings.GetTaskSettingString(TASK_PKG_BUILD, "armarch")
 	metadataDeb := tp.Settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata-deb")
 	rmtemp := tp.Settings.GetTaskSettingBool(TASK_PKG_BUILD, "rmtemp")
 	debDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName()) //v0.8.1 dont use platform dir
@@ -119,7 +120,7 @@ func debBuild(destOs, destArch string, tp TaskParams) (err error) {
 			return err
 		}
 	}
-	controlContent := getDebControlFileContent(tp.AppName, maintainer, tp.Settings.GetFullVersionName(), destArch, description, metadataDeb)
+	controlContent := getDebControlFileContent(tp.AppName, maintainer, tp.Settings.GetFullVersionName(), destArch, armArchName, description, metadataDeb)
 	if tp.Settings.IsVerbose() {
 		log.Printf("Control file:\n%s", string(controlContent))
 	}
@@ -144,7 +145,8 @@ func debBuild(destOs, destArch string, tp TaskParams) (err error) {
 	if err != nil {
 		return err
 	}
-	targetFile := filepath.Join(debDir, fmt.Sprintf("%s_%s_%s.deb", tp.AppName, tp.Settings.GetFullVersionName(), getDebArch(destArch))) //goxc_0.5.2_i386.deb")
+
+	targetFile := filepath.Join(debDir, fmt.Sprintf("%s_%s_%s.deb", tp.AppName, tp.Settings.GetFullVersionName(), getDebArch(destArch, armArchName))) //goxc_0.5.2_i386.deb")
 	inputs := [][]string{
 		[]string{filepath.Join(tmpDir, "debian-binary"), "debian-binary"},
 		[]string{filepath.Join(tmpDir, "control.tar.gz"), "control.tar.gz"},

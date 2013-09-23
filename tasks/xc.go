@@ -23,6 +23,7 @@ import (
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
 	"github.com/laher/goxc/executils"
+	"github.com/laher/goxc/platforms"
 	"log"
 	"os"
 	"path/filepath"
@@ -30,11 +31,12 @@ import (
 
 //runs automatically
 func init() {
+	//GOARM=6 (this is the default for go1.1
 	Register(Task{
 		"xc",
 		"Cross compile. Builds executables for other platforms.",
 		runTaskXC,
-		nil})
+		map[string]interface{}{"GOARM": ""}})
 }
 
 func runTaskXC(tp TaskParams) error {
@@ -82,6 +84,13 @@ func xcPlat(goos, arch string, workingDirectory string, settings config.Settings
 	//log.Printf("building %s", exeName)
 	//v0.8.5 no longer using CGO_ENABLED
 	envExtra := []string{"GOOS=" + goos, "GOARCH=" + arch}
+	if goos == platforms.LINUX && arch == platforms.ARM {
+		// see http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go
+		goarm := settings.GetTaskSettingString(TASK_XC, "GOARM")
+		if goarm != "" {
+			envExtra = append(envExtra, "GOARM="+goarm)
+		}
+	}
 	err := executils.InvokeGo(workingDirectory, args, envExtra, settings.IsVerbose())
 	return err
 }

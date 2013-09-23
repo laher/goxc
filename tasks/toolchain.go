@@ -36,7 +36,7 @@ func init() {
 		"toolchain",
 		"Build toolchain. Make sure to run this each time you update go source.",
 		runTaskToolchain,
-		nil})
+		map[string]interface{}{"GOARM": ""}})
 }
 
 func runTaskToolchain(tp TaskParams) error {
@@ -88,7 +88,11 @@ func buildToolchain(goos string, arch string, settings config.Settings) error {
 	cmd.Env = append(cmd.Env, "GOOS="+goos, "GOARCH="+arch)
 	if goos == platforms.LINUX && arch == platforms.ARM {
 		// see http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go
-		cmd.Env = append(cmd.Env, "GOARM=5")
+		//NOTE: I don't think it has any effect on fp
+		goarm := settings.GetTaskSettingString(TASK_BUILD_TOOLCHAIN, "GOARM")
+		if goarm != "" {
+			cmd.Env = append(cmd.Env, "GOARM="+goarm)
+		}
 	}
 	if settings.IsVerbose() {
 		log.Printf("'make' env: GOOS=%s GOARCH=%s GOROOT=%s", goos, arch, goroot)
