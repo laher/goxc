@@ -21,6 +21,7 @@ import (
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/archive"
+	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
 	"github.com/laher/goxc/platforms"
 	"github.com/laher/goxc/typeutils"
@@ -37,7 +38,7 @@ func init() {
 		TASK_PKG_BUILD,
 		"Build a binary package. Currently only supports .deb format for Debian/Ubuntu Linux.",
 		runTaskPkgBuild,
-		map[string]interface{}{"metadata": map[string]interface{}{"maintainer": "unknown"}, "metadata-deb": map[string]interface{}{"Depends": ""}, "rmtemp": true, "armarch": "armhf"}})
+		map[string]interface{}{"metadata": map[string]interface{}{"maintainer": "unknown"}, "metadata-deb": map[string]interface{}{"Depends": ""}, "rmtemp": true, "armarch": ""}})
 }
 
 func runTaskPkgBuild(tp TaskParams) (err error) {
@@ -91,9 +92,23 @@ func getDebArch(destArch string, armArchName string) string {
 	return architecture
 }
 
+func getArmArchName(settings config.Settings) string {
+	armArchName := settings.GetTaskSettingString(TASK_PKG_BUILD, "armarch")
+	if armArchName == "" {
+		//derive it from GOARM version:
+		goArm := settings.GetTaskSettingString(TASK_XC, "GOARM")
+		if goArm == "5" {
+			armArchName = "armel"
+		} else {
+			armArchName = "armhf"
+		}
+	}
+	return armArchName
+}
+
 func debBuild(destOs, destArch string, tp TaskParams) (err error) {
 	metadata := tp.Settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata")
-	armArchName := tp.Settings.GetTaskSettingString(TASK_PKG_BUILD, "armarch")
+	armArchName :=getArmArchName(tp.Settings)
 	metadataDeb := tp.Settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata-deb")
 	rmtemp := tp.Settings.GetTaskSettingBool(TASK_PKG_BUILD, "rmtemp")
 	debDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName()) //v0.8.1 dont use platform dir
