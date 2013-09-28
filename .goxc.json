@@ -4,7 +4,7 @@
 		"Include": "README.md,.\\_test1/*",
 		"Exclude": "*.go"
 	},
-	"PackageVersion": "0.8.15",
+	"PackageVersion": "0.8.16",
 	"TaskSettings": {
 		"bintray": {
 			"downloadspage": "bintray.md",

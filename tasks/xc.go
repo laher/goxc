@@ -29,6 +29,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 //runs automatically
@@ -38,7 +39,8 @@ func init() {
 		"xc",
 		"Cross compile. Builds executables for other platforms.",
 		runTaskXC,
-		map[string]interface{}{"GOARM": ""}})
+		map[string]interface{}{"GOARM": "",
+		"validation" : "tcBinExists,exeParse" }})
 }
 
 func runTaskXC(tp TaskParams) error {
@@ -60,11 +62,14 @@ func runTaskXC(tp TaskParams) error {
 				return err
 			} else {
 				success = success + 1
-				err = exefileparse.Test(absoluteBin, dest.Arch, dest.Os)
-				if err != nil {
-					log.Printf("Error: %v", err)
-					log.Printf("Something fishy is going on: have you run `goxc -t` for this platform???")
-					return err
+				validationSettings := tp.Settings.GetTaskSettingString(TASK_XC, "validation")
+				if strings.Contains(validationSettings, "exeParse") {
+					err = exefileparse.Test(absoluteBin, dest.Arch, dest.Os)
+					if err != nil {
+						log.Printf("Error: %v", err)
+						log.Printf("Something fishy is going on: have you run `goxc -t` for this platform???")
+						return err
+					}
 				}
 			}
 		}
@@ -77,11 +82,14 @@ func runTaskXC(tp TaskParams) error {
 	return nil
 }
 
-func validatePlatToolchain(goos, arch string) error {
-	err := validatePlatToolchainBinExists(goos, arch)
-	if err != nil {
-		return err
+func validate(goos, arch, validationSettings string) error {
+	if strings.Contains(validationSettings, "tcBinExists") {
+		err := validatePlatToolchainBinExists(goos, arch)
+		if err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
 
@@ -99,7 +107,8 @@ func validatePlatToolchainBinExists(goos, arch string) error {
 // xcPlat: Cross compile for a particular platform
 // 0.3.0 - breaking change - changed 'call []string' to 'workingDirectory string'.
 func xcPlat(goos, arch string, workingDirectory string, settings config.Settings, outDestRoot string, exeName string) (string, error) {
-	err := validatePlatToolchain(goos, arch)
+	validationSettings := settings.GetTaskSettingString(TASK_XC, "validation")
+	err := validate(goos, arch, validationSettings)
 	if err != nil {
 		log.Printf("Toolchain not ready. Re-building toolchain. (%v)", err)
 		err = buildToolchain(goos, arch, settings)
