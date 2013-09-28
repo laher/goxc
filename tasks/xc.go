@@ -22,6 +22,7 @@ import (
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/exefileparse"
 	"github.com/laher/goxc/executils"
 	"github.com/laher/goxc/platforms"
 	"log"
@@ -51,12 +52,19 @@ func runTaskXC(tp TaskParams) error {
 	for _, dest := range tp.DestPlatforms {
 		for _, mainDir := range tp.MainDirs {
 			exeName := filepath.Base(mainDir)
-			err = xcPlat(dest.Os, dest.Arch, mainDir, tp.Settings, outDestRoot, exeName)
+			absoluteBin, err := xcPlat(dest.Os, dest.Arch, mainDir, tp.Settings, outDestRoot, exeName)
 			if err != nil {
 				log.Printf("Error: %v", err)
 				log.Printf("Have you run `goxc -t` for this platform???")
+				return err
 			} else {
 				success = success + 1
+				err = exefileparse.Test(absoluteBin, dest.Arch, dest.Os)
+				if err != nil {
+					log.Printf("Error: %v", err)
+					log.Printf("Something fishy is going on: have you run `goxc -t` for this platform???")
+					return err
+				}
 			}
 		}
 	}
@@ -70,17 +78,20 @@ func runTaskXC(tp TaskParams) error {
 
 // xcPlat: Cross compile for a particular platform
 // 0.3.0 - breaking change - changed 'call []string' to 'workingDirectory string'.
-func xcPlat(goos, arch string, workingDirectory string, settings config.Settings, outDestRoot string, exeName string) error {
+func xcPlat(goos, arch string, workingDirectory string, settings config.Settings, outDestRoot string, exeName string) (string, error) {
 	log.Printf("building %s for platform %s_%s.", exeName, goos, arch)
 	relativeDir := filepath.Join(settings.GetFullVersionName(), goos+"_"+arch)
 
 	outDir := filepath.Join(outDestRoot, relativeDir)
-	os.MkdirAll(outDir, 0755)
-
+	err := os.MkdirAll(outDir, 0755)
+	if err != nil {
+		return "", err
+	}
 	args := []string{"build"}
 	relativeBin := core.GetRelativeBin(goos, arch, exeName, false, settings.GetFullVersionName())
+	absoluteBin := filepath.Join(outDestRoot, relativeBin)
 	args = append(args, executils.GetLdFlagVersionArgs(settings.GetFullVersionName())...)
-	args = append(args, "-o", filepath.Join(outDestRoot, relativeBin), ".")
+	args = append(args, "-o", absoluteBin, ".")
 	//log.Printf("building %s", exeName)
 	//v0.8.5 no longer using CGO_ENABLED
 	envExtra := []string{"GOOS=" + goos, "GOARCH=" + arch}
@@ -91,6 +102,6 @@ func xcPlat(goos, arch string, workingDirectory string, settings config.Settings
 			envExtra = append(envExtra, "GOARM="+goarm)
 		}
 	}
-	err := executils.InvokeGo(workingDirectory, args, envExtra, settings.IsVerbose())
-	return err
+	err = executils.InvokeGo(workingDirectory, args, envExtra, settings.IsVerbose())
+	return absoluteBin, err
 }
