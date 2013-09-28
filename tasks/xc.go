@@ -28,6 +28,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 //runs automatically
@@ -76,14 +77,41 @@ func runTaskXC(tp TaskParams) error {
 	return nil
 }
 
+func validatePlatToolchain(goos, arch string) error {
+	err := validatePlatToolchainBinExists(goos, arch)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func validatePlatToolchainBinExists(goos, arch string) error {
+	goroot := runtime.GOROOT()
+	platGoBin := filepath.Join(goroot , "bin", goos+"_"+arch, "go")
+	if goos == runtime.GOOS && arch == runtime.GOARCH {
+
+		platGoBin = filepath.Join(goroot , "bin", "go")
+	}
+	_, err := os.Stat(platGoBin)
+	return err
+}
+
 // xcPlat: Cross compile for a particular platform
 // 0.3.0 - breaking change - changed 'call []string' to 'workingDirectory string'.
 func xcPlat(goos, arch string, workingDirectory string, settings config.Settings, outDestRoot string, exeName string) (string, error) {
+	err := validatePlatToolchain(goos, arch)
+	if err != nil {
+		log.Printf("Toolchain not ready. Re-building toolchain. (%v)", err)
+		err = buildToolchain(goos, arch, settings)
+		if err != nil {
+			return "", err
+		}
+	}
 	log.Printf("building %s for platform %s_%s.", exeName, goos, arch)
 	relativeDir := filepath.Join(settings.GetFullVersionName(), goos+"_"+arch)
 
 	outDir := filepath.Join(outDestRoot, relativeDir)
-	err := os.MkdirAll(outDir, 0755)
+	err = os.MkdirAll(outDir, 0755)
 	if err != nil {
 		return "", err
 	}
