@@ -21,6 +21,7 @@ import (
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/archive"
+	"github.com/laher/goxc/archive/ar"
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
 	"github.com/laher/goxc/platforms"
@@ -166,6 +167,6 @@ func debBuild(destOs, destArch string, tp TaskParams) (err error) {
 		[]string{filepath.Join(tmpDir, "debian-binary"), "debian-binary"},
 		[]string{filepath.Join(tmpDir, "control.tar.gz"), "control.tar.gz"},
 		[]string{filepath.Join(tmpDir, "data.tar.gz"), "data.tar.gz"}}
-	err = archive.ArForDeb(targetFile, inputs)
+	err = ar.ArForDeb(targetFile, inputs)
 	return
 }
