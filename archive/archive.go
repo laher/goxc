@@ -46,18 +46,20 @@ type Archiver func(archiveFilename string, itemsToArchive []ArchiveItem) error
 
 // goxc function to archive a binary along with supporting files (e.g. README or LICENCE).
 func ArchiveBinariesAndResources(outDir, platName string, binPaths []string, appName string, resources []string, settings config.Settings, archiver Archiver, ending string) (zipFilename string, err error) {
+	var zipDir string
 	if settings.PackageVersion != "" && settings.PackageVersion != core.PACKAGE_VERSION_DEFAULT {
 		//0.1.6 using appname_version_platform. See issue 3
-		zipFilename = appName + "_" + settings.GetFullVersionName() + "_" + platName + "." + ending
+		zipDir = appName + "_" + settings.GetFullVersionName() + "_" + platName
 	} else {
-		zipFilename = appName + "_" + platName + "." + ending
+		zipDir = appName + "_" + platName
 	}
+	zipFilename = zipDir + "." + ending
 	toArchive := []ArchiveItem{}
 	for _, binPath := range binPaths {
-		toArchive = append(toArchive, ArchiveItemFromFileSystem(binPath, filepath.Base(binPath)))
+		toArchive = append(toArchive, ArchiveItemFromFileSystem(binPath, filepath.Join(zipDir, filepath.Base(binPath))))
 	}
 	for _, resource := range resources {
-		toArchive = append(toArchive, ArchiveItemFromFileSystem(resource, resource))
+		toArchive = append(toArchive, ArchiveItemFromFileSystem(resource, filepath.Join(zipDir, resource)))
 	}
 	err = archiver(filepath.Join(outDir, zipFilename), toArchive)
 	return
