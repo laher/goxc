@@ -100,6 +100,9 @@ func validatePlatToolchainBinExists(goos, arch string) error {
 
 		platGoBin = filepath.Join(goroot , "bin", "go")
 	}
+	if goos == platforms.WINDOWS {
+		platGoBin += ".exe"
+	}
 	_, err := os.Stat(platGoBin)
 	return err
 }
