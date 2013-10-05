@@ -41,17 +41,22 @@ func bump(tp TaskParams) error {
 		return nil
 	}
 	pv := c.PackageVersion
-	pvparts := strings.Split(pv, ".")
-	lastpart := pvparts[len(pvparts)-1]
-	lastPartNum, err := strconv.Atoi(lastpart)
-	if err != nil {
-		return err
+	if pv == core.PACKAGE_VERSION_DEFAULT {
+		//go from 'default' version to 0.0.1
+		c.PackageVersion = "0.0.1"
+	} else {
+		pvparts := strings.Split(pv, ".")
+		lastpart := pvparts[len(pvparts)-1]
+		lastPartNum, err := strconv.Atoi(lastpart)
+		if err != nil {
+			return err
+		}
+		lastPartNum+=1
+		pvparts[len(pvparts)-1] = strconv.Itoa(lastPartNum)
+		pvNew := strings.Join(pvparts, ".")
+		c.PackageVersion = pvNew
 	}
-	lastPartNum+=1
-	pvparts[len(pvparts)-1] = strconv.Itoa(lastPartNum)
-	pvNew := strings.Join(pvparts, ".")
-	log.Printf("Bumping from %s to %s", pv, pvNew)
-	c.PackageVersion = pvNew
+	log.Printf("Bumping from %s to %s", pv, c.PackageVersion)
 	return config.WriteJsonConfig(tp.WorkingDirectory, c, "", false)
 }
 

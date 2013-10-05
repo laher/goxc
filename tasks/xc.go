@@ -137,7 +137,6 @@ func validatePlatToolchainPackageVersion(goos, arch string) error {
 			}
 			parts := strings.Split(firstLine, " ")
 			compiledVersion := parts[4]
-			log.Printf("Static library version: %s", compiledVersion)
 			//runtimeVersion := runtime.Version()
 			//log.Printf("Runtime version: %s", runtimeVersion)
 			cmd := exec.Command("go")
@@ -151,10 +150,10 @@ func validatePlatToolchainPackageVersion(goos, arch string) error {
 			//log.Printf("output: %s", string(out))
 			goVersionOutputParts := strings.Split(string(goVersionOutput), " ")
 			goVersion := goVersionOutputParts[2]
-			log.Printf("'go' version: %s", goVersion)
 			if compiledVersion != goVersion {
 				return errors.New("static library version '"+compiledVersion+"' does NOT match `go version` '"+goVersion+"'!")
 			}
+			log.Printf("Toolchain version '%s' verified against 'go' executable version '%s'", compiledVersion, goVersion)
 			return nil
 		}
 	}
