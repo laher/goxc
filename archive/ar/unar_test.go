@@ -19,14 +19,25 @@ package ar
 
 import (
 	"log"
+	"io"
+//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
+	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
+	"github.com/laher/goxc/executils"
+
 	"os"
+	"os/exec"
 	"runtime"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 //TODO: this is commented out because it's an unfinished proof-of-concept.
-func NoTestUnAr(t *testing.T) {
-	nr, err := os.Open(filepath.Join(runtime.GOROOT(), "pkg/linux_386/runtime.a"))
+func TestUnAr(t *testing.T) {
+	goroot := runtime.GOROOT()
+	goos := "linux"
+	arch := "arm"
+	platPkgFileRuntime := filepath.Join(goroot , "pkg", goos+"_"+arch, "runtime.a")
+	nr, err := os.Open(platPkgFileRuntime)
 	if err != nil {
 		t.Fatalf("failed: %v", err)
 	}
@@ -40,6 +51,37 @@ func NoTestUnAr(t *testing.T) {
 			t.Fatalf("failed: %v", err)
 		}
 		log.Printf("Header: %+v", h)
+		if h.Name == "__.PKGDEF" {
+			firstLine := make([]byte, 50)
+			if _, tr.err = io.ReadFull(tr.r, firstLine); tr.err != nil {
+				t.Fatalf("failed: %v", err)
+			}
+			tr.nb -= 50
+			log.Printf("pkgdef first part: '%s'", string(firstLine))
+			expectedPrefix := "go object "+goos+" "+arch+" "
+			if !strings.HasPrefix(string(firstLine), expectedPrefix) {
+				t.Fatalf("failed: does not match '%s'", expectedPrefix)
+			}
+			parts := strings.Split(string(firstLine), " ")
+			compiledVersion := parts[4]
+			log.Printf("Compiled version: %s", compiledVersion)
+			runtimeVersion := runtime.Version()
+			log.Printf("Runtime version: %s", runtimeVersion)
+			cmd := exec.Command("go")
+			args := []string{"version"}
+			err = executils.PrepareCmd(cmd, ".", args, []string{}, false)
+			out, err := cmd.Output()
+			if err != nil {
+				log.Printf("`go version` failed", err)
+			}
+			log.Printf("output: %s", string(out))
+			goParts := strings.Split(string(out), " ")
+			goVersion := goParts[2]
+			log.Printf("Go version: %s", goVersion)
+			if compiledVersion != goVersion {
+				t.Fatalf("Package version does NOT match!")
+			}
+		}
 	}
 }
 

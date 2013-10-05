@@ -40,7 +40,10 @@ func init() {
 		"Cross compile. Builds executables for other platforms.",
 		runTaskXC,
 		map[string]interface{}{"GOARM": "",
-		"validation" : "tcBinExists,exeParse" }})
+		//"validation" : "tcBinExists,exeParse",
+		"validateToolchain" : true,
+		"verifyExe" : true,
+		"autoRebuildToolchain" : true }})
 }
 
 func runTaskXC(tp TaskParams) error {
@@ -62,8 +65,8 @@ func runTaskXC(tp TaskParams) error {
 				return err
 			} else {
 				success = success + 1
-				validationSettings := tp.Settings.GetTaskSettingString(TASK_XC, "validation")
-				if strings.Contains(validationSettings, "exeParse") {
+				isVerifyExe := tp.Settings.GetTaskSettingBool(TASK_XC, "verifyExe")
+				if isVerifyExe {
 					err = exefileparse.Test(absoluteBin, dest.Arch, dest.Os)
 					if err != nil {
 						log.Printf("Error: %v", err)
@@ -82,15 +85,35 @@ func runTaskXC(tp TaskParams) error {
 	return nil
 }
 
-func validate(goos, arch, validationSettings string) error {
-	if strings.Contains(validationSettings, "tcBinExists") {
-		err := validatePlatToolchainBinExists(goos, arch)
-		if err != nil {
-			return err
-		}
+func validateToolchain(goos, arch, validationSettings string) error {
+	err := validatePlatToolchainBinExists(goos, arch)
+	err := validatePlatToolchainPackageVersion(goos, arch)
+	if err != nil {
+		return err
 	}
 
 	return nil
+}
+
+func validatePlatToolchainPackageVersion(goos, arch string) error {
+	goroot := runtime.GOROOT()
+	platPkgFileRuntime := filepath.Join(goroot , "pkg", goos+"_"+arch, "runtime.a")
+	nr, err := os.Open(platPkgFileRuntime)
+	if err != nil {
+		log.Printf("Could not validate toolchain version: %v", err)
+	}
+	tr, err := NewReader(nr)
+	if err != nil {
+		log.Printf("Could not validate toolchain version: %v", err)
+	}
+	for {
+		h, err := tr.Next()
+
+		if err != nil {
+			log.Printf("Could not validate toolchain version: %v", err)
+		}
+		log.Printf("Header: %+v", h)
+	}
 }
 
 func validatePlatToolchainBinExists(goos, arch string) error {
@@ -110,13 +133,18 @@ func validatePlatToolchainBinExists(goos, arch string) error {
 // xcPlat: Cross compile for a particular platform
 // 0.3.0 - breaking change - changed 'call []string' to 'workingDirectory string'.
 func xcPlat(goos, arch string, workingDirectory string, settings config.Settings, outDestRoot string, exeName string) (string, error) {
-	validationSettings := settings.GetTaskSettingString(TASK_XC, "validation")
-	err := validate(goos, arch, validationSettings)
-	if err != nil {
-		log.Printf("Toolchain not ready. Re-building toolchain. (%v)", err)
-		err = buildToolchain(goos, arch, settings)
+	isValidateToolchain := settings.GetTaskSettingBool(TASK_XC, "validateToolchain")
+	if isValidateToolchain {
+		err := validateToolchain(goos, arch)
 		if err != nil {
-			return "", err
+			log.Printf("Toolchain not ready. Re-building toolchain. (%v)", err)
+			isAutoToolchain := settings.GetTaskSettingBool(TASK_XC, "autoRebuildToolchain")
+			if isAutoToolchain {
+				err = buildToolchain(goos, arch, settings)
+			}
+			if err != nil {
+				return "", err
+			}
 		}
 	}
 	log.Printf("building %s for platform %s_%s.", exeName, goos, arch)

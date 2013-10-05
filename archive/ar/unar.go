@@ -55,10 +55,10 @@ var (
 )
 
 type Reader struct {
-	r       io.Reader
-	err	error
+	r   io.Reader
+	err error
 	nb  int64 // number of unread bytes for current file entry
-	pad bool
+	pad bool // whether the file will be padded an extra byte (i.e. if ther's an odd number of bytes in the file)
 }
 
 type Header struct {
@@ -180,11 +180,11 @@ func (tr *Reader) readHeader() *Header {
 	hdr := new(Header)
 	s := slicer(header)
 
-	hdr.Name = string(s.next(fileNameSize))
-	hdr.ModTime = string(s.next(modTimeSize))
-	hdr.Uid = string(s.next(uidSize))
-	hdr.Gid = string(s.next(gidSize))
-	hdr.Mode = string(s.next(modeSize))
+	hdr.Name = strings.TrimSpace(string(s.next(fileNameSize)))
+	hdr.ModTime = strings.TrimSpace(string(s.next(modTimeSize)))
+	hdr.Uid = strings.TrimSpace(string(s.next(uidSize)))
+	hdr.Gid = strings.TrimSpace(string(s.next(gidSize)))
+	hdr.Mode = strings.TrimSpace(string(s.next(modeSize)))
 	sizeStr := strings.TrimSpace(string(s.next(sizeSize)))
 	hdr.Size, tr.err = strconv.ParseInt(sizeStr, 10, 64)
 	if tr.err != nil {

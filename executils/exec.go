@@ -59,15 +59,38 @@ func GetInterpolationLdFlags(args map[string]string) []string {
 // 0.3.1
 func InvokeGo(workingDirectory string, args []string, env []string, isVerbose bool) error {
 	cmd := exec.Command("go")
+	RedirectIO(cmd, os.Stdin, os.Stdout, os.Stderr)
+	err := PrepareCmd(cmd, workingDirectory, args, env, isVerbose)
+	if err != nil {
+		return err
+	}
+	log.Printf("invoking 'go %v' from '%s'", PrintableArgs(args), workingDirectory)
+	err = cmd.Start()
+	if err != nil {
+		log.Printf("Launch error: %s", err)
+		return err
+	} else {
+		err = cmd.Wait()
+		if err != nil {
+			log.Printf("'go' returned error: %s", err)
+			return err
+		} else {
+			if isVerbose {
+				log.Printf("'go' completed successfully")
+			}
+		}
+	}
+	return nil
+
+}
+
+func PrepareCmd(cmd *exec.Cmd, workingDirectory string, args []string, env []string, isVerbose bool) error {
 	cmd.Args = append(cmd.Args, args...)
 	cmd.Dir = workingDirectory
-	f, err := RedirectIO(cmd)
-	if err != nil {
-		log.Printf("Error redirecting IO: %s", err)
-	}
-	if f != nil {
-		defer f.Close()
-	}
+
+	//if f != nil {
+		//defer f.Close()
+	//}
 	//0.7.4 env replaces os.Environ
 	cmd.Env = append(cmd.Env, env...)
 	for _, thisProcessEnvItem := range os.Environ() {
@@ -92,22 +115,6 @@ func InvokeGo(workingDirectory string, args []string, env []string, isVerbose bo
 	if env != nil && len(env) > 0 {
 		log.Printf("specified env vars for 'go': %s", env)
 	}
-	log.Printf("invoking 'go %v' from '%s'", PrintableArgs(args), workingDirectory)
-	err = cmd.Start()
-	if err != nil {
-		log.Printf("Launch error: %s", err)
-		return err
-	} else {
-		err = cmd.Wait()
-		if err != nil {
-			log.Printf("'go' returned error: %s", err)
-			return err
-		} else {
-			if isVerbose {
-				log.Printf("'go' completed successfully")
-			}
-		}
-	}
 	return nil
 }
 
@@ -127,22 +134,12 @@ func PrintableArgs(args []string) string {
 	return ret
 }
 
-// this function copied from 'https://github.com/laher/mkdo'
-// perhaps overkill for this project, but never mind.
-func RedirectIO(cmd *exec.Cmd) (*os.File, error) {
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		log.Println(err)
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		log.Println(err)
-	}
-	go io.Copy(os.Stdout, stdout)
-	go io.Copy(os.Stderr, stderr)
-	//direct. Masked passwords work OK!
-	cmd.Stdin = os.Stdin
-	return nil, err
+func RedirectIO(cmd *exec.Cmd, myin io.Reader, myout, myerr io.Writer) {
+// redirect IO
+	cmd.Stdout = myout
+	cmd.Stderr = myerr
+	cmd.Stdin = myin
+	//return nil, err
 }
 
 // check if cgoEnabled is required.
