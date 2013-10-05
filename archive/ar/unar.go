@@ -157,6 +157,18 @@ func (tr *Reader) Next() (*Header, error) {
 	return hdr, tr.err
 }
 
+func (tr *Reader) NextString(max int) (string, error) {
+	firstLine := make([]byte, max)
+	n, err := io.ReadFull(tr.r, firstLine)
+	tr.nb -= int64(n)
+	if err != nil {
+		tr.err = err
+		log.Printf("failed to read first line of PKGDEF: %v", err)
+		return "", err
+	}
+	return string(firstLine), nil
+}
+
 func (tr *Reader) readHeader() *Header {
 	header := make([]byte, headerSize)
 	if _, tr.err = io.ReadFull(tr.r, header); tr.err != nil {

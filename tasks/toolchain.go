@@ -98,14 +98,8 @@ func buildToolchain(goos string, arch string, settings config.Settings) error {
 		log.Printf("'make' env: GOOS=%s GOARCH=%s GOROOT=%s", goos, arch, goroot)
 	}
 	log.Printf("Invoking '%v' from %s", executils.PrintableArgs(cmd.Args), cmd.Dir)
-	f, err := executils.RedirectIO(cmd)
-	if err != nil {
-		log.Printf("Error redirecting IO: %s", err)
-	}
-	if f != nil {
-		defer f.Close()
-	}
-	err = cmd.Start()
+	executils.RedirectIO(cmd)
+	err := cmd.Start()
 	if err != nil {
 		log.Printf("Build toolchain: Launch error: %s", err)
 		return err

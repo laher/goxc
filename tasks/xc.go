@@ -20,13 +20,16 @@ import (
 	"errors"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
+	"github.com/laher/goxc/archive/ar"
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
 	"github.com/laher/goxc/exefileparse"
 	"github.com/laher/goxc/executils"
 	"github.com/laher/goxc/platforms"
+	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -85,9 +88,12 @@ func runTaskXC(tp TaskParams) error {
 	return nil
 }
 
-func validateToolchain(goos, arch, validationSettings string) error {
+func validateToolchain(goos, arch string) error {
 	err := validatePlatToolchainBinExists(goos, arch)
-	err := validatePlatToolchainPackageVersion(goos, arch)
+	if err != nil {
+		return err
+	}
+	err = validatePlatToolchainPackageVersion(goos, arch)
 	if err != nil {
 		return err
 	}
@@ -102,17 +108,55 @@ func validatePlatToolchainPackageVersion(goos, arch string) error {
 	if err != nil {
 		log.Printf("Could not validate toolchain version: %v", err)
 	}
-	tr, err := NewReader(nr)
+	tr, err := ar.NewReader(nr)
 	if err != nil {
 		log.Printf("Could not validate toolchain version: %v", err)
 	}
 	for {
 		h, err := tr.Next()
-
 		if err != nil {
+			if err == io.EOF {
+				log.Printf("Could not validate toolchain version: %v", err)
+				return nil
+			}
 			log.Printf("Could not validate toolchain version: %v", err)
+			return err
 		}
-		log.Printf("Header: %+v", h)
+		//log.Printf("Header: %+v", h)
+		if h.Name == "__.PKGDEF" {
+			firstLine, err := tr.NextString(50)
+			if err != nil {
+				log.Printf("failed to read first line of PKGDEF: %v", err)
+				return nil
+			}
+			//log.Printf("pkgdef first part: '%s'", firstLine)
+			expectedPrefix := "go object "+goos+" "+arch+" "
+			if !strings.HasPrefix(firstLine, expectedPrefix) {
+				log.Printf("first line of __.PKGDEF does not match expected pattern: %v", expectedPrefix)
+				return nil
+			}
+			parts := strings.Split(firstLine, " ")
+			compiledVersion := parts[4]
+			log.Printf("Static library version: %s", compiledVersion)
+			//runtimeVersion := runtime.Version()
+			//log.Printf("Runtime version: %s", runtimeVersion)
+			cmd := exec.Command("go")
+			args := []string{"version"}
+			err = executils.PrepareCmd(cmd, ".", args, []string{}, false)
+			goVersionOutput, err := cmd.Output()
+			if err != nil {
+				log.Printf("`go version` failed", err)
+				return nil
+			}
+			//log.Printf("output: %s", string(out))
+			goVersionOutputParts := strings.Split(string(goVersionOutput), " ")
+			goVersion := goVersionOutputParts[2]
+			log.Printf("'go' version: %s", goVersion)
+			if compiledVersion != goVersion {
+				return errors.New("static library version '"+compiledVersion+"' does NOT match `go version` '"+goVersion+"'!")
+			}
+			return nil
+		}
 	}
 }
 
@@ -151,7 +195,7 @@ func xcPlat(goos, arch string, workingDirectory string, settings config.Settings
 	relativeDir := filepath.Join(settings.GetFullVersionName(), goos+"_"+arch)
 
 	outDir := filepath.Join(outDestRoot, relativeDir)
-	err = os.MkdirAll(outDir, 0755)
+	err := os.MkdirAll(outDir, 0755)
 	if err != nil {
 		return "", err
 	}

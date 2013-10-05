@@ -59,7 +59,7 @@ func GetInterpolationLdFlags(args map[string]string) []string {
 // 0.3.1
 func InvokeGo(workingDirectory string, args []string, env []string, isVerbose bool) error {
 	cmd := exec.Command("go")
-	RedirectIO(cmd, os.Stdin, os.Stdout, os.Stderr)
+	RedirectIO(cmd)
 	err := PrepareCmd(cmd, workingDirectory, args, env, isVerbose)
 	if err != nil {
 		return err
@@ -133,8 +133,11 @@ func PrintableArgs(args []string) string {
 	}
 	return ret
 }
+func RedirectIO(cmd *exec.Cmd) {
+	RedirectIOTo(cmd, os.Stdin, os.Stdout, os.Stderr)
+}
 
-func RedirectIO(cmd *exec.Cmd, myin io.Reader, myout, myerr io.Writer) {
+func RedirectIOTo(cmd *exec.Cmd, myin io.Reader, myout, myerr io.Writer) {
 // redirect IO
 	cmd.Stdout = myout
 	cmd.Stderr = myerr
