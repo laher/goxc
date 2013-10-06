@@ -1,10 +1,10 @@
 package executils
 
 import (
-	"github.com/laher/goxc/typeutils"
-	"testing"
+//	"github.com/laher/goxc/typeutils"
+//	"testing"
 )
-
+/*
 func TestGetLdFlagVersionArgs(t *testing.T) {
 	actual := GetLdFlagVersionArgs("1.1")
 	expected0 := "-ldflags"
@@ -25,3 +25,4 @@ func TestGetInterpolationLdFlags(t *testing.T) {
 		t.Fatalf("unexpected result %v != %v", actual, expected)
 	}
 }
+*/

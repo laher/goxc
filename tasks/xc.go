@@ -144,7 +144,7 @@ func validatePlatToolchainPackageVersion(goos, arch string) error {
 			err = executils.PrepareCmd(cmd, ".", args, []string{}, false)
 			goVersionOutput, err := cmd.Output()
 			if err != nil {
-				log.Printf("`go version` failed", err)
+				log.Printf("`go version` failed: %v", err)
 				return nil
 			}
 			//log.Printf("output: %s", string(out))
@@ -198,10 +198,10 @@ func xcPlat(goos, arch string, workingDirectory string, settings config.Settings
 	if err != nil {
 		return "", err
 	}
-	args := []string{"build"}
+	args := []string{}
 	relativeBin := core.GetRelativeBin(goos, arch, exeName, false, settings.GetFullVersionName())
 	absoluteBin := filepath.Join(outDestRoot, relativeBin)
-	args = append(args, executils.GetLdFlagVersionArgs(settings.GetFullVersionName())...)
+	//args = append(args, executils.GetLdFlagVersionArgs(settings.GetFullVersionName())...)
 	args = append(args, "-o", absoluteBin, ".")
 	//log.Printf("building %s", exeName)
 	//v0.8.5 no longer using CGO_ENABLED
@@ -213,6 +213,6 @@ func xcPlat(goos, arch string, workingDirectory string, settings config.Settings
 			envExtra = append(envExtra, "GOARM="+goarm)
 		}
 	}
-	err = executils.InvokeGo(workingDirectory, args, envExtra, settings.IsVerbose())
+	err = executils.InvokeGo(workingDirectory, "build", args, envExtra, settings)
 	return absoluteBin, err
 }

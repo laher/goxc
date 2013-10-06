@@ -52,6 +52,15 @@ func ToBool(v interface{}, k string) (bool, error) {
 	return false, fmt.Errorf("%s should be a json boolean, not a %T", k, v)
 }
 
+// coerce interface{} to int
+func ToInt(v interface{}, k string) (int, error) {
+	switch typedV := v.(type) {
+	case int:
+		return typedV, nil
+	}
+	return 0, fmt.Errorf("%s should be a json int, not a %T", k, v)
+}
+
 // coerce interface{} to map[string]interface{}
 func ToMap(v interface{}, k string) (map[string]interface{}, error) {
 	switch typedV := v.(type) {

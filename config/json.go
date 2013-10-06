@@ -28,10 +28,10 @@ import (
 )
 
 const (
-	GOXC_CONFIG_VERSION = "0.8"
+	GOXC_CONFIG_VERSION = "0.9"
 )
 
-var GOXC_CONFIG_SUPPORTED = []string{"0.5.0", "0.6", "0.8"}
+var GOXC_CONFIG_SUPPORTED = []string{"0.5.0", "0.6", "0.8", "0.9"}
 
 //0.6 REMOVED JsonSettings struct.
 
@@ -67,49 +67,6 @@ func LoadJsonConfigs(dir string, configs []string, verbose bool) (Settings, erro
 	}
 	return loadSettingsSection(mergedSettingsMap)
 }
-
-/*
-//Loads a config file and merges results with any 'override' files.
-func LoadJsonConfigOverrideable(dir string, configName string, useLocal bool, verbose bool) (Settings, error) {
-	jsonFile := filepath.Join(dir, configName+GOXC_FILE_EXT)
-	jsonLocalFile := filepath.Join(dir, configName+GOXC_LOCAL_FILE_EXT)
-	var err error
-	if useLocal {
-		localSettingsMap, err := loadJsonFileAsMap(jsonLocalFile, verbose)
-		if err != nil {
-			//load non-local file only.
-			settingsMap, err := loadJsonFileAsMap(jsonFile, verbose)
-			if err != nil {
-				return Settings{}, err
-			}
-			return loadSettingsSection(settingsMap)
-		} else {
-			settingsMap, err := loadJsonFileAsMap(jsonFile, verbose)
-			if err != nil {
-				if os.IsNotExist(err) {
-					return loadSettingsSection(settingsMap)
-				} else {
-					//parse error. Stop right there.
-					return Settings{}, err
-				}
-			} else {
-				merged := typeutils.MergeMaps(localSettingsMap, settingsMap)
-				return loadSettingsSection(merged)
-			}
-		}
-	} else {
-		//load non-local file only.
-		settingsMap, err := loadJsonFileAsMap(jsonFile, verbose)
-		if err != nil {
-			return Settings{}, err
-		}
-		return loadSettingsSection(settingsMap)
-	}
-	//unreachable but required by go compiler
-	//return localSettings.Settings, err
-	return Settings{}, err
-}
-*/
 //0.5.6 provide more detail about errors (syntax errors for now)
 func printErrorDetails(rawJson []byte, err error) {
 	switch typedErr := err.(type) {
@@ -142,10 +99,14 @@ func validateRawJson(rawJson []byte, fileName string) []error {
 	var errs []error
 	m := f.(map[string]interface{})
 	rejectOldTaskDefinitions := false
+	//it was known as 'FormatVersion' until v0.9
 	if fv, keyExists := m["FormatVersion"]; keyExists {
-		formatVersion := fv.(string)
-		if -1 == typeutils.StringSlicePos(GOXC_CONFIG_SUPPORTED, formatVersion) {
-			log.Printf("WARNING (%s): is an old config file. File version: %s. Current version %v", fileName, formatVersion, GOXC_CONFIG_VERSION)
+			m["ConfigVersion"] = fv
+	}
+	if fv, keyExists := m["ConfigVersion"]; keyExists {
+		configVersion := fv.(string)
+		if -1 == typeutils.StringSlicePos(GOXC_CONFIG_SUPPORTED, configVersion) {
+			log.Printf("WARNING (%s): is an old config file. File version: %s. Current version %v", fileName, configVersion, GOXC_CONFIG_VERSION)
 			rejectOldTaskDefinitions = true
 		}
 	} else {
@@ -222,21 +183,26 @@ func loadJsonFileAsMap(jsonFile string, verbose bool) (map[string]interface{}, e
 		log.Printf("ERROR (%s): invalid json!", jsonFile)
 		printErrorDetails(rawJson, err)
 	} else {
-		//fill all the way down.
+		//it was known as FormatVersion until v0.9
 		if fv, keyExists := f["FormatVersion"]; keyExists {
+			f["ConfigVersion"] = fv
+		}
+		//fill all the way down.
+		if fv, keyExists := f["ConfigVersion"]; keyExists {
 			if s, keyExists := f["Settings"]; keyExists {
 				//Support for old versions, up until version 0.5.
 				settingsSection, err := typeutils.ToMap(s, "Settings")
 				if err != nil {
 					return f, err
 				} else {
-					if _, keyExists = settingsSection["FormatVersion"]; !keyExists {
+					if _, keyExists = settingsSection["ConfigVersion"]; !keyExists {
 						//set from jsonSettings
+						//it was previously known as FormatVersion ...
 						formatVersion, err := typeutils.ToString(fv, "FormatVersion")
 						if err != nil {
 							return f, err
 						}
-						settingsSection["FormatVersion"] = formatVersion
+						settingsSection["ConfigVersion"] = formatVersion
 					}
 					return settingsSection, err
 				}
@@ -305,6 +271,16 @@ func loadSettingsSection(settingsSection map[string]interface{}) (settings Setti
 			settings.TaskSettings, err = typeutils.ToMapStringMapStringInterface(v, k)
 		case "FormatVersion":
 			settings.GoxcConfigVersion, err = typeutils.ToString(v, k)
+		case "ConfigVersion":
+			settings.GoxcConfigVersion, err = typeutils.ToString(v, k)
+		case "BuildSettings":
+			m, err := typeutils.ToMap(v, k)
+			if err == nil {
+				settings.BuildSettings, err = buildSettingsFromMap(m)
+				if err == nil {
+					//log.Printf("Parsed build settings OK (%+v)", settings.BuildSettings)
+				}
+			}
 		default:
 			log.Printf("Warning!! Unrecognised Setting '%s' (value %v)", k, v)
 		}

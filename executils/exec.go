@@ -19,52 +19,155 @@ package executils
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
+	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/platforms"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
 )
 
-// get list of args to be used in variable interpolation
-// ldflags are used in any to any build-related go task (install,build,test)
-func GetLdFlagVersionArgs(fullVersionName string) []string {
-	input := map[string]string{"main.BUILD_DATE": time.Now().Format(time.RFC3339)}
-	if fullVersionName != "" {
-		input["main.VERSION"] = fullVersionName
-	}
-	return GetInterpolationLdFlags(input)
-}
+var (
+	BUILD_COMMANDS = []string{"build", "install"}
+	)
 
 // get list of args to be used in variable interpolation
 // ldflags are used in any to any build-related go task (install,build,test)
-func GetInterpolationLdFlags(args map[string]string) []string {
+/*
+func GetLdFlagVersionArgs(fullVersionName string) string {
+	input := map[string]interface{}{"main.BUILD_DATE": time.Now().Format(time.RFC3339)}
+	if fullVersionName != "" {
+		input["main.VERSION"] = fullVersionName
+	}
+	return GetInterpolationFlags(input, "-X")
+}
+*/
+func buildInterpolationVars(args map[string]interface{}, fullVersionName string) map[string]interface{} {
+	ret := map[string]interface{}{}
+	for k, v := range args {
+		switch typedV := v.(type) {
+		case string:
+			switch k {
+			case "Version":
+				ret[typedV] = fullVersionName
+			case "TimeNow":
+				ret[typedV] = time.Now().Format(time.RFC3339)
+			}
+
+		default:
+			//error here?
+		}
+	}
+	return ret
+}
+
+// get list of args to be used in e.g. ldflags variable interpolation
+// v0.9 changed from ldflags-specific to more general flag building
+func buildFlags(args map[string]interface{}, flag string) string {
 	if len(args) < 1 {
-		return []string{}
+		return ""
 	}
 	//ret := make([]string, len(args))
 	var buf bytes.Buffer
 	for k, v := range args {
-		buf.WriteString("-X " + k + " '" + v + "' ")
+		switch typedV := v.(type) {
+		case string:
+			buf.WriteString(flag + " " + k + " '" + typedV + "' ")
+		default:
+			buf.WriteString(fmt.Sprintf("%s %s '%v' ", flag, k, typedV))
+		}
 	}
-	return []string{"-ldflags", buf.String()}
+	return buf.String()
+}
+
+func isBuildCommand(subCmd string) bool {
+	for _, buildCmd := range BUILD_COMMANDS {
+		if subCmd == buildCmd {
+			return true
+		}
+	}
+	return false
 }
 
 // invoke the go command via the os/exec package
 // 0.3.1
-func InvokeGo(workingDirectory string, args []string, env []string, isVerbose bool) error {
-	cmd := exec.Command("go")
+// v0.9 changed signature
+func InvokeGo(workingDirectory string, subCmd string, subCmdArgs []string, env []string, settings config.Settings) error {
+	isVerbose := settings.IsVerbose()
+	fullVersionName := settings.GetFullVersionName()
+	var buildSettings config.BuildSettings
+	if settings.BuildSettings != nil {
+		buildSettings = *settings.BuildSettings
+	} else {
+		buildSettings = config.BuildSettingsDefault()
+	}
+	goRoot := runtime.GOROOT()
+
+	//log.Printf("using build settings (%+v)", buildSettings)
+	if buildSettings.GoRoot != "" {
+		goRoot = buildSettings.GoRoot
+	}
+	cmdPath := filepath.Join(goRoot, "bin", "go")
+	cmd := exec.Command(cmdPath)
 	RedirectIO(cmd)
+	args := []string{subCmd}
+	//these commands only apply to `go build` & `go install`
+	if isBuildCommand(subCmd) {
+		if buildSettings.Processors > 0 {
+			args = append(args, "-p", string(buildSettings.Processors))
+		}
+		if buildSettings.Race {
+			args = append(args, "-race")
+		}
+		if buildSettings.Verbose {
+			args = append(args, "-v")
+		}
+		if buildSettings.PrintCommands {
+			args = append(args, "-x")
+		}
+		if buildSettings.CcFlags != "" {
+			args = append(args, "-ccflags", buildSettings.CcFlags)
+		}
+		if buildSettings.Compiler != "" {
+			args = append(args, "-compiler", buildSettings.Compiler)
+		}
+		if buildSettings.GccGoFlags != "" {
+			args = append(args, "-gccgoflags", buildSettings.GccGoFlags)
+		}
+		if buildSettings.GcFlags != "" {
+			args = append(args, "-gcflags", buildSettings.GcFlags)
+		}
+		if buildSettings.InstallSuffix != "" {
+			args = append(args, "-installsuffix", buildSettings.InstallSuffix)
+		}
+		ldflags := ""
+		if buildSettings.LdFlags != "" {
+			ldflags = buildSettings.LdFlags
+		}
+		if buildSettings.LdFlagsXVars != nil {
+			//TODO!
+			ldflags = ldflags + " " + buildFlags(buildInterpolationVars(*buildSettings.LdFlagsXVars, fullVersionName), "-X")
+		}
+		if ldflags != "" {
+			args = append(args, "-ldflags", ldflags)
+		}
+		if buildSettings.Tags != "" {
+			args = append(args, "-tags", buildSettings.Tags)
+		}
+	}
+	args = append(args, subCmdArgs...)
 	err := PrepareCmd(cmd, workingDirectory, args, env, isVerbose)
 	if err != nil {
 		return err
 	}
-	log.Printf("invoking 'go %v' from '%s'", PrintableArgs(args), workingDirectory)
+	log.Printf("invoking '%s %v' from '%s'", cmdPath, PrintableArgs(args), workingDirectory)
 	err = cmd.Start()
 	if err != nil {
 		log.Printf("Launch error: %s", err)

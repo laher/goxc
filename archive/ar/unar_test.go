@@ -18,21 +18,20 @@ package ar
 
 
 import (
-	"log"
 	"io"
 //Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/executils"
-
+	"log"
 	"os"
 	"os/exec"
-	"runtime"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
 //TODO: this is commented out because it's an unfinished proof-of-concept.
-func TestUnAr(t *testing.T) {
+func NoTestUnAr(t *testing.T) {
 	goroot := runtime.GOROOT()
 	goos := "linux"
 	arch := "arm"
@@ -72,7 +71,7 @@ func TestUnAr(t *testing.T) {
 			err = executils.PrepareCmd(cmd, ".", args, []string{}, false)
 			out, err := cmd.Output()
 			if err != nil {
-				log.Printf("`go version` failed", err)
+				log.Printf("`go version` failed: %v", err)
 			}
 			log.Printf("output: %s", string(out))
 			goParts := strings.Split(string(out), " ")

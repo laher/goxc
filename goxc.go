@@ -60,6 +60,7 @@ var (
 	tasksMinus           string
 	isCliZipArchives     string
 	codesignId           string
+	goRoot               string
 	isWriteConfig        bool
 	isVerbose            bool
 	workingDirectoryFlag string
@@ -281,9 +282,22 @@ func interpretSettings(call []string) (string, config.Settings) {
 		printVersion(os.Stderr)
 		os.Exit(0)
 	}
+
+	//set default ...
+	if goRoot == "" {
+		goRoot = runtime.GOROOT()
+	}
+
+	//only set it if non-default:
+	if goRoot != runtime.GOROOT() {
+		if settings.BuildSettings == nil {
+			bs := config.BuildSettingsDefault()
+			settings.BuildSettings = &bs
+		}
+		settings.BuildSettings.GoRoot = goRoot
+	}
 	//sanity check
-	goroot := runtime.GOROOT()
-	if err := core.SanityCheck(goroot); err != nil {
+	if err := core.SanityCheck(goRoot); err != nil {
 		log.Printf("Error: %s", err)
 		log.Printf(core.MSG_INSTALL_GO_FROM_SOURCE)
 		os.Exit(1)
@@ -331,6 +345,7 @@ func interpretSettings(call []string) (string, config.Settings) {
 			os.Exit(1)
 		}
 	}
+
 	return workingDirectory, settings
 }
 
@@ -401,6 +416,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&tasksToRun, "tasks", "", "Tasks to run. Use `goxc -ht` for more details")
 	flagSet.StringVar(&tasksPlus, "tasks+", "", "Additional tasks to run. See -ht for tasks list")
 	flagSet.StringVar(&tasksMinus, "tasks-", "", "Tasks to exclude. See -ht for tasks list")
+	flagSet.StringVar(&goRoot, "goroot", runtime.GOROOT(), "Specify Go ROOT dir (useful when you have multiple Go installations)")
 	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s). Equivalent to -tasks=toolchain")
 	flagSet.BoolVar(&isWriteConfig, "wc", false, "(over)write config. Overwrites are additive. Try goxc -wc to produce a starting point.")
 	flagSet.Usage = func() {

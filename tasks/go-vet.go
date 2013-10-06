@@ -34,11 +34,11 @@ func init() {
 
 func runTaskGoVet(tp TaskParams) error {
 	dir := tp.Settings.GetTaskSettingString(TASK_GO_VET, "dir")
-	args := []string{"vet", dir}
-	err := executils.InvokeGo(tp.WorkingDirectory, args, []string{}, tp.Settings.IsVerbose())
+	args := []string{dir}
+	err := executils.InvokeGo(tp.WorkingDirectory, "vet", args, []string{}, tp.Settings)
 	//v0.8.3 treat this as a warning only.
 	if err != nil {
-		log.Printf("Go-vet failed (goxc just treats this as a warning now)")
+		log.Print("Go-vet failed (goxc just treats this as a warning for now)")
 	}
 	return nil
 }

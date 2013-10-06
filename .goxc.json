@@ -4,7 +4,7 @@
 		"Include": "README.md,.\\_test1/*",
 		"Exclude": "*.go"
 	},
-	"PackageVersion": "0.8.21",
+	"PackageVersion": "0.9.1",
 	"TaskSettings": {
 		"bintray": {
 			"downloadspage": "bintray.md",
@@ -30,5 +30,5 @@
 			}
 		}
 	},
-	"FormatVersion": "0.8"
+	"ConfigVersion": "0.9"
 }

@@ -71,9 +71,16 @@ type Settings struct {
 	//TaskSettings map[string]map[string]interface{}
 	TaskSettings map[string]map[string]interface{} `json:",omitempty"`
 
-	//for 0.6.0, to replace 'FormatVersion'
-	GoxcConfigVersion string `json:"FormatVersion,omitempty"`
+	//DEPRECATED (since v0.9. See GoxcConfigVersion)
+	FormatVersion string `json:"FormatVersion,omitempty"`
+
+	//v0.9, to replace 'FormatVersion'
+	GoxcConfigVersion string `json:"ConfigVersion,omitempty"`
+
+	BuildSettings *BuildSettings `json:",omitempty"`
 }
+
+
 
 func (s Settings) IsVerbose() bool {
 	return s.Verbosity == core.VERBOSITY_VERBOSE
@@ -233,6 +240,10 @@ func Merge(high Settings, low Settings) Settings {
 		high.TaskSettings = low.TaskSettings
 	} else {
 		high.TaskSettings = typeutils.MergeMapsStringMapStringInterface(high.TaskSettings, low.TaskSettings)
+	}
+	//0.9 BuildSettings
+	if high.BuildSettings == nil {
+		high.BuildSettings = low.BuildSettings
 	}
 	return high
 }
