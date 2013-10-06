@@ -37,7 +37,7 @@ func init() {
 }
 
 func runTaskCopyResources(tp TaskParams) error {
-	resources := core.ParseIncludeResources(tp.WorkingDirectory, tp.Settings.Resources.Include, tp.Settings.Resources.Exclude, tp.Settings.IsVerbose())
+	resources := core.ParseIncludeResources(tp.WorkingDirectory, tp.Settings.ResourcesInclude, tp.Settings.ResourcesExclude, tp.Settings.IsVerbose())
 	destFolder := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
 	log.Printf("resources: %v", resources)
 	for _, resource := range resources {

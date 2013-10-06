@@ -230,7 +230,7 @@ func loadJsonFile(jsonFile string, verbose bool) (Settings, error) {
 }
 
 func loadSettingsSection(settingsSection map[string]interface{}) (settings Settings, err error) {
-	settings = Settings{Resources: Resources{}}
+	settings = Settings{}
 	for k, v := range settingsSection {
 		//try to match key
 		switch k {
@@ -248,13 +248,18 @@ func loadSettingsSection(settingsSection map[string]interface{}) (settings Setti
 			settings.Os, err = typeutils.ToString(v, k)
 		case "BuildConstraints":
 			settings.BuildConstraints, err = typeutils.ToString(v, k)
+		case "ResourcesInclude":
+			settings.ResourcesInclude, err = typeutils.ToString(v, k)
+		case "ResourcesExclude":
+			settings.ResourcesExclude, err = typeutils.ToString(v, k)
+		//deprecated
 		case "Resources":
 			for k2, v2 := range v.(map[string]interface{}) {
 				switch k2 {
 				case "Include":
-					settings.Resources.Include, err = typeutils.ToString(v2, k+":"+k2)
+					settings.ResourcesInclude, err = typeutils.ToString(v2, k+":"+k2)
 				case "Exclude":
-					settings.Resources.Exclude, err = typeutils.ToString(v2, k+":"+k2)
+					settings.ResourcesExclude, err = typeutils.ToString(v2, k+":"+k2)
 				}
 			}
 		case "PackageVersion":

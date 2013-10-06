@@ -64,6 +64,7 @@ var (
 	isWriteConfig        bool
 	isVerbose            bool
 	workingDirectoryFlag string
+	resourcesInclude     string
 )
 
 func printHelp(flagSet *flag.FlagSet) {
@@ -161,11 +162,11 @@ func mergeConfiguredSettings(dir string, configName string, useLocal bool) (conf
 
 //TODO fulfil all defaults
 func fillDefaults(settings config.Settings) config.Settings {
-	if settings.Resources.Include == "" {
-		settings.Resources.Include = core.RESOURCES_INCLUDE_DEFAULT
+	if settings.ResourcesInclude == "" {
+		settings.ResourcesInclude = core.RESOURCES_INCLUDE_DEFAULT
 	}
-	if settings.Resources.Exclude == "" {
-		settings.Resources.Exclude = core.RESOURCES_EXCLUDE_DEFAULT
+	if settings.ResourcesExclude == "" {
+		settings.ResourcesExclude = core.RESOURCES_EXCLUDE_DEFAULT
 	}
 	if settings.PackageVersion == "" {
 		settings.PackageVersion = core.PACKAGE_VERSION_DEFAULT
@@ -221,6 +222,14 @@ func goXC(call []string) {
 }
 
 func interpretSettings(call []string) (string, config.Settings) {
+	if settings.BuildSettings == nil {
+		if isWriteConfig {
+			//settings.BuildSettings = &config.BuildSettings{}
+		} else {
+			bs := config.BuildSettingsDefault()
+			settings.BuildSettings = &bs
+		}
+	}
 	flagSet := setupFlags()
 	if err := flagSet.Parse(call[1:]); err != nil {
 		log.Printf("Error parsing arguments: %s", err)
@@ -312,7 +321,6 @@ func interpretSettings(call []string) (string, config.Settings) {
 			configName = core.GOXC_CONFIGNAME_DEFAULT
 		}
 	}
-
 	//0.6 do NOT use args[0]
 	var workingDirectory string
 	if workingDirectoryFlag != "" {
@@ -401,7 +409,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.ArtifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
 	flagSet.StringVar(&codesignId, "codesign", "", "identity to sign darwin binaries with (only applied when host OS is 'darwin')")
 
-	flagSet.StringVar(&settings.Resources.Include, "include", "", "Include resources in archives (default="+core.RESOURCES_INCLUDE_DEFAULT+")") //TODO: Add resources to non-zips & downloads.md
+	flagSet.StringVar(&resourcesInclude, "include", "", "Include resources in archives (default="+core.RESOURCES_INCLUDE_DEFAULT+")") //TODO: Add resources to non-zips & downloads.md
 
 	//0.2.0 Not easy to 'merge' boolean config items. More flexible to translate them to string options anyway
 	flagSet.BoolVar(&isHelp, "h", false, "Help - options")

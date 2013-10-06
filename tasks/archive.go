@@ -49,7 +49,7 @@ func runTaskArchive(tp TaskParams) error {
 }
 
 func archivePlat(goos, arch string, mainDirs []string, appName, workingDirectory, outDestRoot string, settings config.Settings) error {
-	resources := core.ParseIncludeResources(workingDirectory, settings.Resources.Include, settings.Resources.Exclude, settings.IsVerbose())
+	resources := core.ParseIncludeResources(workingDirectory, settings.ResourcesInclude, settings.ResourcesExclude, settings.IsVerbose())
 	exes := []string{}
 	for _, mainDir := range mainDirs {
 		exeName := filepath.Base(mainDir)

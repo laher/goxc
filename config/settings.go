@@ -23,11 +23,13 @@ import (
 	"log"
 )
 
+/* 0.9: removed!
 // Resources are files which a user might want to include or exclude from their package or archive
 type Resources struct {
 	Include string `json:",omitempty"`
 	Exclude string `json:",omitempty"`
 }
+*/
 
 // Invocation settings
 type Settings struct {
@@ -57,7 +59,9 @@ type Settings struct {
 	//0.7.x experimental option - only 0.7.3. Removed 0.7.4
 	//PrependCurrentEnv string `json:",omitempty"`
 
-	Resources Resources `json:",omitempty"`
+	//0.9 changed from struct to ResourcesInclude & ResourcesExclude
+	ResourcesInclude string `json:",omitempty"`
+	ResourcesExclude string `json:",omitempty"`
 
 	//versioning
 	PackageVersion string `json:",omitempty"`
@@ -192,11 +196,11 @@ func Merge(high Settings, low Settings) Settings {
 		high.BuildConstraints = low.BuildConstraints
 	}
 
-	if high.Resources.Exclude == "" {
-		high.Resources.Exclude = low.Resources.Exclude
+	if high.ResourcesExclude == "" {
+		high.ResourcesExclude = low.ResourcesExclude
 	}
-	if high.Resources.Include == "" {
-		high.Resources.Include = low.Resources.Include
+	if high.ResourcesInclude == "" {
+		high.ResourcesInclude = low.ResourcesInclude
 	}
 	if high.Arch == "" {
 		high.Arch = low.Arch
