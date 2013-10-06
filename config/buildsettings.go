@@ -8,7 +8,7 @@ import (
 
 type BuildSettings struct {
 	GoRoot string `json:",omitempty"`
-	Processors int `json:"omitempty"`
+	Processors int `json:",omitempty"`
 	Race bool `json:",omitempty"`
 	Verbose bool `json:",omitempty"`
 	PrintCommands bool `json:",omitempty"`

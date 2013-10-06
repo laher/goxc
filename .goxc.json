@@ -4,7 +4,7 @@
 		"Include": "README.md,.\\_test1/*",
 		"Exclude": "*.go"
 	},
-	"PackageVersion": "0.9.1",
+	"PackageVersion": "0.9.2",
 	"TaskSettings": {
 		"bintray": {
 			"downloadspage": "bintray.md",
@@ -30,5 +30,11 @@
 			}
 		}
 	},
-	"ConfigVersion": "0.9"
+	"ConfigVersion": "0.9",
+	"BuildSettings": {
+		"LdFlagsXVars": {
+			"TimeNow": "main.BUILD_DATE",
+			"Version": "main.VERSION"
+		}
+	}
 }
