@@ -21,7 +21,7 @@ func TestRemove(t *testing.T) {
 
 func TestPrintJsonDefaults(t *testing.T) {
 	settings := config.Settings{}
-	settings = fillDefaults(settings)
+	config.FillSettingsDefaults(&settings)
 	jsonD, _ := json.MarshalIndent(settings, "", "\t")
 	t.Logf("JSON defaults: \n%+v", string(jsonD))
 }

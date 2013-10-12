@@ -51,7 +51,8 @@ func GetMakeScriptPath(goroot string) string {
 // TODO: in future this could check for existence of gcc/mingw/alternative
 func SanityCheck(goroot string) error {
 	if goroot == "" {
-		return errors.New("go ROOT dir is set to ''. Try using '"+runtime.GOROOT()+"'")
+	//	return errors.New("go ROOT dir is set to ''. Try using '"+runtime.GOROOT()+"'")
+		goroot = runtime.GOROOT()
 	}
 	scriptpath := GetMakeScriptPath(goroot)
 	_, err := os.Stat(scriptpath)

@@ -46,9 +46,9 @@ func JoinList(elem ...string) string {
 
 func TestSanityCheck(t *testing.T) {
 	//goroot := runtime.GOROOT()
-	err := SanityCheck("")
+	err := SanityCheck("i")
 	if err == nil {
-		t.Fatalf("sanity check failed! Expected to flag missing GOROOT variable")
+		t.Fatalf("sanity check failed! Expected to flag incorrect GOROOT variable")
 	}
 	tmpDir, err := ioutil.TempDir("", "goxc_test_sanityCheck")
 	defer os.RemoveAll(tmpDir)

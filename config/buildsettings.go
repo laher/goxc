@@ -7,7 +7,8 @@ import (
 )
 
 type BuildSettings struct {
-	GoRoot string `json:",omitempty"`
+	//GoRoot string `json:"-"` //Made *not* settable in settings file. Only at runtime.
+	//GoVersion string `json:",omitempty"` //hmm. Should I encourage this?
 	Processors int `json:",omitempty"`
 	Race bool `json:",omitempty"`
 	Verbose bool `json:",omitempty"`
@@ -23,19 +24,15 @@ type BuildSettings struct {
 	ExtraArgs []string `json:",omitempty"`
 }
 
-func BuildSettingsDefault() BuildSettings {
-	bs := BuildSettings{}
-	bs.LdFlagsXVars = &map[string]interface{}{"TimeNow" : "main.BUILD_DATE", "Version" : "main.VERSION" }
-	return bs
-}
 
 func buildSettingsFromMap(m map[string]interface{}) (*BuildSettings, error) {
 	var err error
-	bs := BuildSettingsDefault()
+	bs := BuildSettings{}
+	FillBuildSettingsDefaults(&bs)
 	for k, v := range m {
 		switch k {
-		case "GoRoot":
-			bs.GoRoot, err = typeutils.ToString(v, k)
+		//case "GoRoot":
+		//	bs.GoRoot, err = typeutils.ToString(v, k)
 		case "Processors":
 			bs.Processors, err = typeutils.ToInt(v, k)
 		case "Race":

@@ -76,12 +76,17 @@ type Settings struct {
 	TaskSettings map[string]map[string]interface{} `json:",omitempty"`
 
 	//DEPRECATED (since v0.9. See GoxcConfigVersion)
-	FormatVersion string `json:"FormatVersion,omitempty"`
+	FormatVersion string `json:",omitempty"`
 
 	//v0.9, to replace 'FormatVersion'
 	GoxcConfigVersion string `json:"ConfigVersion,omitempty"`
 
+	//v0.9, to replace 'FormatVersion'
 	BuildSettings *BuildSettings `json:",omitempty"`
+
+	//TODO!!
+	PreferredGoVersion string `json:",omitempty"` //try to use a go version...
+	GoRoot string `json:"-"` //only settable by a flag
 }
 
 

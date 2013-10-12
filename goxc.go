@@ -46,7 +46,7 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION    = "0.8.x"
+	VERSION    = "0.9.x"
 	BUILD_DATE = "unknown"
 	// settings for this invocation of goxc
 	settings             config.Settings
@@ -160,43 +160,6 @@ func mergeConfiguredSettings(dir string, configName string, useLocal bool) (conf
 	return settings, err
 }
 
-//TODO fulfil all defaults
-func fillDefaults(settings config.Settings) config.Settings {
-	if settings.ResourcesInclude == "" {
-		settings.ResourcesInclude = core.RESOURCES_INCLUDE_DEFAULT
-	}
-	if settings.ResourcesExclude == "" {
-		settings.ResourcesExclude = core.RESOURCES_EXCLUDE_DEFAULT
-	}
-	if settings.PackageVersion == "" {
-		settings.PackageVersion = core.PACKAGE_VERSION_DEFAULT
-	}
-	if len(settings.Tasks) == 0 {
-		settings.Tasks = tasks.Aliases[tasks.TASKALIAS_DEFAULT]
-	}
-	if settings.TaskSettings == nil {
-		settings.TaskSettings = make(map[string]map[string]interface{})
-	}
-
-	//fill in per-task settings ...
-	for _, t := range tasks.ListTasks() {
-		if t.DefaultSettings != nil {
-			if _, keyExists := settings.TaskSettings[t.Name]; !keyExists {
-				settings.TaskSettings[t.Name] = t.DefaultSettings
-			} else {
-				//TODO go deeper still?
-				for k, v := range t.DefaultSettings {
-					taskSettings := settings.TaskSettings[t.Name]
-					if _, keyExists = taskSettings[k]; !keyExists {
-						taskSettings[k] = v
-					}
-				}
-			}
-		}
-	}
-	return settings
-}
-
 // goXC is the goxc startpoint
 // In theory you could call this with a slice of flags
 func goXC(call []string) {
@@ -209,7 +172,8 @@ func goXC(call []string) {
 		//0.2.5 writeConfig now just exits after writing config
 	} else {
 		//0.2.3 fillDefaults should only happen after writing config
-		settings = fillDefaults(settings)
+		config.FillSettingsDefaults(&settings)
+		tasks.FillTaskSettingsDefaults(&settings)
 
 		if settings.IsVerbose() {
 			log.Printf("Final settings %+v", settings)
@@ -222,14 +186,7 @@ func goXC(call []string) {
 }
 
 func interpretSettings(call []string) (string, config.Settings) {
-	if settings.BuildSettings == nil {
-		if isWriteConfig {
-			//settings.BuildSettings = &config.BuildSettings{}
-		} else {
-			bs := config.BuildSettingsDefault()
-			settings.BuildSettings = &bs
-		}
-	}
+
 	flagSet := setupFlags()
 	if err := flagSet.Parse(call[1:]); err != nil {
 		log.Printf("Error parsing arguments: %s", err)
@@ -291,19 +248,16 @@ func interpretSettings(call []string) (string, config.Settings) {
 		printVersion(os.Stderr)
 		os.Exit(0)
 	}
-
 	//set default ...
+	/*
 	if goRoot == "" {
 		goRoot = runtime.GOROOT()
 	}
+	*/
 
 	//only set it if non-default:
-	if goRoot != runtime.GOROOT() {
-		if settings.BuildSettings == nil {
-			bs := config.BuildSettingsDefault()
-			settings.BuildSettings = &bs
-		}
-		settings.BuildSettings.GoRoot = goRoot
+	if goRoot != runtime.GOROOT() && goRoot != "" {
+		settings.GoRoot = goRoot
 	}
 	//sanity check
 	if err := core.SanityCheck(goRoot); err != nil {
@@ -405,6 +359,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.PrereleaseInfo, "pi", "", "DEPRECATED option name. Use -pr instead")
 	flagSet.StringVar(&settings.BranchName, "br", "", "Branch name (use this if you've forked a repo)")
 	flagSet.StringVar(&settings.BuildName, "bu", "", "Build name (use this for pre-release builds)")
+	flagSet.StringVar(&settings.PreferredGoVersion, "goversion", "", "Preferred Go version")
 
 	flagSet.StringVar(&settings.ArtifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
 	flagSet.StringVar(&codesignId, "codesign", "", "identity to sign darwin binaries with (only applied when host OS is 'darwin')")
@@ -424,7 +379,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&tasksToRun, "tasks", "", "Tasks to run. Use `goxc -ht` for more details")
 	flagSet.StringVar(&tasksPlus, "tasks+", "", "Additional tasks to run. See -ht for tasks list")
 	flagSet.StringVar(&tasksMinus, "tasks-", "", "Tasks to exclude. See -ht for tasks list")
-	flagSet.StringVar(&goRoot, "goroot", runtime.GOROOT(), "Specify Go ROOT dir (useful when you have multiple Go installations)")
+	flagSet.StringVar(&goRoot, "goroot", "", "Specify Go ROOT dir (useful when you have multiple Go installations)")
 	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s). Equivalent to -tasks=toolchain")
 	flagSet.BoolVar(&isWriteConfig, "wc", false, "(over)write config. Overwrites are additive. Try goxc -wc to produce a starting point.")
 	flagSet.Usage = func() {

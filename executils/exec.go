@@ -102,18 +102,21 @@ func isBuildCommand(subCmd string) bool {
 func InvokeGo(workingDirectory string, subCmd string, subCmdArgs []string, env []string, settings config.Settings) error {
 	isVerbose := settings.IsVerbose()
 	fullVersionName := settings.GetFullVersionName()
-	var buildSettings config.BuildSettings
+	//var buildSettings config.BuildSettings
+	buildSettings := settings.BuildSettings
+	/*
 	if settings.BuildSettings != nil {
-		buildSettings = *settings.BuildSettings
 	} else {
-		buildSettings = config.BuildSettingsDefault()
+		buildSettings = config.BuildSettings{}
+		config.FillBuildSettingsDefaults(&buildSettings)
 	}
 	goRoot := runtime.GOROOT()
-
 	//log.Printf("using build settings (%+v)", buildSettings)
 	if buildSettings.GoRoot != "" {
-		goRoot = buildSettings.GoRoot
 	}
+	*/
+	goRoot := settings.GoRoot
+	log.Printf("build settings: %s", goRoot)
 	cmdPath := filepath.Join(goRoot, "bin", "go")
 	cmd := exec.Command(cmdPath)
 	RedirectIO(cmd)

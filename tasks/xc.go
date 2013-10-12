@@ -88,12 +88,12 @@ func runTaskXC(tp TaskParams) error {
 	return nil
 }
 
-func validateToolchain(goos, arch string) error {
-	err := validatePlatToolchainBinExists(goos, arch)
+func validateToolchain(goos, arch, goroot string) error {
+	err := validatePlatToolchainBinExists(goos, arch, goroot)
 	if err != nil {
 		return err
 	}
-	err = validatePlatToolchainPackageVersion(goos, arch)
+	err = validatePlatToolchainPackageVersion(goos, arch, goroot)
 	if err != nil {
 		return err
 	}
@@ -101,8 +101,7 @@ func validateToolchain(goos, arch string) error {
 	return nil
 }
 
-func validatePlatToolchainPackageVersion(goos, arch string) error {
-	goroot := runtime.GOROOT()
+func validatePlatToolchainPackageVersion(goos, arch, goroot string) error {
 	platPkgFileRuntime := filepath.Join(goroot , "pkg", goos+"_"+arch, "runtime.a")
 	nr, err := os.Open(platPkgFileRuntime)
 	if err != nil {
@@ -139,9 +138,14 @@ func validatePlatToolchainPackageVersion(goos, arch string) error {
 			compiledVersion := parts[4]
 			//runtimeVersion := runtime.Version()
 			//log.Printf("Runtime version: %s", runtimeVersion)
-			cmd := exec.Command("go")
+			cmdPath := filepath.Join(goroot, "bin", "go")
+			cmd := exec.Command(cmdPath)
 			args := []string{"version"}
 			err = executils.PrepareCmd(cmd, ".", args, []string{}, false)
+			if err != nil {
+				log.Printf("`go version` failed: %v", err)
+				return nil
+			}
 			goVersionOutput, err := cmd.Output()
 			if err != nil {
 				log.Printf("`go version` failed: %v", err)
@@ -159,8 +163,7 @@ func validatePlatToolchainPackageVersion(goos, arch string) error {
 	}
 }
 
-func validatePlatToolchainBinExists(goos, arch string) error {
-	goroot := runtime.GOROOT()
+func validatePlatToolchainBinExists(goos, arch, goroot string) error {
 	platGoBin := filepath.Join(goroot , "bin", goos+"_"+arch, "go")
 	if goos == runtime.GOOS && arch == runtime.GOARCH {
 
@@ -177,8 +180,9 @@ func validatePlatToolchainBinExists(goos, arch string) error {
 // 0.3.0 - breaking change - changed 'call []string' to 'workingDirectory string'.
 func xcPlat(goos, arch string, workingDirectory string, settings config.Settings, outDestRoot string, exeName string) (string, error) {
 	isValidateToolchain := settings.GetTaskSettingBool(TASK_XC, "validateToolchain")
+	goroot := settings.GoRoot
 	if isValidateToolchain {
-		err := validateToolchain(goos, arch)
+		err := validateToolchain(goos, arch, goroot)
 		if err != nil {
 			log.Printf("Toolchain not ready. Re-building toolchain. (%v)", err)
 			isAutoToolchain := settings.GetTaskSettingBool(TASK_XC, "autoRebuildToolchain")

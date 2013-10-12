@@ -129,6 +129,7 @@ func ListTasks() []Task {
 
 // run all given tasks
 func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, settings config.Settings) {
+	log.Printf("Go root: %s", settings.GoRoot)
 	if settings.IsVerbose() {
 		log.Printf("looping through each platform")
 	}
@@ -201,4 +202,30 @@ func runTask(taskName string, destPlatforms []platforms.Platform, mainDirs []str
 	}
 	log.Printf("Unrecognised task '%s'", taskName)
 	return fmt.Errorf("Unrecognised task '%s'", taskName)
+}
+
+
+func FillTaskSettingsDefaults(settings *config.Settings) {
+	if len(settings.Tasks) == 0 {
+		settings.Tasks = Aliases[TASKALIAS_DEFAULT]
+	}
+	if settings.TaskSettings == nil {
+		settings.TaskSettings = make(map[string]map[string]interface{})
+	}
+	//fill in per-task settings ...
+	for _, t := range ListTasks() {
+		if t.DefaultSettings != nil {
+			if _, keyExists := settings.TaskSettings[t.Name]; !keyExists {
+				settings.TaskSettings[t.Name] = t.DefaultSettings
+			} else {
+				//TODO go deeper still?
+				for k, v := range t.DefaultSettings {
+					taskSettings := settings.TaskSettings[t.Name]
+					if _, keyExists = taskSettings[k]; !keyExists {
+						taskSettings[k] = v
+					}
+				}
+			}
+		}
+	}
 }
