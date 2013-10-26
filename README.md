@@ -17,8 +17,9 @@ Thanks to [dchest](https://github.com/dchest) for the tidy-up and adding the zip
 
 Notable Features
 ----------------
- * (re-)building toolchain to all or selected platforms.
+ * *Automatic* (re-)building toolchain to all or selected platforms.
  * Cross-compilation, to all supported platforms.
+ * Validation of compiled binaries (did it really cross-compile?)
  * filtering on target platform (via commandline options or config file)
  * Zip (or tar.gz) archiving of cross-compiled artifacts
  * Packaging into .debs (for Debian/Ubuntu Linux)
@@ -27,11 +28,12 @@ Notable Features
  * 'downloads page' generation (markdown format).
  * Configuration files for repeatable builds. Includes support for multiple configurations per-project.
  * Per-task configuration options.
- * Override files for 'local' working-copy-specific (or branch-specific) configurations.
+ * 'Override' config files for 'local' working-copy-specific, or branch-specific, configurations.
  * Config file generation & upgrade (using -wc option).
  * go-test, go-vet, go-fmt, go-install, go-clean tasks.
  * version number interpolation during build/test/... (uses go's -ldflags compiler option)
  * support for multiple binaries per project (goxc now searches subdirectories for 'main' packages)
+ * support for multiple Go installations.
 
 Installation
 --------------
@@ -42,19 +44,15 @@ goxc requires the go source and the go toolchain.
  2. Install goxc:
 
             go get github.com/laher/goxc
-
-Basic Usage
------------
-
-### Run once
-
-To build the toolchains for all platforms:
+			
+ 3. Optional: to pre-build the toolchains for all platforms:
+	(Note that this step is now optional, because goxc now builds/rebuilds the cross-compiler toolchains automatically, as necessary)
 
        goxc -t
 
-### Now build your artifacts
 
-To build [g]zipped binaries and .debs for your app:
+Basic Usage
+-----------
 
 	cd path/to/app/dir
 	goxc
@@ -78,15 +76,15 @@ Use `goxc -h options` to list all options.
 "Tasks"
 -------
 
-goxc performs a number of operations, defined as tasks. You can specify tasks with the '-tasks=' option.
+goxc performs a number of operations, defined as 'tasks'. You can specify tasks as commandline arguments
 
- * `goxc -t` performs one task called 'toolchain'. It's the equivalent of `goxc -tasks=toolchain -d=~`
+ * `goxc -t` performs one task called 'toolchain'. It's the equivalent of `goxc -d=~ toolchain`
  * The *default* task is actually several tasks, which can be summarised as follows:
     * validate (tests the code) -> compile (cross-compiles code) -> package ([g]zips up the executables and builds a 'downloads' page)
- * You can specify one or more tasks, such as `goxc -tasks=go-fmt,xc`
+ * You can specify one or more tasks, such as `goxc go-fmt xc`
  * You can skip tasks with '-tasks-='. Skip the 'package' stage with `goxc -tasks-=package`
- * For a list of tasks and 'task aliases', run `goxc -h tasks`
- * For more info on a particular taks, run `goxc -h <taskname>`. This will also show you the configuration options available for that task.
+ * For a list of tasks and 'aliases', run `goxc -h tasks`
+ * For more info on a particular task, run `goxc -h <taskname>`. This will also show you the configuration options available for that task.
 
 Outcome
 -------
