@@ -16,10 +16,9 @@ package ar
    limitations under the License.
 */
 
-
 import (
 	"io"
-//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
+	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/executils"
 	"log"
@@ -30,12 +29,13 @@ import (
 	"strings"
 	"testing"
 )
+
 //TODO: this is commented out because it's an unfinished proof-of-concept.
 func NoTestUnAr(t *testing.T) {
 	goroot := runtime.GOROOT()
 	goos := "linux"
 	arch := "arm"
-	platPkgFileRuntime := filepath.Join(goroot , "pkg", goos+"_"+arch, "runtime.a")
+	platPkgFileRuntime := filepath.Join(goroot, "pkg", goos+"_"+arch, "runtime.a")
 	nr, err := os.Open(platPkgFileRuntime)
 	if err != nil {
 		t.Fatalf("failed: %v", err)
@@ -57,7 +57,7 @@ func NoTestUnAr(t *testing.T) {
 			}
 			tr.nb -= 50
 			log.Printf("pkgdef first part: '%s'", string(firstLine))
-			expectedPrefix := "go object "+goos+" "+arch+" "
+			expectedPrefix := "go object " + goos + " " + arch + " "
 			if !strings.HasPrefix(string(firstLine), expectedPrefix) {
 				t.Fatalf("failed: does not match '%s'", expectedPrefix)
 			}
@@ -83,4 +83,3 @@ func NoTestUnAr(t *testing.T) {
 		}
 	}
 }
-

@@ -2,7 +2,7 @@
 	"ArtifactsDest": "../goxc-pages/dl",
 	"ResourcesInclude": "README.md,.\\_test1/*",
 	"ResourcesExclude": "*.go",
-	"PackageVersion": "0.9.3",
+	"PackageVersion": "0.9.5",
 	"TaskSettings": {
 		"bintray": {
 			"downloadspage": "bintray.md",

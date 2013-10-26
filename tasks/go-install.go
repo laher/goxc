@@ -34,7 +34,7 @@ func init() {
 func runTaskGoInstall(tp TaskParams) error {
 	for _, mainDir := range tp.MainDirs {
 		err := executils.InvokeGo(mainDir, "install", []string{}, []string{}, tp.Settings)
-		if err!=nil {
+		if err != nil {
 			return err
 		}
 	}

@@ -36,7 +36,7 @@ import (
 
 var (
 	BUILD_COMMANDS = []string{"build", "install"}
-	)
+)
 
 // get list of args to be used in variable interpolation
 // ldflags are used in any to any build-related go task (install,build,test)
@@ -104,17 +104,6 @@ func InvokeGo(workingDirectory string, subCmd string, subCmdArgs []string, env [
 	fullVersionName := settings.GetFullVersionName()
 	//var buildSettings config.BuildSettings
 	buildSettings := settings.BuildSettings
-	/*
-	if settings.BuildSettings != nil {
-	} else {
-		buildSettings = config.BuildSettings{}
-		config.FillBuildSettingsDefaults(&buildSettings)
-	}
-	goRoot := runtime.GOROOT()
-	//log.Printf("using build settings (%+v)", buildSettings)
-	if buildSettings.GoRoot != "" {
-	}
-	*/
 	goRoot := settings.GoRoot
 	log.Printf("build settings: %s", goRoot)
 	cmdPath := filepath.Join(goRoot, "bin", "go")
@@ -195,7 +184,7 @@ func PrepareCmd(cmd *exec.Cmd, workingDirectory string, args []string, env []str
 	cmd.Dir = workingDirectory
 
 	//if f != nil {
-		//defer f.Close()
+	//defer f.Close()
 	//}
 	//0.7.4 env replaces os.Environ
 	cmd.Env = append(cmd.Env, env...)
@@ -244,7 +233,7 @@ func RedirectIO(cmd *exec.Cmd) {
 }
 
 func RedirectIOTo(cmd *exec.Cmd, myin io.Reader, myout, myerr io.Writer) {
-// redirect IO
+	// redirect IO
 	cmd.Stdout = myout
 	cmd.Stderr = myerr
 	cmd.Stdin = myin

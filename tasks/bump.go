@@ -51,7 +51,7 @@ func bump(tp TaskParams) error {
 		if err != nil {
 			return err
 		}
-		lastPartNum+=1
+		lastPartNum += 1
 		pvparts[len(pvparts)-1] = strconv.Itoa(lastPartNum)
 		pvNew := strings.Join(pvparts, ".")
 		c.PackageVersion = pvNew
@@ -59,4 +59,3 @@ func bump(tp TaskParams) error {
 	log.Printf("Bumping from %s to %s", pv, c.PackageVersion)
 	return config.WriteJsonConfig(tp.WorkingDirectory, c, "", false)
 }
-

@@ -23,8 +23,8 @@ import (
 	"github.com/laher/goxc/archive/ar"
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
-	"github.com/laher/goxc/exefileparse"
 	"github.com/laher/goxc/executils"
+	"github.com/laher/goxc/exefileparse"
 	"github.com/laher/goxc/platforms"
 	"io"
 	"log"
@@ -43,10 +43,10 @@ func init() {
 		"Cross compile. Builds executables for other platforms.",
 		runTaskXC,
 		map[string]interface{}{"GOARM": "",
-		//"validation" : "tcBinExists,exeParse",
-		"validateToolchain" : true,
-		"verifyExe" : true,
-		"autoRebuildToolchain" : true }})
+			//"validation" : "tcBinExists,exeParse",
+			"validateToolchain":    true,
+			"verifyExe":            true,
+			"autoRebuildToolchain": true}})
 }
 
 func runTaskXC(tp TaskParams) error {
@@ -102,7 +102,7 @@ func validateToolchain(goos, arch, goroot string) error {
 }
 
 func validatePlatToolchainPackageVersion(goos, arch, goroot string) error {
-	platPkgFileRuntime := filepath.Join(goroot , "pkg", goos+"_"+arch, "runtime.a")
+	platPkgFileRuntime := filepath.Join(goroot, "pkg", goos+"_"+arch, "runtime.a")
 	nr, err := os.Open(platPkgFileRuntime)
 	if err != nil {
 		log.Printf("Could not validate toolchain version: %v", err)
@@ -129,7 +129,7 @@ func validatePlatToolchainPackageVersion(goos, arch, goroot string) error {
 				return nil
 			}
 			//log.Printf("pkgdef first part: '%s'", firstLine)
-			expectedPrefix := "go object "+goos+" "+arch+" "
+			expectedPrefix := "go object " + goos + " " + arch + " "
 			if !strings.HasPrefix(firstLine, expectedPrefix) {
 				log.Printf("first line of __.PKGDEF does not match expected pattern: %v", expectedPrefix)
 				return nil
@@ -155,7 +155,7 @@ func validatePlatToolchainPackageVersion(goos, arch, goroot string) error {
 			goVersionOutputParts := strings.Split(string(goVersionOutput), " ")
 			goVersion := goVersionOutputParts[2]
 			if compiledVersion != goVersion {
-				return errors.New("static library version '"+compiledVersion+"' does NOT match `go version` '"+goVersion+"'!")
+				return errors.New("static library version '" + compiledVersion + "' does NOT match `go version` '" + goVersion + "'!")
 			}
 			log.Printf("Toolchain version '%s' verified against 'go' executable version '%s'", compiledVersion, goVersion)
 			return nil
@@ -164,10 +164,10 @@ func validatePlatToolchainPackageVersion(goos, arch, goroot string) error {
 }
 
 func validatePlatToolchainBinExists(goos, arch, goroot string) error {
-	platGoBin := filepath.Join(goroot , "bin", goos+"_"+arch, "go")
+	platGoBin := filepath.Join(goroot, "bin", goos+"_"+arch, "go")
 	if goos == runtime.GOOS && arch == runtime.GOARCH {
 
-		platGoBin = filepath.Join(goroot , "bin", "go")
+		platGoBin = filepath.Join(goroot, "bin", "go")
 	}
 	if goos == platforms.WINDOWS {
 		platGoBin += ".exe"

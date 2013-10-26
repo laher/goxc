@@ -204,7 +204,6 @@ func runTask(taskName string, destPlatforms []platforms.Platform, mainDirs []str
 	return fmt.Errorf("Unrecognised task '%s'", taskName)
 }
 
-
 func FillTaskSettingsDefaults(settings *config.Settings) {
 	if len(settings.Tasks) == 0 {
 		settings.Tasks = Aliases[TASKALIAS_DEFAULT]

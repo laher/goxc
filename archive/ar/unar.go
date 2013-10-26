@@ -21,11 +21,11 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"math"
 	"log"
+	"math"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 /* example showing ar file entries ...
@@ -36,17 +36,17 @@ control.tar.gz  1282478016  0     0     100644  444       `
 .....binary-data.....
 */
 const (
-	blockSize = 512
-	headerSize = 60
+	blockSize    = 512
+	headerSize   = 60
 	arHeaderSize = 8
 
 	fileNameSize = 16
-	modTimeSize = 12
-	uidSize = 6
-	gidSize = 6
-	modeSize = 8
-	sizeSize = 10
-	magicSize = 2
+	modTimeSize  = 12
+	uidSize      = 6
+	gidSize      = 6
+	modeSize     = 8
+	sizeSize     = 10
+	magicSize    = 2
 )
 
 var (
@@ -58,22 +58,21 @@ type Reader struct {
 	r   io.Reader
 	err error
 	nb  int64 // number of unread bytes for current file entry
-	pad bool // whether the file will be padded an extra byte (i.e. if ther's an odd number of bytes in the file)
+	pad bool  // whether the file will be padded an extra byte (i.e. if ther's an odd number of bytes in the file)
 }
 
 type Header struct {
-        // Name is the name of the file.
-        // It must be a relative path: it must not start with a drive
-        // letter (e.g. C:) or leading slash, and only forward slashes
-        // are allowed.
-        Name		   string
-        ModTime       string
+	// Name is the name of the file.
+	// It must be a relative path: it must not start with a drive
+	// letter (e.g. C:) or leading slash, and only forward slashes
+	// are allowed.
+	Name    string
+	ModTime string
 	Uid     string
-	Gid	string
-        Mode    string
-        Size int64
+	Gid     string
+	Mode    string
+	Size    int64
 }
-
 
 type slicer []byte
 
@@ -82,6 +81,7 @@ func (sp *slicer) next(n int) (b []byte) {
 	b, *sp = s[0:n], s[n:]
 	return
 }
+
 // NewReader creates a new Reader reading from r.
 func NewReader(r io.Reader) (*Reader, error) {
 	tr := &Reader{r: r}
@@ -101,7 +101,7 @@ func (tr *Reader) skipUnread() {
 	nr := tr.nb // number of bytes to skip
 	if tr.pad {
 		nr += int64(1)
-		tr.pad= false
+		tr.pad = false
 	}
 	tr.nb = 0
 	if sr, ok := tr.r.(io.Seeker); ok {
@@ -225,4 +225,3 @@ func (tr *Reader) readHeader() *Header {
 	}
 	return hdr
 }
-

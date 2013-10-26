@@ -67,6 +67,7 @@ func LoadJsonConfigs(dir string, configs []string, verbose bool) (Settings, erro
 	}
 	return loadSettingsSection(mergedSettingsMap)
 }
+
 //0.5.6 provide more detail about errors (syntax errors for now)
 func printErrorDetails(rawJson []byte, err error) {
 	switch typedErr := err.(type) {
@@ -101,7 +102,7 @@ func validateRawJson(rawJson []byte, fileName string) []error {
 	rejectOldTaskDefinitions := false
 	//it was known as 'FormatVersion' until v0.9
 	if fv, keyExists := m["FormatVersion"]; keyExists {
-			m["ConfigVersion"] = fv
+		m["ConfigVersion"] = fv
 	}
 	if fv, keyExists := m["ConfigVersion"]; keyExists {
 		configVersion := fv.(string)

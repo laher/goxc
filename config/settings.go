@@ -84,12 +84,11 @@ type Settings struct {
 	//v0.9, to replace 'FormatVersion'
 	BuildSettings *BuildSettings `json:",omitempty"`
 
-	//TODO!!
-	PreferredGoVersion string `json:",omitempty"` //try to use a go version...
-	GoRoot string `json:"-"` //only settable by a flag
+	GoRoot             string `json:"-"`          //only settable by a flag
+
+	//TODO?
+	//PreferredGoVersion string `json:",omitempty"` //try to use a go version...
 }
-
-
 
 func (s Settings) IsVerbose() bool {
 	return s.Verbosity == core.VERBOSITY_VERBOSE

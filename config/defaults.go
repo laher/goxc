@@ -1,17 +1,14 @@
 package config
 
-
 import (
 	"github.com/laher/goxc/core"
 	"log"
 	"runtime"
-	)
-
+)
 
 func FillBuildSettingsDefaults(bs *BuildSettings) {
-	bs.LdFlagsXVars = &map[string]interface{}{"TimeNow" : "main.BUILD_DATE", "Version" : "main.VERSION" }
+	bs.LdFlagsXVars = &map[string]interface{}{"TimeNow": "main.BUILD_DATE", "Version": "main.VERSION"}
 }
-
 
 //TODO fulfil all defaults
 func FillSettingsDefaults(settings *Settings) {
@@ -34,4 +31,3 @@ func FillSettingsDefaults(settings *Settings) {
 		settings.GoRoot = runtime.GOROOT()
 	}
 }
-

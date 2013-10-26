@@ -250,9 +250,9 @@ func interpretSettings(call []string) (string, config.Settings) {
 	}
 	//set default ...
 	/*
-	if goRoot == "" {
-		goRoot = runtime.GOROOT()
-	}
+		if goRoot == "" {
+			goRoot = runtime.GOROOT()
+		}
 	*/
 
 	//only set it if non-default:
@@ -359,7 +359,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.PrereleaseInfo, "pi", "", "DEPRECATED option name. Use -pr instead")
 	flagSet.StringVar(&settings.BranchName, "br", "", "Branch name (use this if you've forked a repo)")
 	flagSet.StringVar(&settings.BuildName, "bu", "", "Build name (use this for pre-release builds)")
-	flagSet.StringVar(&settings.PreferredGoVersion, "goversion", "", "Preferred Go version")
+//	flagSet.StringVar(&settings.PreferredGoVersion, "goversion", "", "Preferred Go version")
 
 	flagSet.StringVar(&settings.ArtifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
 	flagSet.StringVar(&codesignId, "codesign", "", "identity to sign darwin binaries with (only applied when host OS is 'darwin')")

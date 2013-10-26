@@ -109,7 +109,7 @@ func getArmArchName(settings config.Settings) string {
 
 func debBuild(destOs, destArch string, tp TaskParams) (err error) {
 	metadata := tp.Settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata")
-	armArchName :=getArmArchName(tp.Settings)
+	armArchName := getArmArchName(tp.Settings)
 	metadataDeb := tp.Settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata-deb")
 	rmtemp := tp.Settings.GetTaskSettingBool(TASK_PKG_BUILD, "rmtemp")
 	debDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName()) //v0.8.1 dont use platform dir

@@ -27,7 +27,6 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 )
 
 //runs automatically
@@ -78,7 +77,7 @@ func runTaskToolchain(tp TaskParams) error {
 
 // Build toolchain for a given target platform
 func buildToolchain(goos string, arch string, settings config.Settings) error {
-	goroot := runtime.GOROOT()
+	goroot := settings.GoRoot
 	scriptpath := core.GetMakeScriptPath(goroot)
 	cmd := exec.Command(scriptpath)
 	cmd.Dir = filepath.Join(goroot, "src")
