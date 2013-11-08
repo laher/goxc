@@ -20,6 +20,7 @@ import (
 	"archive/zip"
 	"io"
 	"os"
+	"strings"
 )
 
 //TODO: folder support
@@ -54,7 +55,8 @@ func addFileToZIP(zw *zip.Writer, item ArchiveItem) (err error) {
 		return
 	}
 	header.Method = zip.Deflate
-	header.Name = item.ArchivePath
+	//always use forward slashes even on Windows
+	header.Name = strings.Replace(item.ArchivePath, "\\", "/", -1)
 	w, err := zw.CreateHeader(header)
 	if err != nil {
 		zw.Close()

@@ -22,6 +22,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // TarGz implementation of Archiver.
@@ -72,7 +73,8 @@ func TarGzWrite(item ArchiveItem, tw *tar.Writer, fi os.FileInfo) (err error) {
 		}
 	} else {
 		h := new(tar.Header)
-		h.Name = item.ArchivePath
+		//backslash-only paths
+		h.Name = strings.Replace(item.ArchivePath, "\\", "/", -1)
 		h.Size = int64(len(item.Data))
 		err = tw.WriteHeader(h)
 		if err == nil {
