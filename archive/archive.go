@@ -45,21 +45,35 @@ func ArchiveItemFromBytes(data []byte, archivePath string) ArchiveItem {
 type Archiver func(archiveFilename string, itemsToArchive []ArchiveItem) error
 
 // goxc function to archive a binary along with supporting files (e.g. README or LICENCE).
-func ArchiveBinariesAndResources(outDir, platName string, binPaths []string, appName string, resources []string, settings config.Settings, archiver Archiver, ending string) (zipFilename string, err error) {
-	var zipDir string
+func ArchiveBinariesAndResources(outDir, platName string, binPaths []string, appName string, resources []string, settings config.Settings, archiver Archiver, ending string, includeTopLevelDir bool) (zipFilename string, err error) {
+	var zipName string
 	if settings.PackageVersion != "" && settings.PackageVersion != core.PACKAGE_VERSION_DEFAULT {
 		//0.1.6 using appname_version_platform. See issue 3
-		zipDir = appName + "_" + settings.GetFullVersionName() + "_" + platName
+		zipName = appName + "_" + settings.GetFullVersionName() + "_" + platName
 	} else {
-		zipDir = appName + "_" + platName
+		zipName = appName + "_" + platName
 	}
-	zipFilename = zipDir + "." + ending
+	zipFilename = zipName + "." + ending
+	var zipDir string
+	if includeTopLevelDir {
+		zipDir = zipName
+	} else {
+		zipDir = ""
+	}
 	toArchive := []ArchiveItem{}
 	for _, binPath := range binPaths {
-		toArchive = append(toArchive, ArchiveItemFromFileSystem(binPath, filepath.Join(zipDir, filepath.Base(binPath))))
+		destFile := filepath.Base(binPath)
+		if zipDir != "" {
+			destFile = filepath.Join(zipDir, destFile)
+		}
+		toArchive = append(toArchive, ArchiveItemFromFileSystem(binPath, destFile))
 	}
 	for _, resource := range resources {
-		toArchive = append(toArchive, ArchiveItemFromFileSystem(resource, filepath.Join(zipDir, resource)))
+		destFile := filepath.Base(resource)
+		if zipDir != "" {
+			destFile = filepath.Join(zipDir, destFile)
+		}
+		toArchive = append(toArchive, ArchiveItemFromFileSystem(resource, destFile))
 	}
 	err = archiver(filepath.Join(outDir, zipFilename), toArchive)
 	return

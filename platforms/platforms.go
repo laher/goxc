@@ -82,6 +82,15 @@ func getSupportedPlatforms() []Platform {
 	return SUPPORTED_PLATFORMS_1_1
 }
 
+func ContainsPlatform(haystack []Platform, needle Platform) bool {
+	for _, p := range haystack {
+		if p.Os == needle.Os && p.Arch == needle.Arch {
+			return true
+		}
+	}
+	return false
+}
+
 // interpret list of destination platforms (based on os & arch settings)
 //0.5 add support for space delimiters (similar to BuildConstraints)
 //0.5 add support for different oses/services

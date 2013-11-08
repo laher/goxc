@@ -225,10 +225,10 @@ func interpretSettings(call []string) (string, config.Settings) {
 		//0.5.0 using Tasks instead of ArtifactTypes
 		if isCliZipArchives == "true" || isCliZipArchives == "t" {
 			//settings.ArtifactTypes = []string{core.ARTIFACT_TYPE_ZIP}
-			settings.Tasks = remove(settings.TasksExclude, tasks.TASK_ARCHIVE)
-			settings.Tasks = appendIfMissing(settings.Tasks, tasks.TASK_ARCHIVE)
+			settings.Tasks = remove(settings.TasksExclude, tasks.TASKALIAS_ARCHIVE)
+			settings.Tasks = appendIfMissing(settings.Tasks, tasks.TASKALIAS_ARCHIVE)
 		} else if isCliZipArchives == "false" || isCliZipArchives == "f" {
-			settings.TasksExclude = appendIfMissing(settings.TasksExclude, tasks.TASK_ARCHIVE)
+			settings.TasksExclude = appendIfMissing(settings.TasksExclude, tasks.TASKALIAS_ARCHIVE)
 		}
 		//TODO use Setting
 		if codesignId != "" {
