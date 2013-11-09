@@ -2,8 +2,9 @@
 	"ArtifactsDest": "../goxc-pages/dl",
 	"ResourcesInclude": "README.md,.\\_test1/*",
 	"ResourcesExclude": "*.go",
-	"PackageVersion": "0.9.7",
+	"PackageVersion": "0.9.8",
 	"TaskSettings": {
+		"archive-zip": {},
 		"bintray": {
 			"downloadspage": "bintray.md",
 			"package": "goxc",
@@ -26,6 +27,9 @@
 				"Depends": "golang",
 				"Homepage": "https://github.com/laher/goxc"
 			}
+		},
+		"xc": {
+			"test-setting": "test-value"
 		}
 	},
 	"ConfigVersion": "0.9",

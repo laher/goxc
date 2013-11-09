@@ -19,6 +19,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -184,6 +185,46 @@ func goXC(call []string) {
 		tasks.RunTasks(workingDirectory, destPlatforms, settings)
 	}
 }
+func parseCliTasksAndTaskSettings(args []string) ([]string, map[string]map[string]interface{}, error) {
+	tasks := []string{}
+	taskSettings := map[string]map[string]interface{}{}
+	lastArg := ""
+	lastKey := ""
+	for _, arg := range args {
+		if lastKey != "" {
+			taskSettings[lastArg][lastKey] = arg
+			lastKey = ""
+		} else if strings.HasPrefix(arg, "-") {
+			taskSettings[lastArg] = map[string]interface{}{}
+			if strings.Contains(arg, "=") {
+				splut := strings.Split(arg, "=")
+				key := splut[0][1:]
+				//strip double-hyphen
+				if strings.HasPrefix(key, "-") {
+					key = key[1:]
+				}
+				val := splut[1]
+				taskSettings[lastArg][key] = val
+			} else {
+				key := arg[1:]
+				//strip double-hyphen
+				if strings.HasPrefix(key, "-") {
+					key = key[1:]
+				}
+				lastKey = key
+			}
+			
+		} else {
+			tasks = append(tasks, arg)
+			lastArg = arg
+		}
+	}
+	if lastKey != "" {
+		return tasks, taskSettings, errors.New("Received a task setting with no value. Please at least use empty quotes")
+	}
+	//log.Printf("TaskSettings: %+v", taskSettings)
+	return tasks, taskSettings, nil
+}
 
 func interpretSettings(call []string) (string, config.Settings) {
 
@@ -200,10 +241,18 @@ func interpretSettings(call []string) (string, config.Settings) {
 		if isVerbose {
 			settings.Verbosity = core.VERBOSITY_VERBOSE
 		}
-		//0.6 use args. Parse into slice.
-		settings.Tasks = flagSet.Args()
 
-		//0.6 merge after tasks
+		//0.6 use args. Parse into slice.
+		//settings.Tasks = flagSet.Args()
+
+		//0.10.x: per-task flags
+		settings.Tasks, settings.TaskSettings, err = parseCliTasksAndTaskSettings(flagSet.Args())
+		if err != nil {
+			log.Printf("Error parsing arguments: %s", err)
+			os.Exit(1)
+		}
+
+		//the tasksToRun (-tasks=) flag is only kept incase people used it originally. To be taken out eventually
 		if tasksToRun != "" {
 			tasksToRunSlice := strings.FieldsFunc(tasksToRun, func(r rune) bool { return r == ',' || r == ' ' })
 			settings.Tasks = append(settings.Tasks, tasksToRunSlice...)
@@ -301,6 +350,7 @@ func interpretSettings(call []string) (string, config.Settings) {
 	log.Printf("Working directory: '%s', Config name: '%s'", workingDirectory, configName)
 
 	settings, err := mergeConfiguredSettings(workingDirectory, configName, !isWriteConfig)
+	log.Printf("TaskSettings: %+v", settings.TaskSettings)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			log.Printf("Configuration file error. %s", err.Error())
@@ -348,7 +398,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (default is all - \"linux darwin windows freebsd openbsd\")")
 	flagSet.StringVar(&settings.Arch, "arch", "", "Specify Arch (default is all - \"386 amd64 arm\")")
 
-	//TODO introduce and implement in time for 0.6
+	//v0.6
 	flagSet.StringVar(&settings.BuildConstraints, "bc", "", "Specify build constraints (e.g. 'linux,arm windows')")
 
 	flagSet.StringVar(&workingDirectoryFlag, "wd", "", "Specify directory to work on")
