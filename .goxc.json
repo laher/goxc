@@ -1,8 +1,11 @@
 {
 	"ArtifactsDest": "../goxc-pages/dl",
+	"Tasks": [
+		"xc"
+	],
 	"ResourcesInclude": "README.md,.\\_test1/*",
 	"ResourcesExclude": "*.go",
-	"PackageVersion": "0.9.9",
+	"PackageVersion": "0.10.1",
 	"TaskSettings": {
 		"archive-zip": {},
 		"bintray": {
