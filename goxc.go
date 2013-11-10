@@ -117,7 +117,7 @@ func printHelpTopic(flagSet *flag.FlagSet, topic string) {
 					if err != nil {
 						fmt.Fprintf(os.Stderr, "Error displaying TaskSettings info %v\n", err)
 					} else {
-						fmt.Fprintf(os.Stderr, "Available flags/settings for this task:\n \"TaskSettings\": %s \n", string(out))
+						fmt.Fprintf(os.Stderr, "Default settings for this task (JSON-formatted):\n \"TaskSettings\": %s \n", string(out))
 					}
 				} else {
 					fmt.Fprintf(os.Stderr, "TaskSettings:\n No TaskSettings available for '%s'\n", task.Name)
