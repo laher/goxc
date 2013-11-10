@@ -21,7 +21,7 @@ Notable Features
  	* Validation of toolchain & verification of cross-compiled artifacts
  	* Specify target platform, via 'Build Constraint'-like syntax (via commandline flag e.g. `-bc="windows linux,!arm"`, or via config)
  * *Automatic* (re-)building toolchain to all or specified platforms.
- * 'task' based invocation, similar to 'make' or 'ant'.
+ * 'task' based invocation, similar to 'make' or 'ant'. e.g. `goxc xc` or `goxc clean go-test` 
 	* The 'default' task alias will, test, cross-compile, verify, package up your artifacts for each platform, and generate a 'downloads page' with links to each platform. 
  	* Various go tools available via tasks: `go-test`, `go-vet`, `go-fmt`, `go-install`, `go-clean`.
 	* You can modify task behaviour via configuration or commandline flags.
