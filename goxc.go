@@ -57,7 +57,8 @@ var (
 	isHelpTasks          bool
 	isBuildToolchain     bool
 	tasksToRun           string
-	tasksPlus            string
+	tasksAppend          string
+	tasksPrepend         string
 	tasksMinus           string
 	isCliZipArchives     string
 	codesignId           string
@@ -114,12 +115,12 @@ func printHelpTopic(flagSet *flag.FlagSet, topic string) {
 				if task.DefaultSettings != nil {
 					out, err := json.MarshalIndent(map[string]map[string]interface{}{task.Name: task.DefaultSettings}, "", "\t")
 					if err != nil {
-						fmt.Fprintf(os.Stderr, "Error displaying TaskConfig info %v\n", err)
+						fmt.Fprintf(os.Stderr, "Error displaying TaskSettings info %v\n", err)
 					} else {
-						fmt.Fprintf(os.Stderr, "TaskConfig:\n\"TaskConfig\": %s \n", string(out))
+						fmt.Fprintf(os.Stderr, "Available flags/settings for this task:\n \"TaskSettings\": %s \n", string(out))
 					}
 				} else {
-					fmt.Fprintf(os.Stderr, "TaskConfig:\n No TaskConfig available for '%s'\n", task.Name)
+					fmt.Fprintf(os.Stderr, "TaskSettings:\n No TaskSettings available for '%s'\n", task.Name)
 
 				}
 				return
@@ -145,7 +146,6 @@ func printVersion(output *os.File) {
 
 //merge configuration file
 //maybe oneday: parse source
-//TODO honour build flags ? (build flags are per-file rather than per-package, so not sure how this might work)
 func mergeConfiguredSettings(dir string, configName string, useLocal bool) (config.Settings, error) {
 	if settings.IsVerbose() {
 		log.Printf("loading configured settings")
@@ -213,7 +213,7 @@ func parseCliTasksAndTaskSettings(args []string) ([]string, map[string]map[strin
 				}
 				lastKey = key
 			}
-			
+
 		} else {
 			tasks = append(tasks, arg)
 			lastArg = arg
@@ -257,10 +257,11 @@ func interpretSettings(call []string) (string, config.Settings) {
 			tasksToRunSlice := strings.FieldsFunc(tasksToRun, func(r rune) bool { return r == ',' || r == ' ' })
 			settings.Tasks = append(settings.Tasks, tasksToRunSlice...)
 		}
-
-		//TODO permit/recommend spaces
-		if tasksPlus != "" {
-			settings.TasksAppend = strings.FieldsFunc(tasksPlus, func(r rune) bool { return r == ',' || r == ' ' })
+		if tasksPrepend != "" {
+			settings.TasksPrepend = strings.FieldsFunc(tasksPrepend, func(r rune) bool { return r == ',' || r == ' ' })
+		}
+		if tasksAppend != "" {
+			settings.TasksAppend = strings.FieldsFunc(tasksAppend, func(r rune) bool { return r == ',' || r == ' ' })
 		}
 		if tasksMinus != "" {
 			settings.TasksExclude = strings.Split(tasksMinus, ",")
@@ -279,7 +280,6 @@ func interpretSettings(call []string) (string, config.Settings) {
 		} else if isCliZipArchives == "false" || isCliZipArchives == "f" {
 			settings.TasksExclude = appendIfMissing(settings.TasksExclude, tasks.TASKALIAS_ARCHIVE)
 		}
-		//TODO use Setting
 		if codesignId != "" {
 			settings.SetTaskSetting(tasks.TASK_CODESIGN, "id", codesignId)
 		}
@@ -409,12 +409,12 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.PrereleaseInfo, "pi", "", "DEPRECATED option name. Use -pr instead")
 	flagSet.StringVar(&settings.BranchName, "br", "", "Branch name (use this if you've forked a repo)")
 	flagSet.StringVar(&settings.BuildName, "bu", "", "Build name (use this for pre-release builds)")
-//	flagSet.StringVar(&settings.PreferredGoVersion, "goversion", "", "Preferred Go version")
+	//	flagSet.StringVar(&settings.PreferredGoVersion, "goversion", "", "Preferred Go version")
 
 	flagSet.StringVar(&settings.ArtifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
 	flagSet.StringVar(&codesignId, "codesign", "", "identity to sign darwin binaries with (only applied when host OS is 'darwin')")
 
-	flagSet.StringVar(&resourcesInclude, "include", "", "Include resources in archives (default="+core.RESOURCES_INCLUDE_DEFAULT+")") //TODO: Add resources to non-zips & downloads.md
+	flagSet.StringVar(&resourcesInclude, "include", "", "Include resources in archives (default="+core.RESOURCES_INCLUDE_DEFAULT+")")
 
 	//0.2.0 Not easy to 'merge' boolean config items. More flexible to translate them to string options anyway
 	flagSet.BoolVar(&isHelp, "h", false, "Help - options")
@@ -427,8 +427,9 @@ func setupFlags() *flag.FlagSet {
 	flagSet.BoolVar(&isVerbose, "v", false, "Verbose")
 	flagSet.StringVar(&isCliZipArchives, "z", "", "DEPRECATED (use archive & rmbin tasks instead): create ZIP archives instead of directories (true/false. default=true)")
 	flagSet.StringVar(&tasksToRun, "tasks", "", "Tasks to run. Use `goxc -ht` for more details")
-	flagSet.StringVar(&tasksPlus, "tasks+", "", "Additional tasks to run. See -ht for tasks list")
-	flagSet.StringVar(&tasksMinus, "tasks-", "", "Tasks to exclude. See -ht for tasks list")
+	flagSet.StringVar(&tasksPrepend, "+tasks", "", "Additional tasks to run first. See '-help tasks' for tasks list")
+	flagSet.StringVar(&tasksAppend, "tasks+", "", "Additional tasks to run last. See '-help tasks' for tasks list")
+	flagSet.StringVar(&tasksMinus, "tasks-", "", "Tasks to exclude. See '-help tasks' for tasks list")
 	flagSet.StringVar(&goRoot, "goroot", "", "Specify Go ROOT dir (useful when you have multiple Go installations)")
 	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s). Equivalent to -tasks=toolchain")
 	flagSet.BoolVar(&isWriteConfig, "wc", false, "(over)write config. Overwrites are additive. Try goxc -wc to produce a starting point.")
@@ -439,8 +440,8 @@ func setupFlags() *flag.FlagSet {
 }
 
 func printOptions(flagSet *flag.FlagSet) {
-	fmt.Print("Options:\n")
-	taskOptions := []string{"t", "tasks+", "tasks-"}
+	fmt.Print("Help Options:\n")
+	taskOptions := []string{"t", "tasks+", "tasks-", "+tasks"}
 	packageVersioningOptions := []string{"pv", "pi", "br", "bu"}
 	deprecatedOptions := []string{"av", "z", "tasks", "h-tasks", "help-tasks", "ht"} //still work but not mentioned
 	platformOptions := []string{"os", "arch", "bc"}
@@ -452,6 +453,12 @@ func printOptions(flagSet *flag.FlagSet) {
 	fmt.Printf("  -ht            Help - show tasks (and task aliases)\n")
 	fmt.Printf("  -version       %s\n", flagSet.Lookup("version").Usage)
 	fmt.Printf("  -v             %s\n", flagSet.Lookup("v").Usage)
+
+	fmt.Print("Help Topics:\n")
+	fmt.Printf("  options 	    default)\n")
+	fmt.Printf("  tasks         lists all tasks and aliases\n")
+	fmt.Printf("  <task-name>   task description, task options, and default values\n")
+	fmt.Printf("  <alias-name>  lists an alias's task(s)\n")
 
 	//tasks
 	fmt.Printf("Tasks options:\n")

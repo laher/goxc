@@ -44,9 +44,9 @@ const (
 	TASK_CODESIGN   = "codesign"
 
 	TASK_COPY_RESOURCES = "copy-resources"
-	TASK_ARCHIVE_ZIP        = "archive-zip"
-	TASK_ARCHIVE_TAR_GZ        = "archive-tar-gz"
-	TASK_REMOVE_BIN     = "rmbin"   //after zipping
+	TASK_ARCHIVE_ZIP    = "archive-zip"
+	TASK_ARCHIVE_TAR_GZ = "archive-tar-gz"
+	TASK_REMOVE_BIN     = "rmbin" //after zipping
 	TASK_DOWNLOADS_PAGE = "downloads-page"
 
 	TASK_PKG_BUILD = "pkg-build"
@@ -144,9 +144,14 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 	exclusions := ResolveAliases(settings.TasksExclude)
 	appends := ResolveAliases(settings.TasksAppend)
 	mains := ResolveAliases(settings.Tasks)
-	mains = append(mains, appends...)
+	all := ResolveAliases(settings.TasksPrepend)
+	log.Printf("prepending %v", all)
+	all = append(all, mains...)
+	all = append(all, appends...)
+
+	//exclude by resolved task names (not by aliases)
 	tasksToRun := []string{}
-	for _, taskName := range mains {
+	for _, taskName := range all {
 		if !core.ContainsString(exclusions, taskName) {
 			tasksToRun = append(tasksToRun, taskName)
 		}
@@ -178,12 +183,6 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 			log.Printf("Found 'main package' dirs (len %d): %v", len(mainDirs), mainDirs)
 		}
 	}
-	/*
-		if len(mainDirs) == 0 {
-			mainDirs = []string{workingDirectory}
-			log.Printf("No 'main package' dirs found. Defaulting to %v", mainDirs)
-		}
-	*/
 	log.Printf("Running tasks: %v on packages %v", tasksToRun, mainDirs)
 	for _, taskName := range tasksToRun {
 		log.SetPrefix("[goxc:" + taskName + "] ")

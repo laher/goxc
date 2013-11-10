@@ -35,12 +35,12 @@ func init() {
 		"archive-zip",
 		"Create a zip archive. By default, 'zip' format is used for all platforms except Linux",
 		runTaskArchiveZip,
-		map[string]interface{}{"platforms" : "!linux", "include-top-level-dir": "!windows"}})
+		map[string]interface{}{"platforms": "!linux", "include-top-level-dir": "!windows"}})
 	Register(Task{
 		"archive-tar-gz",
 		"Create a compressed archive. Linux-only by default",
 		runTaskArchiveTarGz,
-		map[string]interface{}{"platforms" : "linux", "include-top-level-dir": "!windows"}})
+		map[string]interface{}{"platforms": "linux", "include-top-level-dir": "!windows"}})
 
 }
 
@@ -95,12 +95,12 @@ func archivePlat(goos, arch string, mainDirs []string, appName, workingDirectory
 		relativeBin := core.GetRelativeBin(goos, arch, exeName, false, settings.GetFullVersionName())
 		exes = append(exes, filepath.Join(outDestRoot, relativeBin))
 	}
-	outDir :=filepath.Join(outDestRoot, settings.GetFullVersionName())
+	outDir := filepath.Join(outDestRoot, settings.GetFullVersionName())
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
 		return err
 	}
-	archivePath, err := archive.ArchiveBinariesAndResources( outDir, goos+"_"+arch,
+	archivePath, err := archive.ArchiveBinariesAndResources(outDir, goos+"_"+arch,
 		exes, appName, resources, settings, archiver, ending, includeTopLevelDir)
 	if err != nil {
 		log.Printf("ZIP error: %s", err)

@@ -47,8 +47,10 @@ type Settings struct {
 	//0.5.0 adding exclusions. Easier for dealing with aliases. (e.g. Tasks=[default], TasksExclude=[rmbin] is easier than specifying individual tasks)
 	TasksExclude []string `json:",omitempty"`
 
-	//0.5.0 adding extra tasks. TODO (maybe) - prepend
+	//0.5.0 adding extra tasks.
 	TasksAppend []string `json:",omitempty"`
+	//0.9.9 adding 'prepend'
+	TasksPrepend []string `json:",omitempty"`
 
 	//0.6 complement Os/Arch with BuildConstraints
 	Arch string `json:",omitempty"`
@@ -84,7 +86,7 @@ type Settings struct {
 	//v0.9, to replace 'FormatVersion'
 	BuildSettings *BuildSettings `json:",omitempty"`
 
-	GoRoot             string `json:"-"`          //only settable by a flag
+	GoRoot string `json:"-"` //only settable by a flag
 
 	//TODO?
 	//PreferredGoVersion string `json:",omitempty"` //try to use a go version...
@@ -239,6 +241,10 @@ func Merge(high Settings, low Settings) Settings {
 	//0.6 fixed missing 'merge'
 	if len(high.TasksAppend) == 0 {
 		high.TasksAppend = low.TasksAppend
+	}
+	//0.10 adding 'prepend'
+	if len(high.TasksPrepend) == 0 {
+		high.TasksPrepend = low.TasksPrepend
 	}
 	if len(high.TasksExclude) == 0 {
 		high.TasksExclude = low.TasksExclude

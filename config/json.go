@@ -241,6 +241,8 @@ func loadSettingsSection(settingsSection map[string]interface{}) (settings Setti
 			settings.TasksExclude, err = typeutils.ToStringSlice(v, k)
 		case "TasksAppend":
 			settings.TasksAppend, err = typeutils.ToStringSlice(v, k)
+		case "TasksPrepend":
+			settings.TasksPrepend, err = typeutils.ToStringSlice(v, k)
 		case "ArtifactsDest":
 			settings.ArtifactsDest, err = typeutils.ToString(v, k)
 		case "Arch":
