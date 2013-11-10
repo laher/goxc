@@ -17,22 +17,28 @@ Thanks to [dchest](https://github.com/dchest) for the tidy-up and adding the zip
 
 Notable Features
 ----------------
- * Cross-compilation, to all supported platforms.
+ * Cross-compilation, to all supported platforms, or a specified subset.
  	* Validation of toolchain & verification of cross-compiled artifacts
- * filtering target platform, using build-constraint-like syntax (via commandline flags or config)
- * *Automatic* (re-)building toolchain to all or selected platforms.
+ 	* Specify target platform, via 'Build Constraint'-like syntax (via commandline flag e.g. `-bc="windows linux,!arm"`, or via config)
+ * *Automatic* (re-)building toolchain to all or specified platforms.
+ * 'task' based invocation, similar to 'make' or 'ant'.
+	* The 'default' task alias will, test, cross-compile, verify, package up your artifacts for each platform, and generate a 'downloads page' with links to each platform. 
+ 	* Various go tools available via tasks: `go-test`, `go-vet`, `go-fmt`, `go-install`, `go-clean`.
+	* You can modify task behaviour via configuration or commandline flags.
  * JSON-based configuration files for repeatable builds. 
  	* Most config data can be written via flags (using -wc option) - less JSON fiddliness.
 	* Includes support for multiple configurations per-project.
  	* Per-task configuration options.
 	* 'Override' config files for 'local environment' - working-copy-specific, or branch-specific, configurations.
- * Runs `go test` go-vet, go-fmt, go-install, go-clean tasks.
  * Packaging & distribution
  	* Zip (or tar.gz) archiving of cross-compiled artifacts & accompanying resources (READMEs etc)
  	* Packaging into .debs (for Debian/Ubuntu Linux)
  	* bintray.com integration (deploys binaries to bintray.com). *bintray.com registration required*
  	* 'downloads page' generation (markdown/html format; templatable).
- * version number interpolation at compile-time (uses go's `-ldflags` compiler option to populate given constants or global variables with build version or build date)
+ * Versioning:
+	* track your version number via configuration data.
+	* version number interpolation at compile-time (uses go's `-ldflags` compiler option to populate given constants or global variables with build version or build date)
+	* the `bump` task facilitates increasing the app version number.
  * support for multiple binaries per project (goxc now searches subdirectories for 'main' packages)
  * support for multiple Go installations - choose at runtime with `-goroot=` flag.
 
