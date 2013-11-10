@@ -66,6 +66,7 @@ var (
 	isWriteConfig        bool
 	isVerbose            bool
 	workingDirectoryFlag string
+	buildConstraints     string
 	resourcesInclude     string
 )
 
@@ -283,6 +284,11 @@ func interpretSettings(call []string) (string, config.Settings) {
 		if codesignId != "" {
 			settings.SetTaskSetting(tasks.TASK_CODESIGN, "id", codesignId)
 		}
+		if buildConstraints != "" {
+			//strip single-quotes because these come from the shell and break ApplyBuildConstraints
+			buildConstraints = strings.Replace(buildConstraints, "'", "", -1)
+			settings.BuildConstraints = buildConstraints
+		}
 	}
 	if isHelp {
 		printHelp(flagSet)
@@ -399,7 +405,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.Arch, "arch", "", "Specify Arch (default is all - \"386 amd64 arm\")")
 
 	//v0.6
-	flagSet.StringVar(&settings.BuildConstraints, "bc", "", "Specify build constraints (e.g. 'linux,arm windows')")
+	flagSet.StringVar(&buildConstraints, "bc", "", "Specify build constraints (e.g. 'linux,arm windows')")
 
 	flagSet.StringVar(&workingDirectoryFlag, "wd", "", "Specify directory to work on")
 
