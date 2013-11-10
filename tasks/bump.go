@@ -17,6 +17,7 @@ package tasks
 */
 
 import (
+	"errors"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/config"
@@ -26,13 +27,16 @@ import (
 	"strings"
 )
 
+const TASK_BUMP = "bump"
+
 //runs automatically
 func init() {
 	Register(Task{
-		"bump",
-		"bump package version in .goxc.json",
+		TASK_BUMP,
+		"bump package version in .goxc.json. By default, the patch number (after the second dot) is increased by one. You can specify major or minor instead with -dot=0 or -dot=1",
 		bump,
-		nil})
+		map[string]interface{}{
+			"dot":     "2" }})
 }
 
 func bump(tp TaskParams) error {
@@ -42,20 +46,41 @@ func bump(tp TaskParams) error {
 	}
 	pv := c.PackageVersion
 	if pv == core.PACKAGE_VERSION_DEFAULT {
-		//go from 'default' version to 0.0.1
-		c.PackageVersion = "0.0.1"
-	} else {
-		pvparts := strings.Split(pv, ".")
-		lastpart := pvparts[len(pvparts)-1]
-		lastPartNum, err := strconv.Atoi(lastpart)
+		//go from 'default' version to 0.0.1 (or 0.1.0 or 1.0.0)
+		pv = "0.0.0"
+	}
+	pvparts := strings.Split(pv, ".")
+	partToBumpStr := tp.Settings.GetTaskSettingString(TASK_BUMP, "dot")
+	partToBump, err := strconv.Atoi(partToBumpStr)
+	if err != nil {
+		return err
+	}
+	if partToBump < 0 {
+		return errors.New("Could not determine which part of the version number to bump")
+	}
+	if len(pvparts) > partToBump {
+		thisPart := pvparts[partToBump]
+		thisPartNum, err := strconv.Atoi(thisPart)
 		if err != nil {
 			return err
 		}
-		lastPartNum += 1
-		pvparts[len(pvparts)-1] = strconv.Itoa(lastPartNum)
+		thisPartNum += 1
+		pvparts[partToBump] = strconv.Itoa(thisPartNum)
+		for i, p := range pvparts[partToBump+1:] {
+			_, err := strconv.Atoi(p)
+			if err != nil {
+				break
+			} else {
+				//reset smaller parts to 0
+				pvparts[i+partToBump+1] = "0"
+			}
+			
+		}
 		pvNew := strings.Join(pvparts, ".")
 		c.PackageVersion = pvNew
+		log.Printf("Bumping from %s to %s", pv, c.PackageVersion)
+		return config.WriteJsonConfig(tp.WorkingDirectory, c, "", false)
+	} else {
+		return errors.New("PackageVersion does not contain enough dots to bump this part of the version number")
 	}
-	log.Printf("Bumping from %s to %s", pv, c.PackageVersion)
-	return config.WriteJsonConfig(tp.WorkingDirectory, c, "", false)
 }

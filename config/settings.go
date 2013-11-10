@@ -169,6 +169,18 @@ func (s Settings) GetTaskSettingBool(taskName, settingName string) bool {
 	return ret
 }
 
+func (s Settings) GetTaskSettingInt(taskName, settingName string, defaultValue int) int {
+	retUntyped := s.GetTaskSetting(taskName, settingName)
+	if retUntyped == nil {
+		return defaultValue
+	}
+	ret, err := typeutils.ToInt(retUntyped, taskName+"."+settingName)
+	if err != nil {
+		//already logged
+	}
+	return ret
+}
+
 //Builds version name from PackageVersion, BranchName, PrereleaseInfo, BuildName
 //This breakdown is mainly based on 'semantic versioning' See http://semver.org/
 //The difference being that you can specify a branch name (which becomes part of the 'prerelease info' as named by semver)
