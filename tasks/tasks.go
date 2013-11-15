@@ -145,7 +145,7 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 	appends := ResolveAliases(settings.TasksAppend)
 	mains := ResolveAliases(settings.Tasks)
 	all := ResolveAliases(settings.TasksPrepend)
-	log.Printf("prepending %v", all)
+	//log.Printf("prepending %v", all)
 	all = append(all, mains...)
 	all = append(all, appends...)
 

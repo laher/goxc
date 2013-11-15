@@ -47,7 +47,7 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION    = "0.9.x"
+	VERSION    = "0.10.4"
 	BUILD_DATE = "unknown"
 	// settings for this invocation of goxc
 	settings             config.Settings
@@ -356,7 +356,7 @@ func interpretSettings(call []string) (string, config.Settings) {
 	log.Printf("Working directory: '%s', Config name: '%s'", workingDirectory, configName)
 
 	settings, err := mergeConfiguredSettings(workingDirectory, configName, !isWriteConfig)
-	log.Printf("TaskSettings: %+v", settings.TaskSettings)
+	//log.Printf("TaskSettings: %+v", settings.TaskSettings)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			log.Printf("Configuration file error. %s", err.Error())

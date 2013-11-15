@@ -119,38 +119,47 @@ func LoadFiles(filenames []string) ([]*ast.File, error) {
 	return files, nil
 }
 
-func FindConstantValue(f *ast.File, name string) string {
-	return FindValue(f, name, token.CONST)
+func FindConstantValue(f *ast.File, name string) (*ast.BasicLit) {
+	return FindValue(f, name, []token.Token{token.CONST})
 }
 
 //TODO: refactor to more idiomatic version of this (e.g. use Visit?)
-func FindValue(f *ast.File, name string, tok token.Token) string {
+func FindValue(f *ast.File, name string, toks []token.Token) (*ast.BasicLit) {
 	isName := false
 	isTok := false
 	value := ""
+	found := false
+	var ret *ast.BasicLit
 	ast.Inspect(f, func(n ast.Node) bool {
 		switch x := n.(type) {
 		case *ast.GenDecl:
-			switch x.Tok {
-			case tok:
-				isTok = true
-			default:
-				isTok = false
+			isTok = false
+			for _, tok := range toks {
+				if x.Tok == tok {
+					isTok = true
+				}
 			}
-
 		case *ast.BasicLit:
 			if isName && isTok {
 				//strip quotes
 				value = strings.Replace(x.Value, "\"", "", -1)
+				log.Printf("Found value (%s)", value)
+				ret = x
+				found = true
 				isName = false
 				return false //break out
 			}
 		case *ast.Ident:
-			if isTok && x.Name == name {
-				isName = true
+			isName = false
+			if isTok {
+				//log.Printf("Matching token type, named %s, %+v", x.Name, x)
+				if x.Name == name {
+					isName = true
+				}
 			}
 		}
 		return true
 	})
-	return value
+	//return value, found
+	return ret
 }
