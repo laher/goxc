@@ -52,12 +52,17 @@ goxc requires the go source and the go toolchain.
 
 		go get github.com/laher/goxc
 			
- 3. *Optional*: to pre-build the toolchains for all platforms:
+ 3. a. *Optional*: to pre-build the toolchains for all platforms:
 
 		goxc -t
 
+    b. *OSX Users Only*: With homebrew installed you will need to do the following:
 
-	* Note that this step is now optional, because goxc now builds/rebuilds the cross-compiler toolchains automatically, as necessary)
+		brew tap homebrew/versions
+		brew install apple-gcc42
+		CC=`brew list apple-gcc42 | grep bin/gcc-4.2` goxc -t
+
+	* Note that this step is now optional (for Linux and Windows users), because goxc now builds/rebuilds the cross-compiler toolchains automatically, as necessary). 
 	* Also note that building the toolchain takes a while. Cross-compilation itself is quite fast.
 
 Basic Usage
