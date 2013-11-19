@@ -48,7 +48,7 @@ goxc requires the go source and the go toolchain.
 
  1. [Install go from source](http://golang.org/doc/install/source). (Requires gcc (or MinGW) and 'hg')
 
-	* OSX Users Note: If you are using OSX 19 and XCode 5, it is best to go straight to Go 1.2rc5 (or greater). This is necessary because Apple have replaced the standard gcc with llvm-gcc, and Go 1.1 compilation tools depend on the usual gcc.
+	* OSX Users Note: If you are using XCode 5 (OSX 10.9), it is best to go straight to Go 1.2rc5 (or greater). This is necessary because Apple have replaced the standard gcc with llvm-gcc, and Go 1.1 compilation tools depend on the usual gcc.
 
 		* There is another workaround incase Go 1.2rc5 is not an option:
 
