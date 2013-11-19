@@ -52,9 +52,9 @@ goxc requires the go source and the go toolchain.
 
 		* There is another workaround incase Go 1.2rc5 is not an option:
 
-			brew tap homebrew/versions
-			brew install apple-gcc42
-			CC=`brew list apple-gcc42 | grep bin/gcc-4.2` goxc -t
+				brew tap homebrew/versions
+				brew install apple-gcc42
+				CC=`brew list apple-gcc42 | grep bin/gcc-4.2` goxc -t
 
  2. Install goxc:
 
