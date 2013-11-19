@@ -65,8 +65,6 @@ goxc requires the go source and the go toolchain.
 
 		goxc -t
 
-    * *OSX Users Only*:  With homebrew installed you will need to do the following:
-
 
 	* Note that this step is now optional, because goxc now builds/rebuilds the cross-compiler toolchains automatically, as necessary). 
 	* Also note that building the toolchain takes a while. Cross-compilation itself is quite fast.
