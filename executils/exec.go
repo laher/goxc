@@ -31,6 +31,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"strconv"
 	"time"
 )
 
@@ -112,36 +113,36 @@ func InvokeGo(workingDirectory string, subCmd string, subCmdArgs []string, env [
 	args := []string{subCmd}
 	//these commands only apply to `go build` & `go install`
 	if isBuildCommand(subCmd) {
-		if buildSettings.Processors > 0 {
-			args = append(args, "-p", string(buildSettings.Processors))
+		if buildSettings.Processors != nil {
+			args = append(args, "-p", strconv.Itoa(*buildSettings.Processors))
 		}
-		if buildSettings.Race {
+		if buildSettings.Race != nil && *buildSettings.Race {
 			args = append(args, "-race")
 		}
-		if buildSettings.Verbose {
+		if buildSettings.Verbose != nil && *buildSettings.Verbose {
 			args = append(args, "-v")
 		}
-		if buildSettings.PrintCommands {
+		if buildSettings.PrintCommands != nil && *buildSettings.PrintCommands {
 			args = append(args, "-x")
 		}
-		if buildSettings.CcFlags != "" {
-			args = append(args, "-ccflags", buildSettings.CcFlags)
+		if buildSettings.CcFlags != nil && *buildSettings.CcFlags != "" {
+			args = append(args, "-ccflags", *buildSettings.CcFlags)
 		}
-		if buildSettings.Compiler != "" {
-			args = append(args, "-compiler", buildSettings.Compiler)
+		if buildSettings.Compiler != nil && *buildSettings.Compiler != "" {
+			args = append(args, "-compiler", *buildSettings.Compiler)
 		}
-		if buildSettings.GccGoFlags != "" {
-			args = append(args, "-gccgoflags", buildSettings.GccGoFlags)
+		if buildSettings.GccGoFlags != nil && *buildSettings.GccGoFlags != ""  {
+			args = append(args, "-gccgoflags", *buildSettings.GccGoFlags)
 		}
-		if buildSettings.GcFlags != "" {
-			args = append(args, "-gcflags", buildSettings.GcFlags)
+		if buildSettings.GcFlags != nil && *buildSettings.GcFlags != "" {
+			args = append(args, "-gcflags", *buildSettings.GcFlags)
 		}
-		if buildSettings.InstallSuffix != "" {
-			args = append(args, "-installsuffix", buildSettings.InstallSuffix)
+		if buildSettings.InstallSuffix != nil && *buildSettings.InstallSuffix != "" {
+			args = append(args, "-installsuffix", *buildSettings.InstallSuffix)
 		}
 		ldflags := ""
-		if buildSettings.LdFlags != "" {
-			ldflags = buildSettings.LdFlags
+		if buildSettings.LdFlags != nil {
+			ldflags = *buildSettings.LdFlags
 		}
 		if buildSettings.LdFlagsXVars != nil {
 			//TODO!
@@ -150,8 +151,14 @@ func InvokeGo(workingDirectory string, subCmd string, subCmdArgs []string, env [
 		if ldflags != "" {
 			args = append(args, "-ldflags", ldflags)
 		}
-		if buildSettings.Tags != "" {
-			args = append(args, "-tags", buildSettings.Tags)
+		if buildSettings.Tags != nil && *buildSettings.Tags != "" {
+			args = append(args, "-tags", *buildSettings.Tags)
+		}
+		if len(buildSettings.ExtraArgs) > 0 {
+			args = append(args, buildSettings.ExtraArgs...)
+		}
+		if len(settings.Env) > 0 {
+			env = append(env, settings.Env...)
 		}
 	}
 	args = append(args, subCmdArgs...)

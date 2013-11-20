@@ -64,7 +64,7 @@ func runTaskXC(tp TaskParams) error {
 			absoluteBin, err := xcPlat(dest.Os, dest.Arch, mainDir, tp.Settings, outDestRoot, exeName)
 			if err != nil {
 				log.Printf("Error: %v", err)
-				log.Printf("Have you run `goxc -t` for this platform???")
+				log.Printf("Have you run `goxc -t` for this platform (%s,%s)???", dest.Arch, dest.Os)
 				return err
 			} else {
 				success = success + 1
@@ -73,7 +73,7 @@ func runTaskXC(tp TaskParams) error {
 					err = exefileparse.Test(absoluteBin, dest.Arch, dest.Os)
 					if err != nil {
 						log.Printf("Error: %v", err)
-						log.Printf("Something fishy is going on: have you run `goxc -t` for this platform???")
+						log.Printf("Something fishy is going on: have you run `goxc -t` for this platform (%s,%s)???", dest.Arch, dest.Os)
 						return err
 					}
 				}

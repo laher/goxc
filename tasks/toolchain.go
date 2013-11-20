@@ -35,7 +35,7 @@ func init() {
 		"toolchain",
 		"Build toolchain. Make sure to run this each time you update go source.",
 		runTaskToolchain,
-		map[string]interface{}{"GOARM": ""}})
+		map[string]interface{}{"GOARM": "", "extra-env": []string{}, "no-clean": true}})
 }
 
 func runTaskToolchain(tp TaskParams) error {
@@ -80,19 +80,31 @@ func buildToolchain(goos string, arch string, settings config.Settings) error {
 	goroot := settings.GoRoot
 	scriptpath := core.GetMakeScriptPath(goroot)
 	cmd := exec.Command(scriptpath)
+
 	cmd.Dir = filepath.Join(goroot, "src")
-	cmd.Args = append(cmd.Args, "--no-clean")
+
+	noClean := settings.GetTaskSettingBool(TASK_BUILD_TOOLCHAIN, "no-clean")
+	if noClean {
+		cmd.Args = append(cmd.Args, "--no-clean")
+	}
 	//0.8.5: no longer using cgoEnabled
-	cmd.Env = append([]string{}, os.Environ()...)
-	cmd.Env = append(cmd.Env, "GOOS="+goos, "GOARCH="+arch)
+	env := []string{"GOOS="+goos, "GOARCH="+arch}
+	extraEnv := settings.GetTaskSettingStringSlice(TASK_BUILD_TOOLCHAIN, "extra-env")
+	log.Printf("extra-env: %v", extraEnv)
+
+	env = append(env, extraEnv...)
 	if goos == platforms.LINUX && arch == platforms.ARM {
 		// see http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go
 		//NOTE: I don't think it has any effect on fp
 		goarm := settings.GetTaskSettingString(TASK_BUILD_TOOLCHAIN, "GOARM")
 		if goarm != "" {
-			cmd.Env = append(cmd.Env, "GOARM="+goarm)
+			env = append(env, "GOARM="+goarm)
 		}
 	}
+
+	log.Printf("Setting env: %v", env)
+	cmd.Env = append([]string{}, os.Environ()...)
+	cmd.Env = append(cmd.Env, env...)
 	if settings.IsVerbose() {
 		log.Printf("'make' env: GOOS=%s GOARCH=%s GOROOT=%s", goos, arch, goroot)
 	}

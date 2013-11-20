@@ -83,13 +83,15 @@ type Settings struct {
 	//v0.9, to replace 'FormatVersion'
 	GoxcConfigVersion string `json:"ConfigVersion,omitempty"`
 
-	//v0.9, to replace 'FormatVersion'
 	BuildSettings *BuildSettings `json:",omitempty"`
 
 	GoRoot string `json:"-"` //only settable by a flag
 
 	//TODO?
 	//PreferredGoVersion string `json:",omitempty"` //try to use a go version...
+
+	//v0.10.x
+	Env []string `json:",omitempty"`
 }
 
 func (s Settings) IsVerbose() bool {
@@ -143,6 +145,18 @@ func (s Settings) GetTaskSettingMap(taskName, settingName string) map[string]int
 	}
 	return mp
 
+}
+
+func (s Settings) GetTaskSettingStringSlice(taskName, settingName string) []string {
+	retUntyped := s.GetTaskSetting(taskName, settingName)
+	if retUntyped == nil {
+		return []string{}
+	}
+	strSlice, err := typeutils.ToStringSlice(retUntyped, taskName+"."+settingName)
+	if err != nil {
+		//already logged
+	}
+	return strSlice
 }
 
 func (s Settings) GetTaskSettingString(taskName, settingName string) string {
@@ -270,6 +284,44 @@ func Merge(high Settings, low Settings) Settings {
 	//0.9 BuildSettings
 	if high.BuildSettings == nil {
 		high.BuildSettings = low.BuildSettings
+	} else if low.BuildSettings != nil {
+		if high.BuildSettings.Processors == nil {
+			log.Printf("processors .. %+v", low.BuildSettings.Processors)
+			high.BuildSettings.Processors = low.BuildSettings.Processors
+		}
+		if high.BuildSettings.Race == nil {
+			high.BuildSettings.Race = low.BuildSettings.Race
+		}
+		if high.BuildSettings.Verbose == nil {
+			high.BuildSettings.Verbose = low.BuildSettings.Verbose
+		}
+		if high.BuildSettings.PrintCommands == nil {
+			high.BuildSettings.PrintCommands = low.BuildSettings.PrintCommands
+		}
+		if high.BuildSettings.CcFlags == nil {
+			high.BuildSettings.CcFlags = low.BuildSettings.CcFlags
+		}
+		if high.BuildSettings.Compiler == nil {
+			high.BuildSettings.Compiler = low.BuildSettings.Compiler
+		}
+		if high.BuildSettings.GccGoFlags == nil {
+			high.BuildSettings.GccGoFlags = low.BuildSettings.GccGoFlags
+		}
+		if high.BuildSettings.GcFlags == nil {
+			high.BuildSettings.GcFlags = low.BuildSettings.GcFlags
+		}
+		if high.BuildSettings.InstallSuffix == nil {
+			high.BuildSettings.InstallSuffix = low.BuildSettings.InstallSuffix
+		}
+		if high.BuildSettings.LdFlags == nil {
+			high.BuildSettings.LdFlags = low.BuildSettings.LdFlags
+		}
+		if high.BuildSettings.LdFlagsXVars == nil {
+			high.BuildSettings.LdFlagsXVars = low.BuildSettings.LdFlagsXVars
+		}
+		if high.BuildSettings.Tags == nil {
+			high.BuildSettings.Tags = low.BuildSettings.Tags
+		}
 	}
 	return high
 }

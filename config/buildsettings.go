@@ -8,18 +8,18 @@ import (
 type BuildSettings struct {
 	//GoRoot string `json:"-"` //Made *not* settable in settings file. Only at runtime.
 	//GoVersion string `json:",omitempty"` //hmm. Should I encourage this?
-	Processors    int                     `json:",omitempty"`
-	Race          bool                    `json:",omitempty"`
-	Verbose       bool                    `json:",omitempty"`
-	PrintCommands bool                    `json:",omitempty"`
-	CcFlags       string                  `json:",omitempty"`
-	Compiler      string                  `json:",omitempty"`
-	GccGoFlags    string                  `json:",omitempty"`
-	GcFlags       string                  `json:",omitempty"`
-	InstallSuffix string                  `json:",omitempty"`
-	LdFlags       string                  `json:",omitempty"`
+	Processors    *int                     `json:",omitempty"`
+	Race          *bool                    `json:",omitempty"`
+	Verbose       *bool                    `json:",omitempty"`
+	PrintCommands *bool                    `json:",omitempty"`
+	CcFlags       *string                  `json:",omitempty"`
+	Compiler      *string                  `json:",omitempty"`
+	GccGoFlags    *string                  `json:",omitempty"`
+	GcFlags       *string                  `json:",omitempty"`
+	InstallSuffix *string                  `json:",omitempty"`
+	LdFlags       *string                  `json:",omitempty"`
 	LdFlagsXVars  *map[string]interface{} `json:",omitempty"`
-	Tags          string                  `json:",omitempty"`
+	Tags          *string                  `json:",omitempty"`
 	ExtraArgs     []string                `json:",omitempty"`
 }
 
@@ -32,31 +32,78 @@ func buildSettingsFromMap(m map[string]interface{}) (*BuildSettings, error) {
 		//case "GoRoot":
 		//	bs.GoRoot, err = typeutils.ToString(v, k)
 		case "Processors":
-			bs.Processors, err = typeutils.ToInt(v, k)
+			var fp float64
+			fp, err = typeutils.ToFloat64(v, k)
+			if err == nil {
+				processors := int(fp)
+				bs.Processors = &processors
+			}
 		case "Race":
-			bs.Race, err = typeutils.ToBool(v, k)
+			var race bool
+			race, err = typeutils.ToBool(v, k)
+			if err == nil {
+				bs.Race = &race
+			}
 		case "Verbose":
-			bs.Verbose, err = typeutils.ToBool(v, k)
+			var verbose bool
+			verbose, err = typeutils.ToBool(v, k)
+			if err == nil {
+				bs.Verbose = &verbose
+			}
 		case "PrintCommands":
-			bs.PrintCommands, err = typeutils.ToBool(v, k)
+			var printCommands bool
+			printCommands, err = typeutils.ToBool(v, k)
+			if err == nil {
+				bs.PrintCommands = &printCommands
+			}
 		case "CcFlags":
-			bs.CcFlags, err = typeutils.ToString(v, k)
+			var ccFlags string
+			ccFlags, err = typeutils.ToString(v, k)
+			if err == nil {
+				bs.CcFlags = &ccFlags
+			}
 		case "Compiler":
-			bs.Compiler, err = typeutils.ToString(v, k)
+			var s string
+			s, err = typeutils.ToString(v, k)
+			if err == nil {
+				bs.Compiler = &s
+			}
 		case "GccGoFlags":
-			bs.GccGoFlags, err = typeutils.ToString(v, k)
+			var s string
+			s, err = typeutils.ToString(v, k)
+			if err == nil {
+				bs.GccGoFlags = &s
+			}
 		case "GcFlags":
-			bs.GcFlags, err = typeutils.ToString(v, k)
+			var s string
+			s, err = typeutils.ToString(v, k)
+			if err == nil {
+				bs.GcFlags = &s
+			}
 		case "InstallSuffix":
-			bs.InstallSuffix, err = typeutils.ToString(v, k)
+			var s string
+			s, err = typeutils.ToString(v, k)
+			if err == nil {
+				bs.InstallSuffix = &s
+			}
 		case "LdFlags":
-			bs.LdFlags, err = typeutils.ToString(v, k)
+			var s string
+			s, err = typeutils.ToString(v, k)
+			if err == nil {
+				bs.LdFlags = &s
+			}
 		case "Tags":
-			bs.Tags, err = typeutils.ToString(v, k)
+			var s string
+			s, err = typeutils.ToString(v, k)
+			if err == nil {
+				bs.Tags = &s
+			}
 		case "LdFlagsXVars":
 			var xVars map[string]interface{}
 			xVars, err = typeutils.ToMap(v, k)
-			bs.LdFlagsXVars = &xVars
+			if err == nil {
+				bs.LdFlagsXVars = &xVars
+			}
 		case "ExtraArgs":
 			bs.ExtraArgs, err = typeutils.ToStringSlice(v, k)
 		default:

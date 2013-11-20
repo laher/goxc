@@ -51,6 +51,7 @@ var (
 	BUILD_DATE = "unknown"
 	// settings for this invocation of goxc
 	settings             config.Settings
+	fBuildSettings        config.BuildSettings
 	configName           string
 	isVersion            bool
 	isHelp               bool
@@ -68,6 +69,7 @@ var (
 	workingDirectoryFlag string
 	buildConstraints     string
 	resourcesInclude     string
+	env	 	    config.Strslice
 )
 
 func printHelp(flagSet *flag.FlagSet) {
@@ -227,6 +229,46 @@ func parseCliTasksAndTaskSettings(args []string) ([]string, map[string]map[strin
 	return tasks, taskSettings, nil
 }
 
+func flagVisitor(f *flag.Flag) {
+	
+	switch f.Name {
+	case "build-processors":
+		settings.BuildSettings.Processors = fBuildSettings.Processors
+	case "build-race":
+		settings.BuildSettings.Race = fBuildSettings.Race
+	case "build-verbose":
+		settings.BuildSettings.Verbose = fBuildSettings.Verbose
+	case "build-print-commands":
+		settings.BuildSettings.PrintCommands = fBuildSettings.PrintCommands
+	case "build-ccflags":
+		settings.BuildSettings.CcFlags = fBuildSettings.CcFlags
+	case "build-compiler":
+		settings.BuildSettings.Compiler = fBuildSettings.Compiler
+	case "build-gccgoflags":
+		settings.BuildSettings.GccGoFlags = fBuildSettings.GccGoFlags
+	case "build-gcflags":
+		settings.BuildSettings.GcFlags = fBuildSettings.GcFlags
+	case "build-installsuffix":
+		settings.BuildSettings.InstallSuffix = fBuildSettings.InstallSuffix
+	case "build-ldflags":
+		settings.BuildSettings.LdFlags = fBuildSettings.LdFlags
+	case "build-ldflags-xvars":
+		settings.BuildSettings.LdFlagsXVars = fBuildSettings.LdFlagsXVars
+	case "build-tags":
+		settings.BuildSettings.Tags = fBuildSettings.Tags
+
+	case "env":
+		env, ok := f.Value.(*config.Strslice)
+		if !ok {
+			log.Printf("Type error %v (%T)", f.Value, f.Value)
+		}
+		settings.Env = append(settings.Env, *env...)
+	default:
+		log.Printf("Visiting flag %s", f.Name)
+	}
+}
+
+
 func interpretSettings(call []string) (string, config.Settings) {
 
 	flagSet := setupFlags()
@@ -252,6 +294,11 @@ func interpretSettings(call []string) (string, config.Settings) {
 			log.Printf("Error parsing arguments: %s", err)
 			os.Exit(1)
 		}
+		settings.BuildSettings = &config.BuildSettings{}
+		settings.Env = []string{}
+		flagSet.Visit(flagVisitor)
+
+		log.Printf("env %+v", settings.Env)
 
 		//the tasksToRun (-tasks=) flag is only kept incase people used it originally. To be taken out eventually
 		if tasksToRun != "" {
@@ -439,6 +486,27 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&goRoot, "goroot", "", "Specify Go ROOT dir (useful when you have multiple Go installations)")
 	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s). Equivalent to -tasks=toolchain")
 	flagSet.BoolVar(&isWriteConfig, "wc", false, "(over)write config. Overwrites are additive. Try goxc -wc to produce a starting point.")
+
+
+	//var bs config.BuildSettings
+	//bs.Processors = &processors
+	//v0.10.x
+	fBuildSettings = config.BuildSettings{}
+	fBuildSettings.Processors = flagSet.Int("build-processors", 0, "Processors to use during build")
+	fBuildSettings.Race = flagSet.Bool("build-race", false, "Build flag 'race'")
+	fBuildSettings.Verbose = flagSet.Bool("build-verbose", false, "Build flag 'verbose'")
+	fBuildSettings.PrintCommands = flagSet.Bool("build-print-commands", false, "Build flag 'print-commands'")
+	fBuildSettings.CcFlags = flagSet.String("build-ccflags", "", "Build flag 'print-commands'")
+	fBuildSettings.Compiler = flagSet.String("build-compiler", "", "Build flag 'compiler'")
+	fBuildSettings.GccGoFlags = flagSet.String("build-gccgoflags", "", "Build flag")
+	fBuildSettings.GcFlags = flagSet.String("build-gcflags", "", "Build flag")
+	fBuildSettings.InstallSuffix = flagSet.String("build-installsuffix", "", "Build flag")
+	fBuildSettings.LdFlags = flagSet.String("build-ldflags", "", "Build flag")
+	fBuildSettings.Tags = flagSet.String("build-tags", "", "Build flag")
+	
+	env = config.Strslice{}
+	flagSet.Var(&env, "env", "Use env variables")
+
 	flagSet.Usage = func() {
 		printHelpTopic(flagSet, "options")
 	}
@@ -496,6 +564,14 @@ func printOptions(flagSet *flag.FlagSet) {
 		}
 	})
 
+	//build
+	fmt.Printf("Build:\n")
+	flagSet.VisitAll(func(flag *flag.Flag) {
+		if strings.HasPrefix(flag.Name, "build-") {
+			printFlag(flag, core.ContainsString(boolOptions, flag.Name))
+		}
+	})
+
 	//most
 	fmt.Printf("Other options:\n")
 	flagSet.VisitAll(func(flag *flag.Flag) {
@@ -504,7 +580,8 @@ func printOptions(flagSet *flag.FlagSet) {
 			core.ContainsString(platformOptions, flag.Name) ||
 			core.ContainsString(cfOptions, flag.Name) ||
 			core.ContainsString(deprecatedOptions, flag.Name) ||
-			core.ContainsString([]string{"h", "help", "h-options", "help-options", "version", "v"}, flag.Name) {
+			core.ContainsString([]string{"h", "help", "h-options", "help-options", "version", "v"}, flag.Name) ||
+			strings.HasPrefix(flag.Name, "build-") {
 			return
 		}
 		printFlag(flag, core.ContainsString(boolOptions, flag.Name))
