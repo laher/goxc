@@ -286,7 +286,6 @@ func Merge(high Settings, low Settings) Settings {
 		high.BuildSettings = low.BuildSettings
 	} else if low.BuildSettings != nil {
 		if high.BuildSettings.Processors == nil {
-			log.Printf("processors .. %+v", low.BuildSettings.Processors)
 			high.BuildSettings.Processors = low.BuildSettings.Processors
 		}
 		if high.BuildSettings.Race == nil {

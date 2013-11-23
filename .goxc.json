@@ -1,11 +1,13 @@
 {
 	"ArtifactsDest": "../goxc-pages/dl",
 	"Tasks": [
-		"xc"
+		"interpolate-source",
+		"go-fmt",
+		"default"
 	],
 	"ResourcesInclude": "README.md,.\\_test1/*",
 	"ResourcesExclude": "*.go",
-	"PackageVersion": "0.10.5",
+	"PackageVersion": "0.10.6",
 	"TaskSettings": {
 		"archive-zip": {},
 		"bintray": {

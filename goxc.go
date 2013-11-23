@@ -47,8 +47,8 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION    = "0.10.5"
-	BUILD_DATE = "2013-11-23T23:39:35+13:00"
+	VERSION    = "0.10.6"
+	BUILD_DATE = "2013-11-24T00:02:13+13:00"
 	// settings for this invocation of goxc
 	settings             config.Settings
 	fBuildSettings       config.BuildSettings
@@ -264,7 +264,7 @@ func flagVisitor(f *flag.Flag) {
 		}
 		settings.Env = append(settings.Env, *env...)
 	default:
-		log.Printf("Visiting flag %s", f.Name)
+		//log.Printf("Visiting flag %s", f.Name)
 	}
 }
 
