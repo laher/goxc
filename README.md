@@ -48,16 +48,25 @@ goxc requires the go source and the go toolchain.
 
  1. [Install go from source](http://golang.org/doc/install/source). (Requires gcc (or MinGW) and 'hg')
 
+	* OSX Users Note: If you are using XCode 5 (OSX 10.9), it is best to go straight to Go 1.2rc5 (or greater). This is necessary because Apple have replaced the standard gcc with llvm-gcc, and Go 1.1 compilation tools depend on the usual gcc.
+
+		* There is another workaround incase Go 1.2rc5 is not an option:
+
+				brew tap homebrew/versions
+				brew install apple-gcc42
+				go get github.com/laher/goxc
+				CC=`brew list apple-gcc42 | grep bin/gcc-4.2` goxc -t
+
  2. Install goxc:
 
 		go get github.com/laher/goxc
 			
- 3. *Optional*: to pre-build the toolchains for all platforms:
+ 3. a. *Optional*: to pre-build the toolchains for all platforms:
 
 		goxc -t
 
 
-	* Note that this step is now optional, because goxc now builds/rebuilds the cross-compiler toolchains automatically, as necessary)
+	* Note that this step is now optional, because goxc now builds/rebuilds the cross-compiler toolchains automatically, as necessary). 
 	* Also note that building the toolchain takes a while. Cross-compilation itself is quite fast.
 
 Basic Usage
