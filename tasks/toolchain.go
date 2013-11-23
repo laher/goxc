@@ -88,7 +88,7 @@ func buildToolchain(goos string, arch string, settings config.Settings) error {
 		cmd.Args = append(cmd.Args, "--no-clean")
 	}
 	//0.8.5: no longer using cgoEnabled
-	env := []string{"GOOS="+goos, "GOARCH="+arch}
+	env := []string{"GOOS=" + goos, "GOARCH=" + arch}
 	extraEnv := settings.GetTaskSettingStringSlice(TASK_BUILD_TOOLCHAIN, "extra-env")
 	log.Printf("extra-env: %v", extraEnv)
 

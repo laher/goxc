@@ -38,6 +38,7 @@ Notable Features
  * Versioning:
 	* track your version number via configuration data.
 	* version number interpolation at compile-time (uses go's `-ldflags` compiler option to populate given constants or global variables with build version or build date)
+	* version number interpolation of source code. `goxc interpolate-source` (new task available in 0.10.x).
 	* the `bump` task facilitates increasing the app version number.
  * support for multiple binaries per project (goxc now searches subdirectories for 'main' packages)
  * support for multiple Go installations - choose at runtime with `-goroot=` flag.

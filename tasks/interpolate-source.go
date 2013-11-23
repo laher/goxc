@@ -22,11 +22,12 @@ import (
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/source"
 	"go/parser"
-	"go/token"
 	"go/printer"
+	"go/token"
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 const (
@@ -39,20 +40,30 @@ func init() {
 		TASK_INTERPOLATE_SOURCE,
 		"Replaces a given constant/var value with the current version.",
 		runTaskInterpolateSource,
-		map[string]interface{}{"varnameVersion" : "VERSION"}})
+		map[string]interface{}{"varnameVersion": "VERSION", "varnameBuildDate": "BUILD_DATE"}})
 }
 
-func runTaskInterpolateSource(tp TaskParams) (error) {
+func runTaskInterpolateSource(tp TaskParams) error {
 	err := writeSource(tp)
 	return err
 }
 
-func writeSource(tp TaskParams) (err error) {
+func writeSource(tp TaskParams) error {
 
-	varname := tp.Settings.GetTaskSettingString(TASK_INTERPOLATE_SOURCE, "varnameVersion")
-	versionName := fmt.Sprintf("\"%s\"", tp.Settings.GetFullVersionName())
+	varnameVersion := tp.Settings.GetTaskSettingString(TASK_INTERPOLATE_SOURCE, "varnameVersion")
+	versionName := tp.Settings.GetFullVersionName()
+	err := writeVar(tp, varnameVersion, versionName)
+	if err != nil {
+		return err
+	}
+	varnameBuildDate := tp.Settings.GetTaskSettingString(TASK_INTERPOLATE_SOURCE, "varnameBuildDate")
+	buildDate := time.Now().Format(time.RFC3339)
+	return writeVar(tp, varnameBuildDate, buildDate)
+}
+
+func writeVar(tp TaskParams, varname, varval string) (err error) {
 	if varname != "" {
-		matches, err := filepath.Glob(filepath.Join(tp.WorkingDirectory,"**.go"))
+		matches, err := filepath.Glob(filepath.Join(tp.WorkingDirectory, "**.go"))
 		if err != nil {
 			return err
 		}
@@ -68,9 +79,10 @@ func writeSource(tp TaskParams) (err error) {
 			versionVar := source.FindValue(f, varname, []token.Token{token.CONST, token.VAR})
 			if versionVar != nil {
 				found = true
-				log.Printf("Version '%s' = %v -> %s", varname, versionVar.Value, versionName)
-				versionVar.Value = versionName
-				fw, err := os.OpenFile(match, os.O_WRONLY | os.O_TRUNC, 0644)
+				varvalQuoted := fmt.Sprintf("\"%s\"", varval)
+				log.Printf("Changing source of '%s' = %v -> %s", varname, versionVar.Value, varvalQuoted)
+				versionVar.Value = varvalQuoted
+				fw, err := os.OpenFile(match, os.O_WRONLY|os.O_TRUNC, 0644)
 				if err != nil {
 					return err
 				}
@@ -95,4 +107,3 @@ func writeSource(tp TaskParams) (err error) {
 	}
 	return err
 }
-

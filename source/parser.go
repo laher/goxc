@@ -119,12 +119,12 @@ func LoadFiles(filenames []string) ([]*ast.File, error) {
 	return files, nil
 }
 
-func FindConstantValue(f *ast.File, name string) (*ast.BasicLit) {
+func FindConstantValue(f *ast.File, name string) *ast.BasicLit {
 	return FindValue(f, name, []token.Token{token.CONST})
 }
 
 //TODO: refactor to more idiomatic version of this (e.g. use Visit?)
-func FindValue(f *ast.File, name string, toks []token.Token) (*ast.BasicLit) {
+func FindValue(f *ast.File, name string, toks []token.Token) *ast.BasicLit {
 	isName := false
 	isTok := false
 	value := ""

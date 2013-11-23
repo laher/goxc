@@ -48,10 +48,10 @@ var (
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
 	VERSION    = "0.10.5"
-	BUILD_DATE = "unknown"
+	BUILD_DATE = "2013-11-23T23:39:35+13:00"
 	// settings for this invocation of goxc
 	settings             config.Settings
-	fBuildSettings        config.BuildSettings
+	fBuildSettings       config.BuildSettings
 	configName           string
 	isVersion            bool
 	isHelp               bool
@@ -69,7 +69,7 @@ var (
 	workingDirectoryFlag string
 	buildConstraints     string
 	resourcesInclude     string
-	env	 	    config.Strslice
+	env                  config.Strslice
 )
 
 func printHelp(flagSet *flag.FlagSet) {
@@ -230,7 +230,7 @@ func parseCliTasksAndTaskSettings(args []string) ([]string, map[string]map[strin
 }
 
 func flagVisitor(f *flag.Flag) {
-	
+
 	switch f.Name {
 	case "build-processors":
 		settings.BuildSettings.Processors = fBuildSettings.Processors
@@ -267,7 +267,6 @@ func flagVisitor(f *flag.Flag) {
 		log.Printf("Visiting flag %s", f.Name)
 	}
 }
-
 
 func interpretSettings(call []string) (string, config.Settings) {
 
@@ -487,7 +486,6 @@ func setupFlags() *flag.FlagSet {
 	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s). Equivalent to -tasks=toolchain")
 	flagSet.BoolVar(&isWriteConfig, "wc", false, "(over)write config. Overwrites are additive. Try goxc -wc to produce a starting point.")
 
-
 	//var bs config.BuildSettings
 	//bs.Processors = &processors
 	//v0.10.x
@@ -503,7 +501,7 @@ func setupFlags() *flag.FlagSet {
 	fBuildSettings.InstallSuffix = flagSet.String("build-installsuffix", "", "Build flag")
 	fBuildSettings.LdFlags = flagSet.String("build-ldflags", "", "Build flag")
 	fBuildSettings.Tags = flagSet.String("build-tags", "", "Build flag")
-	
+
 	env = config.Strslice{}
 	flagSet.Var(&env, "env", "Use env variables")
 
@@ -516,7 +514,7 @@ func setupFlags() *flag.FlagSet {
 func printOptions(flagSet *flag.FlagSet) {
 	fmt.Print("Help Options:\n")
 	taskOptions := []string{"t", "tasks+", "tasks-", "+tasks"}
-	packageVersioningOptions := []string{"pv", "pi", "br", "bu"}
+	packageVersioningOptions := []string{"pv", "pr", "br", "bu"}
 	deprecatedOptions := []string{"av", "z", "tasks", "h-tasks", "help-tasks", "ht"} //still work but not mentioned
 	platformOptions := []string{"os", "arch", "bc"}
 	cfOptions := []string{"wc", "c"}

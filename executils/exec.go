@@ -30,8 +30,8 @@ import (
 	"github.com/laher/goxc/platforms"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -131,7 +131,7 @@ func InvokeGo(workingDirectory string, subCmd string, subCmdArgs []string, env [
 		if buildSettings.Compiler != nil && *buildSettings.Compiler != "" {
 			args = append(args, "-compiler", *buildSettings.Compiler)
 		}
-		if buildSettings.GccGoFlags != nil && *buildSettings.GccGoFlags != ""  {
+		if buildSettings.GccGoFlags != nil && *buildSettings.GccGoFlags != "" {
 			args = append(args, "-gccgoflags", *buildSettings.GccGoFlags)
 		}
 		if buildSettings.GcFlags != nil && *buildSettings.GcFlags != "" {

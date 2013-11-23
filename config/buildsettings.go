@@ -8,18 +8,18 @@ import (
 type BuildSettings struct {
 	//GoRoot string `json:"-"` //Made *not* settable in settings file. Only at runtime.
 	//GoVersion string `json:",omitempty"` //hmm. Should I encourage this?
-	Processors    *int                     `json:",omitempty"`
-	Race          *bool                    `json:",omitempty"`
-	Verbose       *bool                    `json:",omitempty"`
-	PrintCommands *bool                    `json:",omitempty"`
-	CcFlags       *string                  `json:",omitempty"`
-	Compiler      *string                  `json:",omitempty"`
-	GccGoFlags    *string                  `json:",omitempty"`
-	GcFlags       *string                  `json:",omitempty"`
-	InstallSuffix *string                  `json:",omitempty"`
-	LdFlags       *string                  `json:",omitempty"`
+	Processors    *int                    `json:",omitempty"`
+	Race          *bool                   `json:",omitempty"`
+	Verbose       *bool                   `json:",omitempty"`
+	PrintCommands *bool                   `json:",omitempty"`
+	CcFlags       *string                 `json:",omitempty"`
+	Compiler      *string                 `json:",omitempty"`
+	GccGoFlags    *string                 `json:",omitempty"`
+	GcFlags       *string                 `json:",omitempty"`
+	InstallSuffix *string                 `json:",omitempty"`
+	LdFlags       *string                 `json:",omitempty"`
 	LdFlagsXVars  *map[string]interface{} `json:",omitempty"`
-	Tags          *string                  `json:",omitempty"`
+	Tags          *string                 `json:",omitempty"`
 	ExtraArgs     []string                `json:",omitempty"`
 }
 

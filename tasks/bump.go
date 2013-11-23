@@ -36,7 +36,7 @@ func init() {
 		"bump package version in .goxc.json. By default, the patch number (after the second dot) is increased by one. You can specify major or minor instead with -dot=0 or -dot=1",
 		bump,
 		map[string]interface{}{
-			"dot":     "2" }})
+			"dot": "2"}})
 }
 
 func bump(tp TaskParams) error {
@@ -74,7 +74,7 @@ func bump(tp TaskParams) error {
 				//reset smaller parts to 0
 				pvparts[i+partToBump+1] = "0"
 			}
-			
+
 		}
 		pvNew := strings.Join(pvparts, ".")
 		c.PackageVersion = pvNew
