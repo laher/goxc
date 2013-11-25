@@ -23,6 +23,11 @@ type BuildSettings struct {
 	ExtraArgs     []string                `json:",omitempty"`
 }
 
+func (this BuildSettings) Equals(that BuildSettings) bool {
+	return this.Processors == that.Processors &&
+		this.Race == that.Race
+}
+
 func buildSettingsFromMap(m map[string]interface{}) (*BuildSettings, error) {
 	var err error
 	bs := BuildSettings{}

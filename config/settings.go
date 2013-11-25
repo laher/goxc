@@ -33,7 +33,7 @@ type Resources struct {
 
 // Invocation settings
 type Settings struct {
-	ArtifactsDest string
+	ArtifactsDest string `json:",omitempty"`
 	//0.2.0 ArtifactTypes replaces ZipArchives bool
 	//0.5.0 ArtifactTypes is replaced by tasks
 	//ArtifactTypes []string //default = 'zip'. Also 'bin'
@@ -231,12 +231,17 @@ func Merge(high Settings, low Settings) Settings {
 		high.BuildConstraints = low.BuildConstraints
 	}
 
-	if high.ResourcesExclude == "" {
-		high.ResourcesExclude = low.ResourcesExclude
-	}
 	if high.ResourcesInclude == "" {
 		high.ResourcesInclude = low.ResourcesInclude
 	}
+	if high.ResourcesExclude == "" {
+		high.ResourcesExclude = low.ResourcesExclude
+	}
+	if high.MainDirsExclude == "" {
+		high.MainDirsExclude = low.MainDirsExclude
+	}
+
+
 	if high.Arch == "" {
 		high.Arch = low.Arch
 	}

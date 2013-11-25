@@ -47,8 +47,13 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
+<<<<<<< HEAD
 	VERSION    = "0.10.6"
 	BUILD_DATE = "2013-11-25T22:18:04+13:00"
+=======
+	VERSION    = "0.10.7"
+	BUILD_DATE = "2013-11-25T21:58:02+13:00"
+>>>>>>> 76399b1e968e488c95a01662ac9d34feac32b594
 	// settings for this invocation of goxc
 	settings             config.Settings
 	fBuildSettings       config.BuildSettings
@@ -65,6 +70,7 @@ var (
 	codesignId           string
 	goRoot               string
 	isWriteConfig        bool
+	isWriteLocalConfig   bool
 	isVerbose            bool
 	workingDirectoryFlag string
 	buildConstraints     string
@@ -147,29 +153,14 @@ func printVersion(output *os.File) {
 	fmt.Fprintf(output, "  build date: %s\n", BUILD_DATE)
 }
 
-//merge configuration file
-//maybe oneday: parse source
-func mergeConfiguredSettings(dir string, configName string, useLocal bool) (config.Settings, error) {
-	if settings.IsVerbose() {
-		log.Printf("loading configured settings")
-	}
-	configuredSettings, err := config.LoadJsonConfigOverrideable(dir, configName, useLocal, settings.IsVerbose())
-	if settings.IsVerbose() {
-		log.Printf("Settings from config %s: %+v : %v", configName, configuredSettings, err)
-	}
-	//TODO: further error handling ?
-	if err == nil {
-		settings = config.Merge(settings, configuredSettings)
-	}
-	return settings, err
-}
-
 // goXC is the goxc startpoint
 // In theory you could call this with a slice of flags
 func goXC(call []string) {
-	workingDirectory, settings := interpretSettings(call)
-	if isWriteConfig {
-		err := config.WriteJsonConfig(workingDirectory, settings, configName, false)
+	interpretFlags(call)
+	workingDirectory := getWorkingDir()
+	mergeConfigIntoSettings(workingDirectory)
+	if isWriteConfig || isWriteLocalConfig {
+		err := config.WriteJsonConfig(workingDirectory, settings, configName, isWriteLocalConfig)
 		if err != nil {
 			log.Printf("Could not write config file: %v", err)
 		}
@@ -268,8 +259,14 @@ func flagVisitor(f *flag.Flag) {
 	}
 }
 
-func interpretSettings(call []string) (string, config.Settings) {
+func interpretSettings(call []string) string {
+	interpretFlags(call)
+	workingDirectory := getWorkingDir()
+	mergeConfigIntoSettings(workingDirectory)
+	return workingDirectory
+}
 
+func interpretFlags(call []string) {
 	flagSet := setupFlags()
 	if err := flagSet.Parse(call[1:]); err != nil {
 		log.Printf("Error parsing arguments: %s", err)
@@ -349,12 +346,6 @@ func interpretSettings(call []string) (string, config.Settings) {
 		printVersion(os.Stderr)
 		os.Exit(0)
 	}
-	//set default ...
-	/*
-		if goRoot == "" {
-			goRoot = runtime.GOROOT()
-		}
-	*/
 
 	//only set it if non-default:
 	if goRoot != runtime.GOROOT() && goRoot != "" {
@@ -366,16 +357,9 @@ func interpretSettings(call []string) (string, config.Settings) {
 		log.Printf(core.MSG_INSTALL_GO_FROM_SOURCE)
 		os.Exit(1)
 	}
-	//0.8 change default name due to new config inheritance rules
-	if configName == "" {
-		if isWriteConfig {
-			//for writing, default to the 'base' file.
-			configName = core.GOXC_CONFIGNAME_BASE
-		} else {
-			//for reading, default to 'default'
-			configName = core.GOXC_CONFIGNAME_DEFAULT
-		}
-	}
+}
+
+func getWorkingDir() string {
 	//0.6 do NOT use args[0]
 	var workingDirectory string
 	if workingDirectoryFlag != "" {
@@ -399,9 +383,40 @@ func interpretSettings(call []string) (string, config.Settings) {
 	} else {
 		workingDirectory = workingDirectoryAbs
 	}
-	log.Printf("Working directory: '%s', Config name: '%s'", workingDirectory, configName)
+	return workingDirectory
+}
 
-	settings, err := mergeConfiguredSettings(workingDirectory, configName, !isWriteConfig)
+//merge configuration file
+//maybe oneday: parse source
+func mergeConfiguredSettings(dir string, configName string, isWriteMain, isWriteLocal bool) error {
+	if settings.IsVerbose() {
+		log.Printf("loading configured settings")
+	}
+	configuredSettings, err := config.LoadJsonConfigOverrideable(dir, configName, !isWriteMain && !isWriteLocal, isWriteLocal, settings.IsVerbose())
+	if settings.IsVerbose() {
+		log.Printf("Settings from config %s: %+v : %v", configName, configuredSettings, err)
+	}
+	//TODO: further error handling ?
+	if err == nil {
+		settings = config.Merge(settings, configuredSettings)
+	}
+	return err
+}
+
+func mergeConfigIntoSettings(workingDirectory string) {
+	//0.8 change default name due to new config inheritance rules
+	if configName == "" {
+		if isWriteConfig || isWriteLocalConfig {
+			//for writing, default to the 'base' file.
+			configName = core.GOXC_CONFIGNAME_BASE
+		} else {
+			//for reading, default to 'default'
+			configName = core.GOXC_CONFIGNAME_DEFAULT
+		}
+	}
+
+	log.Printf("Working directory: '%s', Config name: '%s'", workingDirectory, configName)
+	err := mergeConfiguredSettings(workingDirectory, configName, isWriteConfig, isWriteLocalConfig)
 	//log.Printf("TaskSettings: %+v", settings.TaskSettings)
 	if err != nil {
 		if !os.IsNotExist(err) {
@@ -409,8 +424,6 @@ func interpretSettings(call []string) (string, config.Settings) {
 			os.Exit(1)
 		}
 	}
-
-	return workingDirectory, settings
 }
 
 func appendIfMissing(arr []string, v string) []string {
@@ -485,6 +498,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&goRoot, "goroot", "", "Specify Go ROOT dir (useful when you have multiple Go installations)")
 	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s). Equivalent to -tasks=toolchain")
 	flagSet.BoolVar(&isWriteConfig, "wc", false, "(over)write config. Overwrites are additive. Try goxc -wc to produce a starting point.")
+	flagSet.BoolVar(&isWriteLocalConfig, "wlc", false, "write 'local' config")
 
 	//var bs config.BuildSettings
 	//bs.Processors = &processors
