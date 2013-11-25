@@ -7,7 +7,7 @@
 	],
 	"ResourcesInclude": "README.md,.\\_test1/*",
 	"ResourcesExclude": "*.go",
-	"PackageVersion": "0.10.7",
+	"PackageVersion": "0.10.8",
 	"TaskSettings": {
 		"archive-zip": {},
 		"bintray": {

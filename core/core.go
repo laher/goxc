@@ -79,6 +79,9 @@ func FileExists(path string) (bool, error) {
 }
 
 func ParseCommaGlobs(commaGlob string) []string {
+	if commaGlob == "" {
+		return []string{}
+	}
 	globs := strings.Split(commaGlob, ",")
 	//normalize
 	//treat slashes/backslashes as the same thing ...

@@ -47,13 +47,8 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-<<<<<<< HEAD
-	VERSION    = "0.10.6"
-	BUILD_DATE = "2013-11-25T22:18:04+13:00"
-=======
-	VERSION    = "0.10.7"
-	BUILD_DATE = "2013-11-25T21:58:02+13:00"
->>>>>>> 76399b1e968e488c95a01662ac9d34feac32b594
+	VERSION    = "0.10.8"
+	BUILD_DATE = "2013-11-25T22:33:41+13:00"
 	// settings for this invocation of goxc
 	settings             config.Settings
 	fBuildSettings       config.BuildSettings
@@ -74,7 +69,6 @@ var (
 	isVerbose            bool
 	workingDirectoryFlag string
 	buildConstraints     string
-	resourcesInclude     string
 	env                  config.Strslice
 )
 
@@ -179,6 +173,8 @@ func goXC(call []string) {
 		tasks.RunTasks(workingDirectory, destPlatforms, settings)
 	}
 }
+
+//tasks (and task settings) are defined as args after the main flags
 func parseCliTasksAndTaskSettings(args []string) ([]string, map[string]map[string]interface{}, error) {
 	tasks := []string{}
 	taskSettings := map[string]map[string]interface{}{}
@@ -479,7 +475,12 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.ArtifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
 	flagSet.StringVar(&codesignId, "codesign", "", "identity to sign darwin binaries with (only applied when host OS is 'darwin')")
 
-	flagSet.StringVar(&resourcesInclude, "include", "", "Include resources in archives (default="+core.RESOURCES_INCLUDE_DEFAULT+")")
+	flagSet.StringVar(&settings.ResourcesInclude, "resources-include", "", "Include resources in archives (default="+core.RESOURCES_INCLUDE_DEFAULT+")")
+	//deprecated
+	flagSet.StringVar(&settings.ResourcesInclude, "include", "", "Include resources in archives (default="+core.RESOURCES_INCLUDE_DEFAULT+")")
+
+	flagSet.StringVar(&settings.ResourcesExclude, "resources-exclude", "", "Include resources in archives (default="+core.RESOURCES_EXCLUDE_DEFAULT+")")
+	flagSet.StringVar(&settings.MainDirsExclude, "main-dirs-exclude", "", "Exclude given comma-separated directories from 'main' packages")
 
 	//0.2.0 Not easy to 'merge' boolean config items. More flexible to translate them to string options anyway
 	flagSet.BoolVar(&isHelp, "h", false, "Help - options")

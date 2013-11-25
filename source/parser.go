@@ -27,7 +27,7 @@ import (
 	"strings"
 )
 
-func FindMainDirs(root string, excluding []string) ([]string, error) {
+func FindMainDirs(root string, excludingGlobs []string) ([]string, error) {
 	mainDirs := []string{}
 	sourceFiles := []string{}
 	root, err := filepath.Abs(root)
@@ -75,17 +75,31 @@ func FindMainDirs(root string, excluding []string) ([]string, error) {
 		if file.Name.Name == "main" {
 			mainDir, err := filepath.Abs(filepath.Dir(name))
 			if err != nil {
-				log.Printf("Error: %v", err)
+				log.Printf("Abs error: %s: %v", filepath.Dir(name), err)
 			} else {
 				excluded := false
-				for _, exclGlob := range excluding {
-					matches, err := filepath.Match(exclGlob, filepath.Join(root, exclGlob))
+				for _, exclGlob := range excludingGlobs {
+					//log.Printf("Glob testing: %s matches %s", filepath.Join(root, exclGlob), mainDir)
+					matches, err := filepath.Match(filepath.Join(root, exclGlob), mainDir)
 					if err != nil {
 						//ignore this exclusion glob
-						log.Printf("GLOB error: %s: %s", exclGlob, err)
+						log.Printf("Glob error: %s: %s", exclGlob, err)
 					} else if matches {
+						log.Printf("Main dir '%s' excluded by glob '%s'", mainDir, exclGlob)
 						excluded = true
+					} else {
+						absExcl, err := filepath.Abs(filepath.Join(root, exclGlob))
+						if err != nil {
+							//ignore
+							log.Printf("Abs error: %s: %v", filepath.Join(root, exclGlob), err)
+						} else if strings.HasPrefix(mainDir, absExcl) {
+							log.Printf("Main dir '%s' excluded because it is in '%s'", mainDir, absExcl)
+							excluded = true
+						} else {
+							//log.Printf("Main dir '%s' is NOT in '%s'", mainDir, absExcl)
+						}
 					}
+
 				}
 				if !excluded {
 					alreadyThere := false

@@ -241,7 +241,6 @@ func Merge(high Settings, low Settings) Settings {
 		high.MainDirsExclude = low.MainDirsExclude
 	}
 
-
 	if high.Arch == "" {
 		high.Arch = low.Arch
 	}
