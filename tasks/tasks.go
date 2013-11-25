@@ -175,7 +175,8 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 		//mainDirs = []string{workingDirectory}
 	} else {
 		var err error
-		mainDirs, err = source.FindMainDirs(workingDirectory)
+		excludes := core.ParseCommaGlobs(settings.MainDirsExclude)
+		mainDirs, err = source.FindMainDirs(workingDirectory, excludes)
 		if err != nil || len(mainDirs) == 0 {
 			log.Printf("Warning: could not establish list of main dirs. Using working directory")
 			mainDirs = []string{workingDirectory}

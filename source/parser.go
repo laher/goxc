@@ -27,7 +27,7 @@ import (
 	"strings"
 )
 
-func FindMainDirs(root string) ([]string, error) {
+func FindMainDirs(root string, excluding []string) ([]string, error) {
 	mainDirs := []string{}
 	sourceFiles := []string{}
 	root, err := filepath.Abs(root)
@@ -77,14 +77,26 @@ func FindMainDirs(root string) ([]string, error) {
 			if err != nil {
 				log.Printf("Error: %v", err)
 			} else {
-				alreadyThere := false
-				for _, v := range mainDirs {
-					if v == mainDir {
-						alreadyThere = true
+				excluded := false
+				for _, exclGlob := range excluding {
+					matches, err := filepath.Match(exclGlob, filepath.Join(root, exclGlob))
+					if err != nil {
+						//ignore this exclusion glob
+						log.Printf("GLOB error: %s: %s", exclGlob, err)
+					} else if matches {
+						excluded = true
 					}
 				}
-				if !alreadyThere {
-					mainDirs = append(mainDirs, mainDir)
+				if !excluded {
+					alreadyThere := false
+					for _, v := range mainDirs {
+						if v == mainDir {
+							alreadyThere = true
+						}
+					}
+					if !alreadyThere {
+						mainDirs = append(mainDirs, mainDir)
+					}
 				}
 			}
 		}

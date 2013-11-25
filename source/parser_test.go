@@ -25,7 +25,7 @@ func TestLearning(t *testing.T) {
 }
 
 func TestMainDirs(t *testing.T) {
-	mds, err := FindMainDirs("..")
+	mds, err := FindMainDirs("..", []string{})
 	if err != nil {
 		t.Logf("%v", err)
 		return

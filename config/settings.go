@@ -65,6 +65,9 @@ type Settings struct {
 	ResourcesInclude string `json:",omitempty"`
 	ResourcesExclude string `json:",omitempty"`
 
+	//0.10.x source exclusion
+	MainDirsExclude string `json:",omitempty"`
+
 	//versioning
 	PackageVersion string `json:",omitempty"`
 	BranchName     string `json:",omitempty"`

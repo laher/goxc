@@ -48,7 +48,7 @@ var (
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
 	VERSION    = "0.10.6"
-	BUILD_DATE = "2013-11-24T00:02:13+13:00"
+	BUILD_DATE = "2013-11-25T22:18:04+13:00"
 	// settings for this invocation of goxc
 	settings             config.Settings
 	fBuildSettings       config.BuildSettings
