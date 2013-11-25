@@ -30,3 +30,5 @@ _testmain.go
 *.local.json
 test.json
 goxc
+
+Godeps

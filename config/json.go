@@ -37,14 +37,19 @@ var GOXC_CONFIG_SUPPORTED = []string{"0.5.0", "0.6", "0.8", "0.9"}
 
 //Loads a config file and merges results with any 'override' files.
 //0.8 using new inheritance rules. More flexibility, particular for people wanting different rules for different platforms
-func LoadJsonConfigOverrideable(dir string, configName string, isRead bool, verbose bool) (Settings, error) {
+//0.10.x adding parameter isWriteLocal
+func LoadJsonConfigOverrideable(dir string, configName string, isRead, isWriteLocal, verbose bool) (Settings, error) {
 	var configs []string
 	if isRead {
 		configs = []string{configName + core.GOXC_LOCAL_FILE_EXT, configName + core.GOXC_FILE_EXT,
 			core.GOXC_CONFIGNAME_BASE + core.GOXC_LOCAL_FILE_EXT,
 			core.GOXC_CONFIGNAME_BASE + core.GOXC_FILE_EXT}
 	} else {
-		configs = []string{configName + core.GOXC_FILE_EXT}
+		if isWriteLocal {
+			configs = []string{configName + core.GOXC_LOCAL_FILE_EXT}
+		} else {
+			configs = []string{configName + core.GOXC_FILE_EXT}
+		}
 	}
 	return LoadJsonConfigs(dir, configs, verbose)
 }
@@ -301,6 +306,10 @@ func loadSettingsSection(settingsSection map[string]interface{}) (settings Setti
 
 func WriteJsonConfig(dir string, settings Settings, configName string, isLocal bool) error {
 	settings.GoxcConfigVersion = GOXC_CONFIG_VERSION
+	bs := BuildSettings{}
+	if bs.Equals(*settings.BuildSettings) {
+		settings.BuildSettings = nil
+	}
 	if isLocal {
 		jsonFile := filepath.Join(dir, configName+core.GOXC_LOCAL_FILE_EXT)
 		return writeJsonFile(settings, jsonFile)
