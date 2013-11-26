@@ -87,7 +87,7 @@ func writeVar(tp TaskParams, varname, varval string) (err error) {
 					return err
 				}
 				defer fw.Close()
-				err = printer.Fprint(fw, fset, f)
+				err = (&printer.Config{Mode: printer.UseSpaces | printer.TabIndent, Tabwidth: 8}).Fprint(fw, fset, f)
 				if err != nil {
 					return err
 				}
