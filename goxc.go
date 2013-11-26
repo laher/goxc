@@ -36,10 +36,10 @@ import (
 )
 
 const (
-	MSG_HELP               = "Usage: goxc [<option(s)>] [<task(s)>]\n"
-	MSG_HELP_TOPICS        = "goxc -h <topic>\n"
-	MSG_HELP_TOPICS_EG     = "More help:\n\tgoxc -h options\nor\n\tgoxc -h tasks\n"
-	MSG_HELP_UNKNOWN_TOPIC = "Unknown topic '%s'. Try 'options' or 'tasks'\n"
+	MSG_HELP		= "Usage: goxc [<option(s)>] [<task(s)>]\n"
+	MSG_HELP_TOPICS		= "goxc -h <topic>\n"
+	MSG_HELP_TOPICS_EG	= "More help:\n\tgoxc -h options\nor\n\tgoxc -h tasks\n"
+	MSG_HELP_UNKNOWN_TOPIC	= "Unknown topic '%s'. Try 'options' or 'tasks'\n"
 )
 
 var (
@@ -47,29 +47,29 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION    = "0.10.8"
-	BUILD_DATE = "2013-11-25T22:33:41+13:00"
+	VERSION		= "0.10.9"
+	BUILD_DATE	= "2013-11-26T22:14:21+13:00"
 	// settings for this invocation of goxc
-	settings             config.Settings
-	fBuildSettings       config.BuildSettings
-	configName           string
-	isVersion            bool
-	isHelp               bool
-	isHelpTasks          bool
-	isBuildToolchain     bool
-	tasksToRun           string
-	tasksAppend          string
-	tasksPrepend         string
-	tasksMinus           string
-	isCliZipArchives     string
-	codesignId           string
-	goRoot               string
-	isWriteConfig        bool
-	isWriteLocalConfig   bool
-	isVerbose            bool
-	workingDirectoryFlag string
-	buildConstraints     string
-	env                  config.Strslice
+	settings		config.Settings
+	fBuildSettings		config.BuildSettings
+	configName		string
+	isVersion		bool
+	isHelp			bool
+	isHelpTasks		bool
+	isBuildToolchain	bool
+	tasksToRun		string
+	tasksAppend		string
+	tasksPrepend		string
+	tasksMinus		string
+	isCliZipArchives	string
+	codesignId		string
+	goRoot			string
+	isWriteConfig		bool
+	isWriteLocalConfig	bool
+	isVerbose		bool
+	workingDirectoryFlag	string
+	buildConstraints	string
+	env			config.Strslice
 )
 
 func printHelp(flagSet *flag.FlagSet) {
@@ -426,7 +426,7 @@ func appendIfMissing(arr []string, v string) []string {
 	ret := make([]string, len(arr))
 	copy(ret, arr)
 	for _, val := range arr {
-		if val == v { //found. return.
+		if val == v {	//found. return.
 			return ret
 		}
 	}
@@ -530,7 +530,7 @@ func printOptions(flagSet *flag.FlagSet) {
 	fmt.Print("Help Options:\n")
 	taskOptions := []string{"t", "tasks+", "tasks-", "+tasks"}
 	packageVersioningOptions := []string{"pv", "pr", "br", "bu"}
-	deprecatedOptions := []string{"av", "z", "tasks", "h-tasks", "help-tasks", "ht"} //still work but not mentioned
+	deprecatedOptions := []string{"av", "z", "tasks", "h-tasks", "help-tasks", "ht"}	//still work but not mentioned
 	platformOptions := []string{"os", "arch", "bc"}
 	cfOptions := []string{"wc", "c"}
 	boolOptions := []string{"h", "v", "version", "t", "wc"}
