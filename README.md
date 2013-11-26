@@ -137,7 +137,7 @@ If non-archived, artifacts generated into a directory structure as follows:
 Configuration file
 -----------------
 
-For repeatable builds (and some extra options), it is recomended to use goxc can use a configuration file(s) to save and re-run compilations.
+For repeatable builds (and some extra options), it is recomended to use goxc with one or more configuration file(s) to save and re-run compilations.
 
 To create a config file, just use the -wc (write config) option.
 
