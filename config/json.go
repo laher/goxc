@@ -309,7 +309,7 @@ func loadSettingsSection(settingsSection map[string]interface{}) (settings Setti
 func WriteJsonConfig(dir string, settings Settings, configName string, isLocal bool) error {
 	settings.GoxcConfigVersion = GOXC_CONFIG_VERSION
 	bs := BuildSettings{}
-	if bs.Equals(*settings.BuildSettings) {
+	if settings.BuildSettings != nil && bs.Equals(*settings.BuildSettings) {
 		settings.BuildSettings = nil
 	}
 	if isLocal {
