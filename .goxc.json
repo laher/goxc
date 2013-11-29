@@ -7,7 +7,7 @@
 	],
 	"ResourcesInclude": "README.md,.\\_test1/*",
 	"ResourcesExclude": "*.go",
-	"PackageVersion": "0.10.11",
+	"PackageVersion": "0.11.0",
 	"TaskSettings": {
 		"archive-zip": {},
 		"bintray": {
@@ -39,7 +39,7 @@
 	},
 	"ConfigVersion": "0.9",
 	"BuildSettings": {
-		"Processors": 3,
+		"Processors": 1,
 		"Verbose": false,
 		"Compiler": "gc",
 		"LdFlagsXVars": {

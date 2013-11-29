@@ -53,7 +53,7 @@ func ArchiveBinariesAndResources(outDir, platName string, binPaths []string, app
 	} else {
 		zipName = appName + "_" + platName
 	}
-	zipFilename = zipName + "." + ending
+	zipFilename = filepath.Join(outDir, zipName+"."+ending)
 	var zipDir string
 	if includeTopLevelDir {
 		zipDir = zipName
@@ -75,6 +75,6 @@ func ArchiveBinariesAndResources(outDir, platName string, binPaths []string, app
 		}
 		toArchive = append(toArchive, ArchiveItemFromFileSystem(resource, destFile))
 	}
-	err = archiver(filepath.Join(outDir, zipFilename), toArchive)
+	err = archiver(zipFilename, toArchive)
 	return
 }

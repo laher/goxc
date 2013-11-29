@@ -47,8 +47,8 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION    = "0.10.11"
-	BUILD_DATE = "2013-11-26T22:48:35+13:00"
+	VERSION    = "0.11.0"
+	BUILD_DATE = "2013-11-30T10:58:36+13:00"
 	// settings for this invocation of goxc
 	settings             config.Settings
 	fBuildSettings       config.BuildSettings
@@ -69,6 +69,7 @@ var (
 	isVerbose            bool
 	workingDirectoryFlag string
 	buildConstraints     string
+	maxProcessors        int
 	env                  config.Strslice
 )
 
@@ -170,7 +171,7 @@ func goXC(call []string) {
 		//2.0.0: Removed PKG_VERSION parsing
 		destPlatforms := platforms.GetDestPlatforms(settings.Os, settings.Arch)
 		destPlatforms = platforms.ApplyBuildConstraints(settings.BuildConstraints, destPlatforms)
-		tasks.RunTasks(workingDirectory, destPlatforms, settings)
+		tasks.RunTasks(workingDirectory, destPlatforms, settings, maxProcessors)
 	}
 }
 
@@ -328,6 +329,7 @@ func interpretFlags(call []string) {
 			buildConstraints = strings.Replace(buildConstraints, "'", "", -1)
 			settings.BuildConstraints = buildConstraints
 		}
+		maxProcessors = calcMaxProcessors(maxProcessors)
 	}
 	if isHelp {
 		printHelp(flagSet)
@@ -354,7 +356,32 @@ func interpretFlags(call []string) {
 		os.Exit(1)
 	}
 }
-
+func calcMaxProcessors(max int) int {
+	processors := runtime.NumCPU()
+	if processors > 1 {
+		if max > 0 {
+			if max > processors {
+				return processors
+			} else {
+				return max
+			}
+		} else if max < 0 {
+			//ok -x
+			result := processors + max
+			if result < 1 {
+				log.Printf("Requested less than one processor (%d %d = %d) - using 1 only!", processors, max, result)
+				return 1
+			} else {
+				return result
+			}
+		} else {
+			//default
+			return processors - 1
+		}
+	} else {
+		return 1
+	}
+}
 func getWorkingDir() string {
 	//0.6 do NOT use args[0]
 	var workingDirectory string
@@ -500,6 +527,8 @@ func setupFlags() *flag.FlagSet {
 	flagSet.BoolVar(&isBuildToolchain, "t", false, "Build cross-compiler toolchain(s). Equivalent to -tasks=toolchain")
 	flagSet.BoolVar(&isWriteConfig, "wc", false, "(over)write config. Overwrites are additive. Try goxc -wc to produce a starting point.")
 	flagSet.BoolVar(&isWriteLocalConfig, "wlc", false, "write 'local' config")
+
+	flagSet.IntVar(&maxProcessors, "max-processors", 0, "Max processors (for parallelizing tasks)")
 
 	//var bs config.BuildSettings
 	//bs.Processors = &processors

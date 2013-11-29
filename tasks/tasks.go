@@ -26,6 +26,7 @@ import (
 	"github.com/laher/goxc/platforms"
 	"github.com/laher/goxc/source"
 	"log"
+	"runtime"
 	"strings"
 )
 
@@ -80,13 +81,23 @@ type TaskParams struct {
 	AppName                       string
 	WorkingDirectory, OutDestRoot string
 	Settings                      config.Settings
+	MaxProcessors                 int
 }
 
 // A task is basically a user-defined function given a unique name, plus some 'default settings'
 type Task struct {
 	Name            string
 	Description     string
-	f               func(TaskParams) error
+	run             func(TaskParams) error
+	DefaultSettings map[string]interface{}
+}
+
+type ParallelizableTask struct {
+	Name            string
+	Description     string
+	setUp           func(TaskParams) ([]platforms.Platform, error)
+	perPlatform     func(TaskParams, platforms.Platform, chan error)
+	tearDown        func(TaskParams) error
 	DefaultSettings map[string]interface{}
 }
 
@@ -105,6 +116,53 @@ var (
 
 // Register a task for use by goxc. Call from an 'init' function
 func Register(task Task) {
+	allTasks[task.Name] = task
+}
+
+func generateParallelizedRunFunc(pTask ParallelizableTask) func(TaskParams) error {
+	fn := func(tp TaskParams) error {
+		platforms, err := pTask.setUp(tp)
+		if err != nil {
+			return err
+		}
+		count := len(platforms)
+		numProcs := runtime.NumCPU()
+		log.Printf("Parallelizing %s for %d platforms, using %d of %d processors", pTask.Name, count, tp.MaxProcessors, numProcs)
+		errchan := make(chan error)
+		for _, pl := range platforms {
+			go pTask.perPlatform(tp, pl, errchan)
+		}
+		errs := []error{}
+		i := 0
+		for i < count {
+			err = <-errchan
+			if err != nil {
+				errs = append(errs, err)
+			}
+			i++
+		}
+		//always tearDown incase you need to free resources
+		if pTask.tearDown != nil {
+			err = pTask.tearDown(tp)
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+		if len(errs) > 0 {
+			log.Printf("Multiple errors (returning first one): %v", errs)
+			return errs[0]
+		}
+		return nil
+	}
+	return fn
+}
+
+func RegisterParallelizable(pTask ParallelizableTask) {
+	task := Task{
+		Name:            pTask.Name,
+		Description:     pTask.Description,
+		run:             generateParallelizedRunFunc(pTask),
+		DefaultSettings: pTask.DefaultSettings}
 	allTasks[task.Name] = task
 }
 
@@ -132,8 +190,8 @@ func ListTasks() []Task {
 }
 
 // run all given tasks
-func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, settings config.Settings) {
-	log.Printf("Go root: %s", settings.GoRoot)
+func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, settings config.Settings, maxProcessors int) {
+	log.Printf("Using Go root: %s", settings.GoRoot)
 	if settings.IsVerbose() {
 		log.Printf("looping through each platform")
 	}
@@ -187,7 +245,7 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 	log.Printf("Running tasks: %v on packages %v", tasksToRun, mainDirs)
 	for _, taskName := range tasksToRun {
 		log.SetPrefix("[goxc:" + taskName + "] ")
-		err := runTask(taskName, destPlatforms, mainDirs, appName, workingDirectory, outDestRoot, settings)
+		err := runTask(taskName, destPlatforms, mainDirs, appName, workingDirectory, outDestRoot, settings, maxProcessors)
 		if err != nil {
 			// TODO: implement 'force' option.
 			log.Printf("Stopping after '%s' failed with error '%v'", taskName, err)
@@ -199,10 +257,10 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 }
 
 // run named task
-func runTask(taskName string, destPlatforms []platforms.Platform, mainDirs []string, appName, workingDirectory, outDestRoot string, settings config.Settings) error {
+func runTask(taskName string, destPlatforms []platforms.Platform, mainDirs []string, appName, workingDirectory, outDestRoot string, settings config.Settings, maxProcessors int) error {
 	if taskV, keyExists := allTasks[taskName]; keyExists {
-		tp := TaskParams{destPlatforms, mainDirs, appName, workingDirectory, outDestRoot, settings}
-		return taskV.f(tp)
+		tp := TaskParams{destPlatforms, mainDirs, appName, workingDirectory, outDestRoot, settings, maxProcessors}
+		return taskV.run(tp)
 	}
 	log.Printf("Unrecognised task '%s'", taskName)
 	return fmt.Errorf("Unrecognised task '%s'", taskName)

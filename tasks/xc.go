@@ -38,10 +38,12 @@ import (
 //runs automatically
 func init() {
 	//GOARM=6 (this is the default for go1.1
-	Register(Task{
-		"xc",
+	RegisterParallelizable(ParallelizableTask{
+		TASK_XC,
 		"Cross compile. Builds executables for other platforms.",
-		runTaskXC,
+		setupXc,
+		runXc,
+		nil,
 		map[string]interface{}{"GOARM": "",
 			//"validation" : "tcBinExists,exeParse",
 			"validateToolchain":    true,
@@ -49,43 +51,58 @@ func init() {
 			"autoRebuildToolchain": true}})
 }
 
-func runTaskXC(tp TaskParams) error {
+func setupXc(tp TaskParams) ([]platforms.Platform, error) {
+
 	if len(tp.DestPlatforms) == 0 {
-		return errors.New("No valid platforms specified")
+		return []platforms.Platform{}, errors.New("No valid platforms specified")
 	}
-	success := 0
-	var err error
-	appName := core.GetAppName(tp.WorkingDirectory)
-	outDestRoot := core.GetOutDestRoot(appName, tp.Settings.ArtifactsDest, tp.WorkingDirectory)
-	log.Printf("mainDirs : %v", tp.MainDirs)
+
+	isValidateToolchain := tp.Settings.GetTaskSettingBool(TASK_XC, "validateToolchain")
+	goroot := tp.Settings.GoRoot
 	for _, dest := range tp.DestPlatforms {
-		for _, mainDir := range tp.MainDirs {
-			exeName := filepath.Base(mainDir)
-			absoluteBin, err := xcPlat(dest.Os, dest.Arch, mainDir, tp.Settings, outDestRoot, exeName)
+		if isValidateToolchain {
+			err := validateToolchain(dest.Os, dest.Arch, goroot)
 			if err != nil {
-				log.Printf("Error: %v", err)
-				log.Printf("Have you run `goxc -t` for this platform (%s,%s)???", dest.Arch, dest.Os)
-				return err
-			} else {
-				success = success + 1
-				isVerifyExe := tp.Settings.GetTaskSettingBool(TASK_XC, "verifyExe")
-				if isVerifyExe {
-					err = exefileparse.Test(absoluteBin, dest.Arch, dest.Os)
-					if err != nil {
-						log.Printf("Error: %v", err)
-						log.Printf("Something fishy is going on: have you run `goxc -t` for this platform (%s,%s)???", dest.Arch, dest.Os)
-						return err
-					}
+				log.Printf("Toolchain not ready. Re-building toolchain. (%v)", err)
+				isAutoToolchain := tp.Settings.GetTaskSettingBool(TASK_XC, "autoRebuildToolchain")
+				if isAutoToolchain {
+					err = buildToolchain(dest.Os, dest.Arch, tp.Settings)
+				}
+				if err != nil {
+					return nil, err
 				}
 			}
 		}
 	}
-	//0.6 return error if no platforms succeeded.
-	if success < 1 {
-		log.Printf("No successes!")
-		return err
+	return tp.DestPlatforms, nil
+}
+
+func runXc(tp TaskParams, dest platforms.Platform, errchan chan error) {
+	appName := core.GetAppName(tp.WorkingDirectory)
+	outDestRoot := core.GetOutDestRoot(appName, tp.Settings.ArtifactsDest, tp.WorkingDirectory)
+	log.Printf("mainDirs : %v", tp.MainDirs)
+	for _, mainDir := range tp.MainDirs {
+		exeName := filepath.Base(mainDir)
+		absoluteBin, err := xcPlat(dest.Os, dest.Arch, mainDir, tp.Settings, outDestRoot, exeName)
+		if err != nil {
+			log.Printf("Error: %v", err)
+			log.Printf("Have you run `goxc -t` for this platform (%s,%s)???", dest.Arch, dest.Os)
+			errchan <- err
+			return
+		} else {
+			isVerifyExe := tp.Settings.GetTaskSettingBool(TASK_XC, "verifyExe")
+			if isVerifyExe {
+				err = exefileparse.Test(absoluteBin, dest.Arch, dest.Os)
+				if err != nil {
+					log.Printf("Error: %v", err)
+					log.Printf("Something fishy is going on: have you run `goxc -t` for this platform (%s,%s)???", dest.Arch, dest.Os)
+					errchan <- err
+					return
+				}
+			}
+		}
 	}
-	return nil
+	errchan <- nil
 }
 
 func validateToolchain(goos, arch, goroot string) error {
@@ -179,24 +196,8 @@ func validatePlatToolchainBinExists(goos, arch, goroot string) error {
 // xcPlat: Cross compile for a particular platform
 // 0.3.0 - breaking change - changed 'call []string' to 'workingDirectory string'.
 func xcPlat(goos, arch string, workingDirectory string, settings config.Settings, outDestRoot string, exeName string) (string, error) {
-	isValidateToolchain := settings.GetTaskSettingBool(TASK_XC, "validateToolchain")
-	goroot := settings.GoRoot
-	if isValidateToolchain {
-		err := validateToolchain(goos, arch, goroot)
-		if err != nil {
-			log.Printf("Toolchain not ready. Re-building toolchain. (%v)", err)
-			isAutoToolchain := settings.GetTaskSettingBool(TASK_XC, "autoRebuildToolchain")
-			if isAutoToolchain {
-				err = buildToolchain(goos, arch, settings)
-			}
-			if err != nil {
-				return "", err
-			}
-		}
-	}
 	log.Printf("building %s for platform %s_%s.", exeName, goos, arch)
 	relativeDir := filepath.Join(settings.GetFullVersionName(), goos+"_"+arch)
-
 	outDir := filepath.Join(outDestRoot, relativeDir)
 	err := os.MkdirAll(outDir, 0755)
 	if err != nil {

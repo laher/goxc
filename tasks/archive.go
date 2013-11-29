@@ -31,60 +31,72 @@ import (
 
 //runs automatically
 func init() {
-	Register(Task{
-		"archive-zip",
+	RegisterParallelizable(ParallelizableTask{
+		TASK_ZIP,
 		"Create a zip archive. By default, 'zip' format is used for all platforms except Linux",
-		runTaskArchiveZip,
+		setupZip,
+		runTaskZip,
+		nil,
 		map[string]interface{}{"platforms": "!linux", "include-top-level-dir": "!windows"}})
-	Register(Task{
-		"archive-tar-gz",
+	RegisterParallelizable(ParallelizableTask{
+		TASK_TARGZ,
 		"Create a compressed archive. Linux-only by default",
-		runTaskArchiveTarGz,
+		setupTarGz,
+		runTaskTarGz,
+		nil,
 		map[string]interface{}{"platforms": "linux", "include-top-level-dir": "!windows"}})
 
 }
 
-func runTaskArchiveZip(tp TaskParams) error {
-	return runTaskArchive(tp, "archive-zip")
-}
+const (
+	TASK_ZIP   = "archive-zip"
+	TASK_TARGZ = "archive-tar-gz"
+)
 
-func runTaskArchiveTarGz(tp TaskParams) error {
-	return runTaskArchive(tp, "archive-tar-gz")
-}
-
-func runTaskArchive(tp TaskParams, taskName string) error {
-	//for previous versions (until 2.0.3) ...
+func setupTarGz(tp TaskParams) ([]platforms.Platform, error) {
+	//for previous versions ...
 	//osOptions := settings.GetTaskSettingMap(TASK_ARCHIVE, "os")
-	if _, keyExists := tp.Settings.TaskSettings["os"]; keyExists {
-		return errors.New("Option 'os' no longer supported! Please use 'tar-gz' instead, specified as a 'build contraint'. e.g. 'linux,386'")
+	if _, keyExists := tp.Settings.TaskSettings[TASK_TARGZ]["os"]; keyExists {
+		return []platforms.Platform{}, errors.New("Option 'os' is no longer supported! Please use 'platforms' instead, specified as a 'build contraint'. e.g. 'linux,386'")
 	}
-	//for Windows, include topleveldir
-	bc := tp.Settings.GetTaskSettingString(taskName, "platforms")
+	bc := tp.Settings.GetTaskSettingString(TASK_TARGZ, "platforms")
 	destPlatforms := platforms.ApplyBuildConstraints(bc, tp.DestPlatforms)
-	bcTopLevelDir := tp.Settings.GetTaskSettingString(taskName, "include-top-level-dir")
-	destPlatformsTopLevelDir := platforms.ApplyBuildConstraints(bcTopLevelDir, tp.DestPlatforms)
-	var ending string
-	var archiver archive.Archiver
-	switch taskName {
-	case "archive-tar-gz":
-		ending = "tar.gz"
-		archiver = archive.TarGz
-	case "archive-zip":
-		ending = "zip"
-		archiver = archive.Zip
-	default:
-		return errors.New("Unrecognised task name!")
+	return destPlatforms, nil
+}
+func setupZip(tp TaskParams) ([]platforms.Platform, error) {
+	//for previous versions ...
+	//osOptions := settings.GetTaskSettingMap(TASK_ARCHIVE, "os")
+	if _, keyExists := tp.Settings.TaskSettings[TASK_ZIP]["os"]; keyExists {
+		return []platforms.Platform{}, errors.New("Option 'os' is no longer supported! Please use 'platforms' instead, specified as a 'build contraint'. e.g. 'linux,386'")
 	}
-	for _, dest := range destPlatforms {
-		isIncludeTopLevelDir := platforms.ContainsPlatform(destPlatformsTopLevelDir, dest)
-		err := archivePlat(dest.Os, dest.Arch, tp.MainDirs, tp.AppName, tp.WorkingDirectory, tp.OutDestRoot, tp.Settings, ending, archiver, isIncludeTopLevelDir)
-		if err != nil {
-			//TODO - 'force' option?
-			return err
-		}
+	bc := tp.Settings.GetTaskSettingString(TASK_ZIP, "platforms")
+	destPlatforms := platforms.ApplyBuildConstraints(bc, tp.DestPlatforms)
+	return destPlatforms, nil
+}
+
+func runTaskTarGz(tp TaskParams, dest platforms.Platform, errchan chan error) {
+	bcTopLevelDir := tp.Settings.GetTaskSettingString(TASK_TARGZ, "include-top-level-dir")
+	destPlatforms := platforms.ApplyBuildConstraints(bcTopLevelDir, []platforms.Platform{dest})
+	isIncludeTopLevelDir := platforms.ContainsPlatform(destPlatforms, dest)
+	runArchiveTask(tp, dest, errchan, "tar.gz", archive.TarGz, isIncludeTopLevelDir)
+}
+
+func runTaskZip(tp TaskParams, dest platforms.Platform, errchan chan error) {
+	bcTopLevelDir := tp.Settings.GetTaskSettingString(TASK_ZIP, "include-top-level-dir")
+	destPlatforms := platforms.ApplyBuildConstraints(bcTopLevelDir, []platforms.Platform{dest})
+	isIncludeTopLevelDir := platforms.ContainsPlatform(destPlatforms, dest)
+	runArchiveTask(tp, dest, errchan, "zip", archive.Zip, isIncludeTopLevelDir)
+}
+
+func runArchiveTask(tp TaskParams, dest platforms.Platform, errchan chan error, ending string, archiver archive.Archiver, isIncludeTopLevelDir bool) {
+	err := archivePlat(dest.Os, dest.Arch, tp.MainDirs, tp.AppName, tp.WorkingDirectory, tp.OutDestRoot, tp.Settings, ending, archiver, isIncludeTopLevelDir)
+	if err != nil {
+		//TODO - 'force' option?
+		errchan <- err
+		return
 	}
-	//TODO return error?
-	return nil
+	//always notify completion
+	errchan <- nil
 }
 
 func archivePlat(goos, arch string, mainDirs []string, appName, workingDirectory, outDestRoot string, settings config.Settings, ending string, archiver archive.Archiver, includeTopLevelDir bool) error {
