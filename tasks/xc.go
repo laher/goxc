@@ -61,9 +61,9 @@ func setupXc(tp TaskParams) ([]platforms.Platform, error) {
 	goroot := tp.Settings.GoRoot
 	for _, dest := range tp.DestPlatforms {
 		if isValidateToolchain {
-			err := validateToolchain(dest.Os, dest.Arch, goroot)
+			err := validateToolchain(dest, goroot)
 			if err != nil {
-				log.Printf("Toolchain not ready. Re-building toolchain. (%v)", err)
+				log.Printf("Toolchain not ready for %v. Re-building toolchain. (%v)", dest, err)
 				isAutoToolchain := tp.Settings.GetTaskSettingBool(TASK_XC, "autoRebuildToolchain")
 				if isAutoToolchain {
 					err = buildToolchain(dest.Os, dest.Arch, tp.Settings)
@@ -83,7 +83,7 @@ func runXc(tp TaskParams, dest platforms.Platform, errchan chan error) {
 	log.Printf("mainDirs : %v", tp.MainDirs)
 	for _, mainDir := range tp.MainDirs {
 		exeName := filepath.Base(mainDir)
-		absoluteBin, err := xcPlat(dest.Os, dest.Arch, mainDir, tp.Settings, outDestRoot, exeName)
+		absoluteBin, err := xcPlat(dest, mainDir, tp.Settings, outDestRoot, exeName)
 		if err != nil {
 			log.Printf("Error: %v", err)
 			log.Printf("Have you run `goxc -t` for this platform (%s,%s)???", dest.Arch, dest.Os)
@@ -105,12 +105,12 @@ func runXc(tp TaskParams, dest platforms.Platform, errchan chan error) {
 	errchan <- nil
 }
 
-func validateToolchain(goos, arch, goroot string) error {
-	err := validatePlatToolchainBinExists(goos, arch, goroot)
+func validateToolchain(dest platforms.Platform, goroot string) error {
+	err := validatePlatToolchainBinExists(dest, goroot)
 	if err != nil {
 		return err
 	}
-	err = validatePlatToolchainPackageVersion(goos, arch, goroot)
+	err = validatePlatToolchainPackageVersion(dest, goroot)
 	if err != nil {
 		return err
 	}
@@ -118,8 +118,8 @@ func validateToolchain(goos, arch, goroot string) error {
 	return nil
 }
 
-func validatePlatToolchainPackageVersion(goos, arch, goroot string) error {
-	platPkgFileRuntime := filepath.Join(goroot, "pkg", goos+"_"+arch, "runtime.a")
+func validatePlatToolchainPackageVersion(dest platforms.Platform, goroot string) error {
+	platPkgFileRuntime := filepath.Join(goroot, "pkg", dest.Os+"_"+dest.Arch, "runtime.a")
 	nr, err := os.Open(platPkgFileRuntime)
 	if err != nil {
 		log.Printf("Could not validate toolchain version: %v", err)
@@ -146,7 +146,7 @@ func validatePlatToolchainPackageVersion(goos, arch, goroot string) error {
 				return nil
 			}
 			//log.Printf("pkgdef first part: '%s'", firstLine)
-			expectedPrefix := "go object " + goos + " " + arch + " "
+			expectedPrefix := "go object " + dest.Os + " " + dest.Arch + " "
 			if !strings.HasPrefix(firstLine, expectedPrefix) {
 				log.Printf("first line of __.PKGDEF does not match expected pattern: %v", expectedPrefix)
 				return nil
@@ -174,19 +174,19 @@ func validatePlatToolchainPackageVersion(goos, arch, goroot string) error {
 			if compiledVersion != goVersion {
 				return errors.New("static library version '" + compiledVersion + "' does NOT match `go version` '" + goVersion + "'!")
 			}
-			log.Printf("Toolchain version '%s' verified against 'go' executable version '%s'", compiledVersion, goVersion)
+			log.Printf("Toolchain version '%s' verified against 'go %s' for %v", compiledVersion, goVersion, dest)
 			return nil
 		}
 	}
 }
 
-func validatePlatToolchainBinExists(goos, arch, goroot string) error {
-	platGoBin := filepath.Join(goroot, "bin", goos+"_"+arch, "go")
-	if goos == runtime.GOOS && arch == runtime.GOARCH {
+func validatePlatToolchainBinExists(dest platforms.Platform, goroot string) error {
+	platGoBin := filepath.Join(goroot, "bin", dest.Os+"_"+dest.Arch, "go")
+	if dest.Os == runtime.GOOS && dest.Arch == runtime.GOARCH {
 
 		platGoBin = filepath.Join(goroot, "bin", "go")
 	}
-	if goos == platforms.WINDOWS {
+	if dest.Os == platforms.WINDOWS {
 		platGoBin += ".exe"
 	}
 	_, err := os.Stat(platGoBin)
@@ -195,23 +195,23 @@ func validatePlatToolchainBinExists(goos, arch, goroot string) error {
 
 // xcPlat: Cross compile for a particular platform
 // 0.3.0 - breaking change - changed 'call []string' to 'workingDirectory string'.
-func xcPlat(goos, arch string, workingDirectory string, settings config.Settings, outDestRoot string, exeName string) (string, error) {
-	log.Printf("building %s for platform %s_%s.", exeName, goos, arch)
-	relativeDir := filepath.Join(settings.GetFullVersionName(), goos+"_"+arch)
+func xcPlat(dest platforms.Platform, workingDirectory string, settings config.Settings, outDestRoot string, exeName string) (string, error) {
+	log.Printf("building %s for platform %v.", exeName, dest)
+	relativeDir := filepath.Join(settings.GetFullVersionName(), dest.Os+"_"+dest.Arch)
 	outDir := filepath.Join(outDestRoot, relativeDir)
 	err := os.MkdirAll(outDir, 0755)
 	if err != nil {
 		return "", err
 	}
 	args := []string{}
-	relativeBin := core.GetRelativeBin(goos, arch, exeName, false, settings.GetFullVersionName())
+	relativeBin := core.GetRelativeBin(dest.Os, dest.Arch, exeName, false, settings.GetFullVersionName())
 	absoluteBin := filepath.Join(outDestRoot, relativeBin)
 	//args = append(args, executils.GetLdFlagVersionArgs(settings.GetFullVersionName())...)
 	args = append(args, "-o", absoluteBin, ".")
 	//log.Printf("building %s", exeName)
 	//v0.8.5 no longer using CGO_ENABLED
-	envExtra := []string{"GOOS=" + goos, "GOARCH=" + arch}
-	if goos == platforms.LINUX && arch == platforms.ARM {
+	envExtra := []string{"GOOS=" + dest.Os, "GOARCH=" + dest.Arch}
+	if dest.Os == platforms.LINUX && dest.Arch == platforms.ARM {
 		// see http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go
 		goarm := settings.GetTaskSettingString(TASK_XC, "GOARM")
 		if goarm != "" {

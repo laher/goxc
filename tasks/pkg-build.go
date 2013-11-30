@@ -30,7 +30,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	//"strings"
 )
 
 //runs automatically

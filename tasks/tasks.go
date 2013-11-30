@@ -126,8 +126,11 @@ func generateParallelizedRunFunc(pTask ParallelizableTask) func(TaskParams) erro
 			return err
 		}
 		count := len(platforms)
+		if count < 1 {
+			return nil
+		}
 		numProcs := runtime.NumCPU()
-		log.Printf("Parallelizing %s for %d platforms, using %d of %d processors", pTask.Name, count, tp.MaxProcessors, numProcs)
+		log.Printf("Parallelizing %s for %d platforms, using max %d of %d processors", pTask.Name, count, tp.MaxProcessors, numProcs)
 		errchan := make(chan error)
 		for _, pl := range platforms {
 			go pTask.perPlatform(tp, pl, errchan)
