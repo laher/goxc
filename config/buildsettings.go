@@ -25,13 +25,34 @@ type BuildSettings struct {
 
 func (this BuildSettings) Equals(that BuildSettings) bool {
 	return this.Processors == that.Processors &&
-		this.Race == that.Race
+		this.Race == that.Race &&
+		this.Verbose == that.Verbose &&
+		this.PrintCommands == that.PrintCommands &&
+		this.CcFlags == that.CcFlags &&
+		this.Compiler == that.Compiler &&
+		this.GccGoFlags == that.GccGoFlags &&
+		this.GcFlags == that.GcFlags &&
+		this.InstallSuffix == that.InstallSuffix &&
+		this.LdFlags == that.LdFlags &&
+		this.Tags == that.Tags &&
+		typeutils.StringSliceEquals(this.ExtraArgs, that.ExtraArgs) &&
+		((this.LdFlagsXVars == nil && that.LdFlagsXVars == nil) ||
+			(this.LdFlagsXVars != nil && that.LdFlagsXVars != nil && typeutils.AreMapsEqual(*this.LdFlagsXVars, *that.LdFlagsXVars)))
+}
+func (this BuildSettings) IsEmpty() bool {
+	bs := BuildSettings{}
+	if bs.Equals(this) {
+		return true
+	}
+	//defaults can also be considered 'empty'
+	FillBuildSettingsDefaults(&bs)
+	return bs.Equals(this)
 }
 
 func buildSettingsFromMap(m map[string]interface{}) (*BuildSettings, error) {
 	var err error
 	bs := BuildSettings{}
-	FillBuildSettingsDefaults(&bs)
+	//FillBuildSettingsDefaults(&bs)
 	for k, v := range m {
 		switch k {
 		//case "GoRoot":

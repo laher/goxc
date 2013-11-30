@@ -28,12 +28,16 @@ func init() {
 		TASK_GO_TEST,
 		"runs `go test ./...`. (dir is configurable).",
 		runTaskGoTest,
-		map[string]interface{}{"dir": "./..."}})
+		map[string]interface{}{"dir": "./...", "i": true}})
 }
 
 func runTaskGoTest(tp TaskParams) error {
 	dir := tp.Settings.GetTaskSettingString(TASK_GO_TEST, "dir")
+	i := tp.Settings.GetTaskSettingBool(TASK_GO_TEST, "i")
 	args := []string{dir}
+	if i {
+		args = []string{"-i", dir}
+	}
 	//args = append(args, executils.GetLdFlagVersionArgs(tp.Settings.GetFullVersionName())...)
 	err := executils.InvokeGo(tp.WorkingDirectory, "test", args, []string{}, tp.Settings)
 	return err

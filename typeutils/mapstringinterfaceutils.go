@@ -114,6 +114,32 @@ func MergeMapsStringMapStringInterface(high, low map[string]map[string]interface
 	return high
 }
 
+func AreMapsEqual(a, b map[string]interface{}) bool {
+	if a == nil {
+		return b == nil
+	} else {
+		for key, aVal := range a {
+			if bVal, bKeyExists := b[key]; bKeyExists {
+				if aVal != bVal {
+					return false
+				}
+			} else {
+				return false
+			}
+		}
+		for key, bVal := range b {
+			if aVal, aKeyExists := a[key]; aKeyExists {
+				if aVal != bVal {
+					return false
+				}
+			} else {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 // merge possibly-nested maps (first argument takes priority)
 // note that lists are replaced, not merged
 func MergeMaps(high, low map[string]interface{}) map[string]interface{} {

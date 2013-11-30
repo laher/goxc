@@ -289,7 +289,7 @@ func Merge(high Settings, low Settings) Settings {
 		high.TaskSettings = typeutils.MergeMapsStringMapStringInterface(high.TaskSettings, low.TaskSettings)
 	}
 	//0.9 BuildSettings
-	if high.BuildSettings == nil {
+	if high.BuildSettings == nil || high.BuildSettings.IsEmpty() {
 		high.BuildSettings = low.BuildSettings
 	} else if low.BuildSettings != nil {
 		if high.BuildSettings.Processors == nil {

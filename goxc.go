@@ -47,8 +47,8 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION    = "0.11.0"
-	BUILD_DATE = "2013-11-30T10:58:36+13:00"
+	VERSION    = "0.11.2"
+	BUILD_DATE = "2013-11-30T17:49:19+13:00"
 	// settings for this invocation of goxc
 	settings             config.Settings
 	fBuildSettings       config.BuildSettings
@@ -168,7 +168,6 @@ func goXC(call []string) {
 		if settings.IsVerbose() {
 			log.Printf("Final settings %+v", settings)
 		}
-		//2.0.0: Removed PKG_VERSION parsing
 		destPlatforms := platforms.GetDestPlatforms(settings.Os, settings.Arch)
 		destPlatforms = platforms.ApplyBuildConstraints(settings.BuildConstraints, destPlatforms)
 		tasks.RunTasks(workingDirectory, destPlatforms, settings, maxProcessors)

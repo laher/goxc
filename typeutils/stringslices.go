@@ -68,3 +68,27 @@ func StringSliceEquals(a, b []string) bool {
 	}
 	return true
 }
+
+//this was taken from golang `bytes.Compare`.
+func StringSliceCompare(a, b []string) int {
+	m := len(a)
+	if m > len(b) {
+		m = len(b)
+	}
+	for i, ac := range a[0:m] {
+		bc := b[i]
+		switch {
+		case ac > bc:
+			return 1
+		case ac < bc:
+			return -1
+		}
+	}
+	switch {
+	case len(a) < len(b):
+		return -1
+	case len(a) > len(b):
+		return 1
+	}
+	return 0
+}
