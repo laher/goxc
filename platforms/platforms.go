@@ -23,7 +23,6 @@ import (
 	//"github.com/laher/goxc/archive"
 	//"github.com/laher/goxc/config"
 	"log"
-	"runtime"
 	"strings"
 )
 
@@ -76,9 +75,9 @@ var (
 )
 
 func getSupportedPlatforms() []Platform {
-	if strings.HasPrefix(runtime.Version(), "go1.0") {
-		return SUPPORTED_PLATFORMS_1_0
-	}
+	//if strings.HasPrefix(runtime.Version(), "go1.0") {
+	//	return SUPPORTED_PLATFORMS_1_0
+	//}
 	return SUPPORTED_PLATFORMS_1_1
 }
 

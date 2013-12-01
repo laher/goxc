@@ -33,6 +33,7 @@ import (
 	"github.com/laher/goxc/core"
 	"github.com/laher/goxc/platforms"
 	"github.com/laher/goxc/tasks"
+	"github.com/laher/uggo/uflag"
 )
 
 const (
@@ -48,7 +49,7 @@ var (
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
 	VERSION    = "0.11.3"
-	BUILD_DATE = "2013-11-30T19:44:40+13:00"
+	BUILD_DATE = "2013-12-01T21:43:16+13:00"
 	// settings for this invocation of goxc
 	settings             config.Settings
 	fBuildSettings       config.BuildSettings
@@ -73,7 +74,7 @@ var (
 	env                  config.Strslice
 )
 
-func printHelp(flagSet *flag.FlagSet) {
+func printHelp(flagSet uflag.FlagSetWithAliases) {
 	args := flagSet.Args()
 	if len(args) < 1 {
 		printVersion(os.Stderr)
@@ -83,7 +84,7 @@ func printHelp(flagSet *flag.FlagSet) {
 	}
 }
 
-func printHelpTopic(flagSet *flag.FlagSet, topic string) {
+func printHelpTopic(flagSet uflag.FlagSetWithAliases, topic string) {
 	switch topic {
 	case "options":
 		fmt.Fprint(os.Stderr, MSG_HELP)
@@ -477,9 +478,9 @@ func remove(arr []string, v string) []string {
 // Set up flags.
 // Note use of empty strings as defaults, with 'actual' defaults .
 // This is done to make merging options from configuration files easier.
-func setupFlags() *flag.FlagSet {
-	flagSet := flag.NewFlagSet("goxc", flag.ContinueOnError)
-	flagSet.StringVar(&configName, "c", "", "config name")
+func setupFlags() uflag.FlagSetWithAliases {
+	flagSet := uflag.NewFlagSet("goxc", flag.ContinueOnError)
+	flagSet.AliasedStringVar(&configName, []string{"c", "config"}, "", "config name")
 
 	//TODO deprecate?
 	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (default is all - \"linux darwin windows freebsd openbsd\")")
@@ -554,7 +555,7 @@ func setupFlags() *flag.FlagSet {
 	return flagSet
 }
 
-func printOptions(flagSet *flag.FlagSet) {
+func printOptions(flagSet uflag.FlagSetWithAliases) {
 	fmt.Print("Help Options:\n")
 	taskOptions := []string{"t", "tasks+", "tasks-", "+tasks"}
 	packageVersioningOptions := []string{"pv", "pr", "br", "bu"}
