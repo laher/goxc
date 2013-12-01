@@ -40,7 +40,7 @@ func init() {
 		TASK_INTERPOLATE_SOURCE,
 		"Replaces a given constant/var value with the current version.",
 		runTaskInterpolateSource,
-		map[string]interface{}{"varnameVersion": "VERSION", "varnameBuildDate": "BUILD_DATE"}})
+		map[string]interface{}{"varnameVersion": "VERSION", "varnameSourceDate": "SOURCE_DATE"}})
 }
 
 func runTaskInterpolateSource(tp TaskParams) error {
@@ -56,9 +56,9 @@ func writeSource(tp TaskParams) error {
 	if err != nil {
 		return err
 	}
-	varnameBuildDate := tp.Settings.GetTaskSettingString(TASK_INTERPOLATE_SOURCE, "varnameBuildDate")
-	buildDate := time.Now().Format(time.RFC3339)
-	return writeVar(tp, varnameBuildDate, buildDate)
+	varnameSourceDate := tp.Settings.GetTaskSettingString(TASK_INTERPOLATE_SOURCE, "varnameSourceDate")
+	sourceDate := time.Now().Format(time.RFC3339)
+	return writeVar(tp, varnameSourceDate, sourceDate)
 }
 
 func writeVar(tp TaskParams, varname, varval string) (err error) {

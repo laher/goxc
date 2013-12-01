@@ -45,7 +45,7 @@ func bump(tp TaskParams) error {
 		return nil
 	}
 	pv := c.PackageVersion
-	if pv == core.PACKAGE_VERSION_DEFAULT {
+	if pv == core.PACKAGE_VERSION_DEFAULT || pv == "" {
 		//go from 'default' version to 0.0.1 (or 0.1.0 or 1.0.0)
 		pv = "0.0.0"
 	}
