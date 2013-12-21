@@ -253,7 +253,10 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 			log.Printf("Found 'main package' dirs (len %d): %v", len(mainDirs), mainDirs)
 		}
 	}
-	log.Printf("Running tasks: %v on packages %v", tasksToRun, allPackages)
+	log.Printf("Running tasks: %v", tasksToRun)
+	if settings.IsVerbose() {
+		log.Printf("All packages: %v", tasksToRun, allPackages)
+	}
 	for _, taskName := range tasksToRun {
 		log.SetPrefix("[goxc:" + taskName + "] ")
 		err := runTask(taskName, destPlatforms, allPackages, mainDirs, appName, workingDirectory, outDestRoot, settings, maxProcessors)

@@ -118,11 +118,13 @@ func debSourceBuild(tp TaskParams) (err error) {
 		return err
 	}
 	//TODO add/exclude resources to /usr/share
-	err = archive.TarGz(filepath.Join(destDir, tp.AppName+"_"+version+".orig.tar.gz"), items)
+	origTgzPath := filepath.Join(destDir, tp.AppName+"_"+version+".orig.tar.gz")
+	err = archive.TarGz(origTgzPath, items)
 	// []archive.ArchiveItem{archive.ArchiveItemFromFileSystem(tp.WorkingDirectory, "/usr/bin/"+tp.AppName)})
 	if err != nil {
 		return err
 	}
+	log.Printf("Created %s", origTgzPath)
 
 	//2. generate .debian.tar.gz (just containing debian/ directory)
 	//generate debian/control
@@ -136,7 +138,8 @@ func debSourceBuild(tp TaskParams) (err error) {
 	copyrightData := []byte{}
 	//generate debian/README.Debian
 	readmeData := []byte{}
-	err = archive.TarGz(filepath.Join(destDir, tp.AppName+"_"+version+".debian.tar.gz"),
+	debTgzPath := filepath.Join(destDir, tp.AppName+"_"+version+".debian.tar.gz")
+	err = archive.TarGz(debTgzPath,
 		[]archive.ArchiveItem{
 			archive.ArchiveItemFromBytes(changelogData, "debian/changelog"),
 			archive.ArchiveItemFromBytes(copyrightData, "debian/copyright"),
@@ -147,11 +150,13 @@ func debSourceBuild(tp TaskParams) (err error) {
 	if err != nil {
 		return err
 	}
+	log.Printf("Created %s", debTgzPath)
 
 	//3. generate .dsc file
-	err = ioutil.WriteFile(filepath.Join(destDir, tp.AppName+"_"+version+".dsc"), controlData, 0644)
+	dscPath := filepath.Join(destDir, tp.AppName+"_"+version+".dsc")
+	err = ioutil.WriteFile(dscPath, controlData, 0644)
 	if err == nil {
-		log.Printf("Files written to %s", destDir)
+		log.Printf("Wrote %s", dscPath)
 	}
 	return err
 }

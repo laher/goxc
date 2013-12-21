@@ -79,6 +79,7 @@ func bump(tp TaskParams) error {
 		pvNew := strings.Join(pvparts, ".")
 		c.PackageVersion = pvNew
 		log.Printf("Bumping from %s to %s", pv, c.PackageVersion)
+		tp.Settings.PackageVersion = pvNew
 		return config.WriteJsonConfig(tp.WorkingDirectory, c, "", false)
 	} else {
 		return errors.New("PackageVersion does not contain enough dots to bump this part of the version number")
