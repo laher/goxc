@@ -92,7 +92,7 @@ func getDebArch(destArch string, armArchName string) string {
 	return architecture
 }
 
-func getArmArchName(settings config.Settings) string {
+func getArmArchName(settings *config.Settings) string {
 	armArchName := settings.GetTaskSettingString(TASK_PKG_BUILD, "armarch")
 	if armArchName == "" {
 		//derive it from GOARM version:

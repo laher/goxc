@@ -17,6 +17,7 @@ package sdeb
 */
 
 import (
+	"errors"
 	"fmt"
 	"github.com/laher/goxc/archive"
 	"io"
@@ -28,19 +29,34 @@ import (
 )
 
 //TODO: unfinished: need to discover root dir to determine which dirs to pre-make.
-func SdebGetSourcesAsArchiveItems(codeDir, prefix string) (sources []archive.ArchiveItem, err error) {
+func SdebGetSourcesAsArchiveItems(codeDir, prefix string) ([]archive.ArchiveItem, error) {
+	return sdebGetSourcesAsArchiveItems(codeDir, codeDir, prefix)
+}
+
+//
+func sdebGetSourcesAsArchiveItems(root, codeDir, prefix string) ([]archive.ArchiveItem, error) {
+	sources := []archive.ArchiveItem{}
+	//1. Glob for files in this dir
 	//log.Printf("Globbing %s", codeDir)
 	matches, err := filepath.Glob(filepath.Join(codeDir, "*.go"))
 	if err != nil {
 		return sources, err
 	}
 	for _, match := range matches {
-		sources = append(sources, archive.ArchiveItemFromFileSystem(match, filepath.Join(prefix, match)))
+		relativeMatch, err := filepath.Rel(root, match)
+		if err != nil {
+			return nil, errors.New("Error finding go sources " + err.Error())
+		}
+		destName := filepath.Join(prefix, relativeMatch)
+		//log.Printf("Putting file %s in %s", match, destName)
+		sources = append(sources, archive.ArchiveItemFromFileSystem(match, destName))
 	}
+
+	//2. Recurse into subdirs
 	fis, err := ioutil.ReadDir(codeDir)
 	for _, fi := range fis {
 		if fi.IsDir() && fi.Name() != DIRNAME_TEMP {
-			additionalItems, err := SdebGetSourcesAsArchiveItems(filepath.Join(codeDir, fi.Name()), prefix)
+			additionalItems, err := sdebGetSourcesAsArchiveItems(root, filepath.Join(codeDir, fi.Name()), prefix)
 			sources = append(sources, additionalItems...)
 			if err != nil {
 				return sources, err

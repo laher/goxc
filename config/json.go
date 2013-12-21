@@ -296,6 +296,8 @@ func loadSettingsSection(settingsSection map[string]interface{}) (settings Setti
 					//log.Printf("Parsed build settings OK (%+v)", settings.BuildSettings)
 				}
 			}
+		case "Env":
+			settings.Env, err = typeutils.ToStringSlice(v, k)
 		default:
 			log.Printf("Warning!! Unrecognised Setting '%s' (value %v)", k, v)
 		}

@@ -19,6 +19,7 @@ package executils
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -32,6 +33,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 )
 
@@ -97,21 +99,31 @@ func isBuildCommand(subCmd string) bool {
 	return false
 }
 
+func splitEnvVar(asString string) (string, string, error) {
+	parts := strings.SplitN(asString, "=", 2)
+	if len(parts) > 1 {
+		return parts[0], parts[1], nil
+	} else {
+		return "", "", errors.New("Invalid env variable definition")
+	}
+}
+
 // invoke the go command via the os/exec package
 // 0.3.1
 // v0.9 changed signature
-func InvokeGo(workingDirectory string, subCmd string, subCmdArgs []string, env []string, settings config.Settings) error {
+func InvokeGo(workingDirectory string, subCmd string, subCmdArgs []string, env []string, settings *config.Settings) error {
 	isVerbose := settings.IsVerbose()
 	fullVersionName := settings.GetFullVersionName()
 	//var buildSettings config.BuildSettings
 	buildSettings := settings.BuildSettings
 	goRoot := settings.GoRoot
-	log.Printf("build settings: %s", goRoot)
+	if isVerbose {
+		log.Printf("build settings: %s", goRoot)
+	}
 	cmdPath := filepath.Join(goRoot, "bin", "go")
-	cmd := exec.Command(cmdPath)
-	RedirectIO(cmd)
 	args := []string{subCmd}
-	//these commands only apply to `go build` & `go install`
+
+	//these features only apply to `go build` & `go install`
 	if isBuildCommand(subCmd) {
 		if buildSettings.Processors != nil {
 			args = append(args, "-p", strconv.Itoa(*buildSettings.Processors))
@@ -157,12 +169,62 @@ func InvokeGo(workingDirectory string, subCmd string, subCmdArgs []string, env [
 		if len(buildSettings.ExtraArgs) > 0 {
 			args = append(args, buildSettings.ExtraArgs...)
 		}
-		if len(settings.Env) > 0 {
-			env = append(env, settings.Env...)
+	}
+	if settings.IsVerbose() {
+		log.Printf("Env: %v", settings.Env)
+	}
+	if len(settings.Env) > 0 {
+		vars := struct {
+			PS  string
+			PLS string
+			Env map[string]string
+		}{
+			string(os.PathSeparator),
+			string(os.PathListSeparator),
+			map[string]string{},
+		}
+		for _, val := range os.Environ() {
+			k, v, err := splitEnvVar(val)
+			if err != nil {
+				//ignore invalid env vars from environment
+			} else {
+				vars.Env[k] = v
+			}
+		}
+		for _, envTpl := range settings.Env {
+			if settings.IsVerbose() {
+				log.Printf("Processing env var %s", envTpl)
+			}
+			tpl, err := template.New("envItem").Parse(envTpl)
+			if err != nil {
+				return err
+			}
+			var dest bytes.Buffer
+			err = tpl.Execute(&dest, vars)
+			if err != nil {
+				return err
+			}
+			executed := dest.String()
+			if settings.IsVerbose() {
+				if envTpl != executed {
+					log.Printf("Setting env var (converted from %s to %s)", envTpl, executed)
+				} else {
+					log.Printf("Setting env var from config: %s", executed)
+				}
+			}
+			env = append(env, dest.String())
+			//new address if necessary
+			k, v, err := splitEnvVar(dest.String())
+			if err != nil {
+				//fail on badly specified ENV vars
+				return errors.New("Invalid env var defined by settings")
+			} else {
+				vars.Env[k] = v
+			}
 		}
 	}
 	args = append(args, subCmdArgs...)
-	err := PrepareCmd(cmd, workingDirectory, args, env, isVerbose)
+	cmd, err := NewCmd(cmdPath, workingDirectory, args, env, isVerbose, true)
 	if err != nil {
 		return err
 	}
@@ -186,15 +248,25 @@ func InvokeGo(workingDirectory string, subCmd string, subCmdArgs []string, env [
 
 }
 
+func NewCmd(cmdPath string, workingDirectory string, args []string, env []string, isVerbose bool, isRedirect bool) (*exec.Cmd, error) {
+	cmd := exec.Command(cmdPath)
+	if isRedirect {
+		RedirectIO(cmd)
+	}
+	return cmd, PrepareCmd(cmd, workingDirectory, args, env, isVerbose)
+}
+
 func PrepareCmd(cmd *exec.Cmd, workingDirectory string, args []string, env []string, isVerbose bool) error {
 	cmd.Args = append(cmd.Args, args...)
 	cmd.Dir = workingDirectory
+	cmd.Env = CombineActualEnv(append(cmd.Env, env...), isVerbose)
+	return nil
+}
 
-	//if f != nil {
-	//defer f.Close()
-	//}
+func CombineActualEnv(env []string, isVerbose bool) []string {
 	//0.7.4 env replaces os.Environ
-	cmd.Env = append(cmd.Env, env...)
+	cmdEnv := []string{}
+	cmdEnv = append(cmdEnv, env...)
 	for _, thisProcessEnvItem := range os.Environ() {
 		thisProcessEnvItemSplit := strings.Split(thisProcessEnvItem, "=")
 		key := thisProcessEnvItemSplit[0]
@@ -208,16 +280,16 @@ func PrepareCmd(cmd *exec.Cmd, workingDirectory string, args []string, env []str
 			}
 		}
 		if !exists {
-			cmd.Env = append(cmd.Env, thisProcessEnvItem)
+			cmdEnv = append(cmdEnv, thisProcessEnvItem)
 		}
 	}
 	if isVerbose {
-		log.Printf("(verbose!) all env vars for 'go': %s", cmd.Env)
+		log.Printf("(verbose!) all env vars for 'go': %s", cmdEnv)
 	}
 	if env != nil && len(env) > 0 {
 		log.Printf("specified env vars for 'go': %s", env)
 	}
-	return nil
+	return cmdEnv
 }
 
 // returns a list of printable args

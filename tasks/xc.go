@@ -195,7 +195,7 @@ func validatePlatToolchainBinExists(dest platforms.Platform, goroot string) erro
 
 // xcPlat: Cross compile for a particular platform
 // 0.3.0 - breaking change - changed 'call []string' to 'workingDirectory string'.
-func xcPlat(dest platforms.Platform, workingDirectory string, settings config.Settings, outDestRoot string, exeName string) (string, error) {
+func xcPlat(dest platforms.Platform, workingDirectory string, settings *config.Settings, outDestRoot string, exeName string) (string, error) {
 	log.Printf("building %s for platform %v.", exeName, dest)
 	relativeDir := filepath.Join(settings.GetFullVersionName(), dest.Os+"_"+dest.Arch)
 	outDir := filepath.Join(outDestRoot, relativeDir)

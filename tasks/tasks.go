@@ -77,10 +77,11 @@ var (
 // Parameter object passed to a task.
 type TaskParams struct {
 	DestPlatforms                 []platforms.Platform
+	AllPackageDirs                []string
 	MainDirs                      []string
 	AppName                       string
 	WorkingDirectory, OutDestRoot string
-	Settings                      config.Settings
+	Settings                      *config.Settings
 	MaxProcessors                 int
 }
 
@@ -193,7 +194,7 @@ func ListTasks() []Task {
 }
 
 // run all given tasks
-func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, settings config.Settings, maxProcessors int) {
+func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, settings *config.Settings, maxProcessors int) {
 	log.Printf("Using Go root: %s", settings.GoRoot)
 	if settings.IsVerbose() {
 		log.Printf("looping through each platform")
@@ -230,25 +231,32 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 			return
 		}
 	}
-	var mainDirs []string
+	mainDirs := []string{}
+	allPackages := []string{}
 	if len(tasksToRun) == 1 && tasksToRun[0] == "toolchain" {
 		log.Printf("Toolchain task only - not searching for main dirs")
 		//mainDirs = []string{workingDirectory}
 	} else {
 		var err error
 		excludes := core.ParseCommaGlobs(settings.MainDirsExclude)
+		excludesSource := core.ParseCommaGlobs(settings.SourceDirsExclude)
+		excludesSource = append(excludesSource, excludes...)
+		allPackages, err = source.FindSourceDirs(workingDirectory, "", excludesSource)
+		if err != nil || len(allPackages) == 0 {
+			log.Printf("Warning: could not establish list of source packages. Using working directory")
+			allPackages = []string{workingDirectory}
+		}
 		mainDirs, err = source.FindMainDirs(workingDirectory, excludes)
 		if err != nil || len(mainDirs) == 0 {
-			log.Printf("Warning: could not establish list of main dirs. Using working directory")
-			mainDirs = []string{workingDirectory}
+			log.Printf("Warning: could not find any main dirs: %v", err)
 		} else {
 			log.Printf("Found 'main package' dirs (len %d): %v", len(mainDirs), mainDirs)
 		}
 	}
-	log.Printf("Running tasks: %v on packages %v", tasksToRun, mainDirs)
+	log.Printf("Running tasks: %v on packages %v", tasksToRun, allPackages)
 	for _, taskName := range tasksToRun {
 		log.SetPrefix("[goxc:" + taskName + "] ")
-		err := runTask(taskName, destPlatforms, mainDirs, appName, workingDirectory, outDestRoot, settings, maxProcessors)
+		err := runTask(taskName, destPlatforms, allPackages, mainDirs, appName, workingDirectory, outDestRoot, settings, maxProcessors)
 		if err != nil {
 			// TODO: implement 'force' option.
 			log.Printf("Stopping after '%s' failed with error '%v'", taskName, err)
@@ -260,9 +268,9 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 }
 
 // run named task
-func runTask(taskName string, destPlatforms []platforms.Platform, mainDirs []string, appName, workingDirectory, outDestRoot string, settings config.Settings, maxProcessors int) error {
+func runTask(taskName string, destPlatforms []platforms.Platform, mainDirs []string, allPackages []string, appName, workingDirectory, outDestRoot string, settings *config.Settings, maxProcessors int) error {
 	if taskV, keyExists := allTasks[taskName]; keyExists {
-		tp := TaskParams{destPlatforms, mainDirs, appName, workingDirectory, outDestRoot, settings, maxProcessors}
+		tp := TaskParams{destPlatforms, mainDirs, allPackages, appName, workingDirectory, outDestRoot, settings, maxProcessors}
 		return taskV.run(tp)
 	}
 	log.Printf("Unrecognised task '%s'", taskName)

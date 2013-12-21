@@ -67,6 +67,8 @@ type Settings struct {
 
 	//0.10.x source exclusion
 	MainDirsExclude string `json:",omitempty"`
+	//0.13.x source exclusion (source dirs)
+	SourceDirsExclude string `json:",omitempty"`
 
 	//versioning
 	PackageVersion string `json:",omitempty"`
@@ -97,11 +99,11 @@ type Settings struct {
 	Env []string `json:",omitempty"`
 }
 
-func (s Settings) IsVerbose() bool {
+func (s *Settings) IsVerbose() bool {
 	return s.Verbosity == core.VERBOSITY_VERBOSE
 }
 
-func (s Settings) IsTask(taskName string) bool {
+func (s *Settings) IsTask(taskName string) bool {
 	for _, t := range s.Tasks {
 		if t == taskName {
 			return true
@@ -110,7 +112,7 @@ func (s Settings) IsTask(taskName string) bool {
 	return false
 }
 
-func (s Settings) SetTaskSetting(taskName, settingName string, value interface{}) {
+func (s *Settings) SetTaskSetting(taskName, settingName string, value interface{}) {
 	if s.TaskSettings == nil {
 		s.TaskSettings = make(map[string]map[string]interface{})
 	}
@@ -123,7 +125,7 @@ func (s Settings) SetTaskSetting(taskName, settingName string, value interface{}
 	value.(map[string]interface{})[settingName] = value
 }
 
-func (s Settings) GetTaskSetting(taskName, settingName string) interface{} {
+func (s *Settings) GetTaskSetting(taskName, settingName string) interface{} {
 	if value, keyExists := s.TaskSettings[taskName]; keyExists {
 		taskMap := value //.(map[string]interface{})
 		if settingValue, keyExists := taskMap[settingName]; keyExists {
@@ -137,7 +139,7 @@ func (s Settings) GetTaskSetting(taskName, settingName string) interface{} {
 	}
 	return nil
 }
-func (s Settings) GetTaskSettingMap(taskName, settingName string) map[string]interface{} {
+func (s *Settings) GetTaskSettingMap(taskName, settingName string) map[string]interface{} {
 	retUntyped := s.GetTaskSetting(taskName, settingName)
 	if retUntyped == nil {
 		return nil
@@ -150,7 +152,7 @@ func (s Settings) GetTaskSettingMap(taskName, settingName string) map[string]int
 
 }
 
-func (s Settings) GetTaskSettingStringSlice(taskName, settingName string) []string {
+func (s *Settings) GetTaskSettingStringSlice(taskName, settingName string) []string {
 	retUntyped := s.GetTaskSetting(taskName, settingName)
 	if retUntyped == nil {
 		return []string{}
@@ -162,7 +164,7 @@ func (s Settings) GetTaskSettingStringSlice(taskName, settingName string) []stri
 	return strSlice
 }
 
-func (s Settings) GetTaskSettingString(taskName, settingName string) string {
+func (s *Settings) GetTaskSettingString(taskName, settingName string) string {
 	retUntyped := s.GetTaskSetting(taskName, settingName)
 	if retUntyped == nil {
 		return ""
@@ -174,7 +176,7 @@ func (s Settings) GetTaskSettingString(taskName, settingName string) string {
 	return str
 }
 
-func (s Settings) GetTaskSettingBool(taskName, settingName string) bool {
+func (s *Settings) GetTaskSettingBool(taskName, settingName string) bool {
 	retUntyped := s.GetTaskSetting(taskName, settingName)
 	if retUntyped == nil {
 		return false
@@ -186,7 +188,7 @@ func (s Settings) GetTaskSettingBool(taskName, settingName string) bool {
 	return ret
 }
 
-func (s Settings) GetTaskSettingInt(taskName, settingName string, defaultValue int) int {
+func (s *Settings) GetTaskSettingInt(taskName, settingName string, defaultValue int) int {
 	retUntyped := s.GetTaskSetting(taskName, settingName)
 	if retUntyped == nil {
 		return defaultValue
@@ -201,7 +203,7 @@ func (s Settings) GetTaskSettingInt(taskName, settingName string, defaultValue i
 //Builds version name from PackageVersion, BranchName, PrereleaseInfo, BuildName
 //This breakdown is mainly based on 'semantic versioning' See http://semver.org/
 //The difference being that you can specify a branch name (which becomes part of the 'prerelease info' as named by semver)
-func (settings Settings) GetFullVersionName() string {
+func (settings *Settings) GetFullVersionName() string {
 	versionName := settings.PackageVersion
 	if settings.BranchName != "" {
 		versionName += "-" + settings.BranchName
@@ -328,6 +330,9 @@ func Merge(high Settings, low Settings) Settings {
 		if high.BuildSettings.Tags == nil {
 			high.BuildSettings.Tags = low.BuildSettings.Tags
 		}
+	}
+	if len(high.Env) == 0 {
+		high.Env = low.Env
 	}
 	return high
 }

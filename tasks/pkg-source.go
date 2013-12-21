@@ -27,6 +27,7 @@ import (
 	"github.com/laher/goxc/platforms"
 	"github.com/laher/goxc/typeutils"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	//"strings"
@@ -149,7 +150,9 @@ func debSourceBuild(tp TaskParams) (err error) {
 
 	//3. generate .dsc file
 	err = ioutil.WriteFile(filepath.Join(destDir, tp.AppName+"_"+version+".dsc"), controlData, 0644)
-
+	if err == nil {
+		log.Printf("Files written to %s", destDir)
+	}
 	return err
 }
 

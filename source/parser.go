@@ -28,6 +28,10 @@ import (
 )
 
 func FindMainDirs(root string, excludingGlobs []string) ([]string, error) {
+	return FindSourceDirs(root, "main", excludingGlobs)
+}
+
+func FindSourceDirs(root string, packageNameFilter string, excludingGlobs []string) ([]string, error) {
 	mainDirs := []string{}
 	sourceFiles := []string{}
 	root, err := filepath.Abs(root)
@@ -72,7 +76,7 @@ func FindMainDirs(root string, excludingGlobs []string) ([]string, error) {
 		return mainDirs, err
 	}
 	for name, file := range parsedMap {
-		if file.Name.Name == "main" {
+		if packageNameFilter == "" || file.Name.Name == packageNameFilter {
 			mainDir, err := filepath.Abs(filepath.Dir(name))
 			if err != nil {
 				log.Printf("Abs error: %s: %v", filepath.Dir(name), err)

@@ -7,7 +7,7 @@
 	],
 	"ResourcesInclude": "README.md,.\\_test1/*",
 	"ResourcesExclude": "*.go",
-	"PackageVersion": "0.11.4",
+	"PackageVersion": "0.12.0",
 	"TaskSettings": {
 		"archive-zip": {},
 		"bintray": {
@@ -37,5 +37,8 @@
 			"test-setting": "test-value"
 		}
 	},
-	"ConfigVersion": "0.9"
+	"ConfigVersion": "0.9",
+	"Env": [
+		"GOPATH=Godeps{{.PLS}}{{.Env.GOPATH}}"
+	]
 }

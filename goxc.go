@@ -49,7 +49,7 @@ var (
 	// So, goxc does this automatically during 'go build'
 	VERSION     = "0.11.4"
 	BUILD_DATE  = ""
-	SOURCE_DATE = "2013-12-02T08:53:55+13:00"
+	SOURCE_DATE = "2013-12-20T11:51:55+13:00"
 	// settings for this invocation of goxc
 	settings             config.Settings
 	fBuildSettings       config.BuildSettings
@@ -171,7 +171,7 @@ func goXC(call []string) {
 		}
 		destPlatforms := platforms.GetDestPlatforms(settings.Os, settings.Arch)
 		destPlatforms = platforms.ApplyBuildConstraints(settings.BuildConstraints, destPlatforms)
-		tasks.RunTasks(workingDirectory, destPlatforms, settings, maxProcessors)
+		tasks.RunTasks(workingDirectory, destPlatforms, &settings, maxProcessors)
 	}
 }
 
@@ -290,9 +290,9 @@ func interpretFlags(call []string) {
 		settings.BuildSettings = &config.BuildSettings{}
 		settings.Env = []string{}
 		flagSet.Visit(flagVisitor)
-
-		log.Printf("env %+v", settings.Env)
-
+		if settings.IsVerbose() {
+			log.Printf("env from flags: %+v", settings.Env)
+		}
 		//the tasksToRun (-tasks=) flag is only kept incase people used it originally. To be taken out eventually
 		if tasksToRun != "" {
 			tasksToRunSlice := strings.FieldsFunc(tasksToRun, func(r rune) bool { return r == ',' || r == ' ' })

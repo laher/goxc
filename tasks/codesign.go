@@ -51,7 +51,7 @@ func runTaskCodesign(tp TaskParams) (err error) {
 	return err
 }
 
-func codesignPlat(goos, arch string, outDestRoot string, relativeBin string, settings config.Settings) error {
+func codesignPlat(goos, arch string, outDestRoot string, relativeBin string, settings *config.Settings) error {
 	// settings.codesign only works on OS X for binaries generated for OS X.
 	id := settings.GetTaskSettingString("codesign", "id")
 	if id != "" && runtime.GOOS == platforms.DARWIN && goos == platforms.DARWIN {

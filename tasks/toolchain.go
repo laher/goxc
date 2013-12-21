@@ -76,7 +76,7 @@ func runTaskToolchain(tp TaskParams) error {
 }
 
 // Build toolchain for a given target platform
-func buildToolchain(goos string, arch string, settings config.Settings) error {
+func buildToolchain(goos string, arch string, settings *config.Settings) error {
 	goroot := settings.GoRoot
 	scriptpath := core.GetMakeScriptPath(goroot)
 	cmd := exec.Command(scriptpath)

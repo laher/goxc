@@ -51,7 +51,7 @@ func runTaskRmBin(tp TaskParams) error {
 	return nil
 }
 
-func rmBinPlat(goos, arch, exeName, outDestRoot string, settings config.Settings) error {
+func rmBinPlat(goos, arch, exeName, outDestRoot string, settings *config.Settings) error {
 	relativeBin := core.GetRelativeBin(goos, arch, exeName, false, settings.GetFullVersionName())
 	binPath := filepath.Join(outDestRoot, relativeBin)
 	err := os.Remove(binPath)
