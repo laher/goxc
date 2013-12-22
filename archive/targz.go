@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // TarGz implementation of Archiver.
@@ -76,6 +77,8 @@ func TarGzWrite(item ArchiveItem, tw *tar.Writer, fi os.FileInfo) (err error) {
 		//backslash-only paths
 		h.Name = strings.Replace(item.ArchivePath, "\\", "/", -1)
 		h.Size = int64(len(item.Data))
+		h.Mode = int64(0644) //? is this ok?
+		h.ModTime = time.Now()
 		err = tw.WriteHeader(h)
 		if err == nil {
 			_, err = tw.Write(item.Data)

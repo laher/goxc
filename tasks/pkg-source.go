@@ -19,9 +19,9 @@ package tasks
 /* INCOMPLETE!! */
 //TODO: Complete sometime during 0.7.x
 import (
+	"bytes"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
-	"fmt"
 	"github.com/laher/goxc/archive"
 	"github.com/laher/goxc/packaging/sdeb"
 	"github.com/laher/goxc/platforms"
@@ -31,6 +31,8 @@ import (
 	"os"
 	"path/filepath"
 	//"strings"
+	"text/template"
+	"time"
 )
 
 const (
@@ -67,13 +69,7 @@ func runTaskPkgSource(tp TaskParams) (err error) {
 func debSourceBuild(tp TaskParams) (err error) {
 	metadata := tp.Settings.GetTaskSettingMap(TASK_PKG_SOURCE, "metadata")
 	metadataDeb := tp.Settings.GetTaskSettingMap(TASK_PKG_SOURCE, "metadata-deb")
-	//rmtemp := tp.Settings.GetTaskSettingBool(TASK_PKG_SOURCE, "rmtemp")
-	/*
-		tmpDir := filepath.Join(tp.OutDestRoot, ".goxc-temp")
-		if rmtemp {
-			defer os.RemoveAll(tmpDir)
-		}
-	*/
+	
 	description := ""
 	if desc, keyExists := metadata["description"]; keyExists {
 		description, err = typeutils.ToString(desc, "description")
@@ -94,21 +90,10 @@ func debSourceBuild(tp TaskParams) (err error) {
 	if err != nil {
 		return err
 	}
-
-	//if tp.Settings.IsVerbose() {
-	//log.Printf("Control file:\n%s", string(controlContent))
-	//}
-
-	//err = ioutil.WriteFile(filepath.Join(tmpDir, "control"), controlContent, 0644)
 	if err != nil {
 		return err
 	}
-	/*
-		err = archive.TarGz(filepath.Join(tmpDir, "control.tar.gz"), []archive.ArchiveItem{archive.ArchiveItemFromBytes(controlContent, "control")})
-		if err != nil {
-			return err
-		}
-	*/
+	
 	//build
 	//1. generate orig.tar.gz
 	//memcached_1.2.5.orig.tar.gz
@@ -120,7 +105,6 @@ func debSourceBuild(tp TaskParams) (err error) {
 	//TODO add/exclude resources to /usr/share
 	origTgzPath := filepath.Join(destDir, tp.AppName+"_"+version+".orig.tar.gz")
 	err = archive.TarGz(origTgzPath, items)
-	// []archive.ArchiveItem{archive.ArchiveItemFromFileSystem(tp.WorkingDirectory, "/usr/bin/"+tp.AppName)})
 	if err != nil {
 		return err
 	}
@@ -128,15 +112,24 @@ func debSourceBuild(tp TaskParams) (err error) {
 
 	//2. generate .debian.tar.gz (just containing debian/ directory)
 	//generate debian/control
-	controlData := getSourceDebControlFileContent(tp.AppName, maintainer, tp.Settings.GetFullVersionName(), arches, description, metadataDeb)
+	templateVars := getTemplateVars(tp.AppName, maintainer, tp.Settings.GetFullVersionName(), arches, description, metadataDeb)
+	controlData, err := getDebMetadataFileContent(sdeb.TEMPLATE_SOURCEDEB_CONTROL, templateVars)
+	if err != nil {
+		return err
+	}
 	//generate debian/rules
-	rulesData := []byte(sdeb.FILETEMPLATE_DEBIAN_RULES)
+	rulesData := []byte(sdeb.TEMPLATE_DEBIAN_RULES)
 	sourceFormatData := []byte(sdeb.FILECONTENT_DEBIAN_SOURCE_FORMAT)
 	//generate debian/changelog
-	changelogData := []byte{}
+	initialChangelogTemplate := sdeb.TEMPLATE_CHANGELOG_HEADER + "\n\n * Initial entry \n" + sdeb.TEMPLATE_CHANGELOG_FOOTER
+	changelogData, err := getDebMetadataFileContent(initialChangelogTemplate, templateVars)
+	if err != nil {
+		return err
+	}
 	//generate debian/copyright
 	copyrightData := []byte{}
 	//generate debian/README.Debian
+	//TODO: try pulling in README.md etc
 	readmeData := []byte{}
 	debTgzPath := filepath.Join(destDir, tp.AppName+"_"+version+".debian.tar.gz")
 	err = archive.TarGz(debTgzPath,
@@ -161,6 +154,55 @@ func debSourceBuild(tp TaskParams) (err error) {
 	return err
 }
 
+func getTemplateVars(appName, maintainer, version, arch, description string, metadataDeb map[string]interface{}) (interface{}) {
+	vars := struct {
+		PackageName string
+		BuildDepends  string
+		Priority string
+		Maintainer string
+		MaintainerEmail string
+		StandardsVersion string
+		Architecture string
+		Section string
+		Depends string
+		Description string
+		Other string
+		Status string
+		EntryDate string
+	}{
+		appName,
+		sdeb.BUILD_DEPENDS_DEFAULT,
+		sdeb.PRIORITY_DEFAULT,
+		maintainer,
+		maintainer,
+		sdeb.STANDARDS_VERSION_DEFAULT,
+		sdeb.ARCHITECTURE_DEFAULT,
+		sdeb.SECTION_DEFAULT,
+		"",
+		description,
+		"",
+		"unreleased",
+		time.Now().Format("Mon, 2 Jan 2006 15:04:05 -0700"),
+	}
+	return vars
+}
+
+func getDebMetadataFileContent(templateStr string, vars interface{}) ([]byte, error) {
+
+	tpl, err := template.New("control").Parse(templateStr)
+	if err != nil {
+		return nil, err
+	}
+	var dest bytes.Buffer
+	
+	err = tpl.Execute(&dest, vars)
+	if err != nil {
+		return nil, err
+	}
+	return dest.Bytes(), nil
+}
+
+/*
 func getSourceDebControlFileContent(appName, maintainer, version, arch, description string, metadataDeb map[string]interface{}) []byte {
 	control := fmt.Sprintf("Source: %s\nPriority: optional\n", appName)
 	if maintainer != "" {
@@ -178,3 +220,4 @@ func getSourceDebControlFileContent(appName, maintainer, version, arch, descript
 	control = fmt.Sprintf("%sDescription: %s\n", control, description)
 	return []byte(control)
 }
+*/

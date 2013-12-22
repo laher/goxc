@@ -1,7 +1,7 @@
 package sdeb
 
 const (
-	FILETEMPLATE_DEBIAN_RULES = `#!/usr/bin/make -f
+	TEMPLATE_DEBIAN_RULES = `#!/usr/bin/make -f
 # -*- makefile -*-
 
 # Uncomment this to turn on verbose mode.
@@ -40,11 +40,29 @@ binary: binary-arch`
 	FILECONTENT_DEBIAN_SOURCE_OPTIONS = `tar-ignore = .hg
 tar-ignore = .git
 tar-ignore = .bzr`
+	TEMPLATE_SOURCEDEB_CONTROL =`Source: {{.PackageName}}
+Build-Depends: {{.BuildDepends}}
+Priority: {{.Priority}}
+Maintainer: {{.Maintainer}}
+Standards-Version: {{.StandardsVersion}}
+Section: {{.Section}}
+
+Package: {{.PackageName}}
+Architecture: {{.Architecture}}
+Depends: ${misc:Depends}{{.Depends}}
+Description: {{.Description}}
+{{.Other}}`
+
+	TEMPLATE_CHANGELOG_HEADER = `{{.PackageName}} ({{.StandardsVersion}} {{.Status}}; urgency=low`
+	TEMPLATE_CHANGELOG_INITIAL_ENTRY = ` * Initial import
+`
+	TEMPLATE_CHANGELOG_FOOTER = ` -- {{.Maintainer}} <{{.MaintainerEmail}}>  {{.EntryDate}}`
+	TEMPLATE_STATUS_DEFAULT   = "unreleased"
 
 	SECTION_DEFAULT           = "devel" //TODO: correct to use this?
 	PRIORITY_DEFAULT          = "extra"
-	BUILD_DEPENDS_DEFAULT     = "debhelper (>= 7.0.50~), golang-stable"
-	STANDARDS_VERSION_DEFAULT = "3.9.1"
-	ARCHITECTURE_DEFAULT      = "amd64 i386 armel"
+	BUILD_DEPENDS_DEFAULT     = "debhelper (>= 9.1.0), golang-stable"
+	STANDARDS_VERSION_DEFAULT = "3.9.4"
+	ARCHITECTURE_DEFAULT      = "any"
 	DIRNAME_TEMP              = ".goxc-temp"
 )

@@ -20,21 +20,29 @@ import (
 	"errors"
 	"fmt"
 	"github.com/laher/goxc/archive"
+	"github.com/laher/goxc/core"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"text/template"
+	//"text/template"
 )
 
 //TODO: unfinished: need to discover root dir to determine which dirs to pre-make.
 func SdebGetSourcesAsArchiveItems(codeDir, prefix string) ([]archive.ArchiveItem, error) {
-	return sdebGetSourcesAsArchiveItems(codeDir, codeDir, prefix)
+	goPathRoot := core.GetGoPathElement(codeDir)
+	goPathRootResolved, err := filepath.EvalSymlinks(goPathRoot)
+	if err != nil {
+		log.Printf("Could not evaluate symlinks for %s", goPathRoot)
+		goPathRootResolved = goPathRoot
+	}
+	log.Printf("goPathRoot = %s. Code dir was %s", goPathRootResolved, codeDir)
+	return sdebGetSourcesAsArchiveItems(goPathRootResolved, codeDir, prefix)
 }
 
 //
-func sdebGetSourcesAsArchiveItems(root, codeDir, prefix string) ([]archive.ArchiveItem, error) {
+func sdebGetSourcesAsArchiveItems(goPathRoot, codeDir, prefix string) ([]archive.ArchiveItem, error) {
 	sources := []archive.ArchiveItem{}
 	//1. Glob for files in this dir
 	//log.Printf("Globbing %s", codeDir)
@@ -43,7 +51,7 @@ func sdebGetSourcesAsArchiveItems(root, codeDir, prefix string) ([]archive.Archi
 		return sources, err
 	}
 	for _, match := range matches {
-		relativeMatch, err := filepath.Rel(root, match)
+		relativeMatch, err := filepath.Rel(goPathRoot, match)
 		if err != nil {
 			return nil, errors.New("Error finding go sources " + err.Error())
 		}
@@ -56,7 +64,7 @@ func sdebGetSourcesAsArchiveItems(root, codeDir, prefix string) ([]archive.Archi
 	fis, err := ioutil.ReadDir(codeDir)
 	for _, fi := range fis {
 		if fi.IsDir() && fi.Name() != DIRNAME_TEMP {
-			additionalItems, err := sdebGetSourcesAsArchiveItems(root, filepath.Join(codeDir, fi.Name()), prefix)
+			additionalItems, err := sdebGetSourcesAsArchiveItems(goPathRoot, filepath.Join(codeDir, fi.Name()), prefix)
 			sources = append(sources, additionalItems...)
 			if err != nil {
 				return sources, err
@@ -119,7 +127,7 @@ func SdebCopySourceRecurse(codeDir, destDir string) (err error) {
 	}
 	return nil
 }
-
+/*
 // prepare folders and debian/ files.
 // (everything except copying source)
 func SdebPrepare(workingDirectory, appName, maintainer, version, arches, description, buildDepends string, metadataDeb map[string]interface{}) (err error) {
@@ -143,7 +151,7 @@ func SdebPrepare(workingDirectory, appName, maintainer, version, arches, descrip
 		return err
 	}
 	//write control file and related files
-	tpl, err := template.New("rules").Parse(FILETEMPLATE_DEBIAN_RULES)
+	tpl, err := template.New("rules").Parse(TEMPLATE_DEBIAN_RULES)
 	if err != nil {
 		return err
 	}
@@ -167,7 +175,7 @@ func SdebPrepare(workingDirectory, appName, maintainer, version, arches, descrip
 	//call dpkg-build, if available
 	return err
 }
-
+*/
 func getSdebControlFileContent(appName, maintainer, version, arches, description, buildDepends string, metadataDeb map[string]interface{}) []byte {
 	control := fmt.Sprintf("Source: %s\nPriority: extra\n", appName)
 	if maintainer != "" {
