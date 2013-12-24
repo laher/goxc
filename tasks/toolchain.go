@@ -69,6 +69,7 @@ func runTaskToolchain(tp TaskParams) error {
 		}
 		if success < 1 {
 			log.Printf("No successes!")
+			log.Printf("Have you installed Go from source?? If not, please see http://golang.org/doc/install/source")
 			return err
 		}
 	}
