@@ -2,7 +2,7 @@ package sdeb
 
 const (
 	TEMPLATE_DEBIAN_COMPAT         = "9"
-	FORMAT_DEFAULT = "3.0 (quilt)"
+	FORMAT_DEFAULT                 = "3.0 (quilt)"
 	TEMPLATE_DEBIAN_SOURCE_FORMAT  = FORMAT_DEFAULT
 	TEMPLATE_DEBIAN_SOURCE_OPTIONS = `tar-ignore = .hg
 tar-ignore = .git
@@ -43,7 +43,7 @@ binary-arch: clean
 
 binary: binary-arch`
 
-	TEMPLATE_SOURCEDEB_CONTROL =`Source: {{.PackageName}}
+	TEMPLATE_SOURCEDEB_CONTROL = `Source: {{.PackageName}}
 Build-Depends: {{.BuildDepends}}
 Priority: {{.Priority}}
 Maintainer: {{.Maintainer}}
@@ -56,7 +56,7 @@ Depends: ${misc:Depends}{{.Depends}}
 Description: {{.Description}}
 {{.Other}}`
 
-	TEMPLATE_DEBIAN_DSC =`Format: {{.Format}}
+	TEMPLATE_DEBIAN_DSC = `Format: {{.Format}}
 Source: {{.PackageName}}
 Binary: {{.PackageName}}
 Architecture: {{.Architecture}}
@@ -74,17 +74,16 @@ Files:{{range .Files}}
  {{.Checksum}} {{.Size}} {{.File}}{{end}}
 {{.Other}}`
 
-
-	TEMPLATE_CHANGELOG_HEADER = `{{.PackageName}} ({{.PackageVersion}}) {{.Status}}; urgency=low`
+	TEMPLATE_CHANGELOG_HEADER        = `{{.PackageName}} ({{.PackageVersion}}) {{.Status}}; urgency=low`
 	TEMPLATE_CHANGELOG_INITIAL_ENTRY = `  * Initial import`
-	TEMPLATE_CHANGELOG_FOOTER = ` -- {{.Maintainer}} <{{.MaintainerEmail}}>  {{.EntryDate}}`
-	TEMPLATE_DEBIAN_COPYRIGHT = `Copyright 2013 {{.PackageName}}`
-	TEMPLATE_DEBIAN_README = `{{.PackageName}}
+	TEMPLATE_CHANGELOG_FOOTER        = ` -- {{.Maintainer}} <{{.MaintainerEmail}}>  {{.EntryDate}}`
+	TEMPLATE_DEBIAN_COPYRIGHT        = `Copyright 2013 {{.PackageName}}`
+	TEMPLATE_DEBIAN_README           = `{{.PackageName}}
 ==========
 
 `
 
-	STATUS_DEFAULT   = "unreleased"
+	STATUS_DEFAULT            = "unreleased"
 	SECTION_DEFAULT           = "devel" //TODO: correct to use this?
 	PRIORITY_DEFAULT          = "extra"
 	BUILD_DEPENDS_DEFAULT     = "debhelper (>= 9.1.0), golang-go"

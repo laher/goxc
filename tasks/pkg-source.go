@@ -39,30 +39,31 @@ import (
 	"text/template"
 	"time"
 )
+
 type Checksum struct {
 	Checksum string
-	Size int64
-	File string
+	Size     int64
+	File     string
 }
 type TemplateVars struct {
-	PackageName string
-	PackageVersion string
-	BuildDepends  string
-	Priority string
-	Maintainer string
-	MaintainerEmail string
+	PackageName      string
+	PackageVersion   string
+	BuildDepends     string
+	Priority         string
+	Maintainer       string
+	MaintainerEmail  string
 	StandardsVersion string
-	Architecture string
-	Section string
-	Depends string
-	Description string
-	Other string
-	Status string
-	EntryDate string
-	Format string
-	Files []Checksum
-	ChecksumsSha1 []Checksum
-	ChecksumsSha256 []Checksum
+	Architecture     string
+	Section          string
+	Depends          string
+	Description      string
+	Other            string
+	Status           string
+	EntryDate        string
+	Format           string
+	Files            []Checksum
+	ChecksumsSha1    []Checksum
+	ChecksumsSha256  []Checksum
 }
 
 const (
@@ -137,7 +138,7 @@ func debSourceBuild(tp TaskParams) (err error) {
 	metadata := tp.Settings.GetTaskSettingMap(TASK_PKG_SOURCE, "metadata")
 	metadataDeb := tp.Settings.GetTaskSettingMap(TASK_PKG_SOURCE, "metadata-deb")
 	//default to just package <packagename>
-	description := "package "+tp.AppName
+	description := "package " + tp.AppName
 	if desc, keyExists := metadata["description"]; keyExists {
 		description, err = typeutils.ToString(desc, "description")
 		if err != nil {
@@ -181,7 +182,7 @@ func debSourceBuild(tp TaskParams) (err error) {
 	templateVars := getTemplateVars(tp.AppName, tp.Settings.GetFullVersionName(), maintainer, maintainerEmail, tp.Settings.GetFullVersionName(), arches, description, metadataDeb)
 
 	//TODO add/exclude resources to /usr/share
-	origTgzName :=  tp.AppName+"_"+version+".orig.tar.gz"
+	origTgzName := tp.AppName + "_" + version + ".orig.tar.gz"
 	origTgzPath := filepath.Join(destDir, origTgzName)
 	err = archive.TarGz(origTgzPath, items)
 	if err != nil {
@@ -196,8 +197,6 @@ func debSourceBuild(tp TaskParams) (err error) {
 	templateVars.Files = append(templateVars.Files, *checksumMd5)
 	templateVars.ChecksumsSha1 = append(templateVars.ChecksumsSha1, *checksumSha1)
 	templateVars.ChecksumsSha256 = append(templateVars.ChecksumsSha256, *checksumSha256)
-
-
 
 	//2. generate .debian.tar.gz (just containing debian/ directory)
 
@@ -242,7 +241,7 @@ func debSourceBuild(tp TaskParams) (err error) {
 	var changelogData []byte
 	_, err = os.Stat(changelogFilename)
 	if os.IsNotExist(err) {
-		initialChangelogTemplate := sdeb.TEMPLATE_CHANGELOG_HEADER + "\n\n"+ sdeb.TEMPLATE_CHANGELOG_INITIAL_ENTRY +"\n\n" + sdeb.TEMPLATE_CHANGELOG_FOOTER
+		initialChangelogTemplate := sdeb.TEMPLATE_CHANGELOG_HEADER + "\n\n" + sdeb.TEMPLATE_CHANGELOG_INITIAL_ENTRY + "\n\n" + sdeb.TEMPLATE_CHANGELOG_FOOTER
 		changelogData, err = getDebMetadataFileContent(filepath.Join(templateDir, "initial-changelog.tpl"), initialChangelogTemplate, templateVars)
 		if err != nil {
 			return err
@@ -263,7 +262,7 @@ func debSourceBuild(tp TaskParams) (err error) {
 	if err != nil {
 		return err
 	}
-	debTgzName := tp.AppName+"_"+version+".debian.tar.gz"
+	debTgzName := tp.AppName + "_" + version + ".debian.tar.gz"
 	debTgzPath := filepath.Join(destDir, debTgzName)
 	err = archive.TarGz(debTgzPath,
 		[]archive.ArchiveItem{
@@ -301,7 +300,7 @@ func debSourceBuild(tp TaskParams) (err error) {
 	return err
 }
 
-func getTemplateVars(appName, appVersion, maintainer, maintainerEmail, version, arch, description string, metadataDeb map[string]interface{}) (TemplateVars) {
+func getTemplateVars(appName, appVersion, maintainer, maintainerEmail, version, arch, description string, metadataDeb map[string]interface{}) TemplateVars {
 	vars := TemplateVars{
 		appName,
 		appVersion,
@@ -330,7 +329,7 @@ func getDebMetadataFileContent(templateFile string, templateDefault string, vars
 	var tplText string
 	if os.IsNotExist(err) {
 		tplText = templateDefault
-		
+
 	} else if err != nil {
 		return nil, err
 	} else {
@@ -345,7 +344,7 @@ func getDebMetadataFileContent(templateFile string, templateDefault string, vars
 		return nil, err
 	}
 	var dest bytes.Buffer
-	
+
 	err = tpl.Execute(&dest, vars)
 	if err != nil {
 		return nil, err
