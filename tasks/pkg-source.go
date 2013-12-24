@@ -16,8 +16,8 @@ package tasks
    limitations under the License.
 */
 
-/* INCOMPLETE!! */
-//TODO: Complete sometime during 0.7.x
+/* Nearing completion */
+//TODO: various refinements ...
 import (
 	"bytes"
 	"crypto/md5"
@@ -88,10 +88,14 @@ func runTaskPkgSource(tp TaskParams) (err error) {
 	}
 	//TODO rpm
 	if makeSourceDeb {
+		log.Printf("Building 'source deb' for Ubuntu/Debian Linux.")
+		log.Printf("WARNING: 'source deb' functionality requires more documentation and config options to make it properly useful. More coming soon.")
 		err = debSourceBuild(tp)
 		if err != nil {
 			return
 		}
+	} else {
+		log.Printf("Not building source debs because Linux has not been selected as a target OS")
 	}
 	//OK
 	return
