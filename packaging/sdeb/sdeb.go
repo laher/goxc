@@ -37,7 +37,7 @@ func SdebGetSourcesAsArchiveItems(codeDir, prefix string) ([]archive.ArchiveItem
 		log.Printf("Could not evaluate symlinks for %s", goPathRoot)
 		goPathRootResolved = goPathRoot
 	}
-	log.Printf("goPathRoot = %s. Code dir was %s", goPathRootResolved, codeDir)
+	log.Printf("Code dir %s (using goPath element %s)", codeDir, goPathRootResolved)
 	return sdebGetSourcesAsArchiveItems(goPathRootResolved, codeDir, prefix)
 }
 

@@ -27,7 +27,9 @@ func FillSettingsDefaults(settings *Settings) {
 		settings.BuildSettings = &bs
 	}
 	if settings.GoRoot == "" {
-		log.Printf("Defaulting GoRoot to runtime.GOROOT (%s)", runtime.GOROOT())
+		if settings.IsVerbose() {
+			log.Printf("Defaulting GoRoot to runtime.GOROOT (%s)", runtime.GOROOT())
+		}
 		settings.GoRoot = runtime.GOROOT()
 	}
 }
