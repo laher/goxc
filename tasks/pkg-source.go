@@ -76,7 +76,7 @@ func init() {
 		TASK_PKG_SOURCE,
 		"Build a source package. Currently only supports 'source deb' format for Debian/Ubuntu Linux.",
 		runTaskPkgSource,
-		map[string]interface{}{"metadata": map[string]interface{}{"maintainer": "unknown", "maintainerEmail": "unknown@example.com"}, "metadata-deb": map[string]interface{}{"Depends": "", "Build-Depends": "debhelper (>=4.0.0), golang-go, gcc"}, "templateDir": "debian-templates", "rmtemp": true}})
+		map[string]interface{}{"metadata": map[string]interface{}{"maintainer": "unknown", "maintainerEmail": "unknown@example.com"}, "metadata-deb": map[string]interface{}{"Depends": "", "Priority": "extra", "Section": "devel", "Status": "unreleased", "Build-Depends": "debhelper (>= 9.1.0), golang-go"}, "templateDir": "debian-templates", "rmtemp": true}})
 }
 
 func runTaskPkgSource(tp TaskParams) (err error) {
