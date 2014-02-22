@@ -69,7 +69,7 @@ func ArchiveBinariesAndResources(outDir, platName string, binPaths []string, app
 		toArchive = append(toArchive, ArchiveItemFromFileSystem(binPath, destFile))
 	}
 	for _, resource := range resources {
-		destFile := filepath.Base(resource)
+		destFile := resource
 		if zipDir != "" {
 			destFile = filepath.Join(zipDir, destFile)
 		}
