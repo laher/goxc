@@ -43,7 +43,7 @@ func init() {
 
 func runTaskPkgBuild(tp TaskParams) (err error) {
 	for _, dest := range tp.DestPlatforms {
-		err := pkgBuildPlat(dest.Os, dest.Arch, tp)
+		err := pkgBuildPlat(dest, tp)
 		if err != nil {
 			log.Printf("Error: %v", err)
 		}
@@ -51,11 +51,11 @@ func runTaskPkgBuild(tp TaskParams) (err error) {
 	return
 }
 
-func pkgBuildPlat(destOs, destArch string, tp TaskParams) (err error) {
-	if destOs == platforms.LINUX {
+func pkgBuildPlat(dest platforms.Platform, tp TaskParams) (err error) {
+	if dest.Os == platforms.LINUX {
 		//TODO rpm
 		//TODO sdeb
-		return debBuild(destOs, destArch, tp)
+		return debBuild(dest, tp)
 	}
 	// TODO BSD ports?
 	// TODO Mac pkgs?
@@ -106,7 +106,7 @@ func getArmArchName(settings *config.Settings) string {
 	return armArchName
 }
 
-func debBuild(destOs, destArch string, tp TaskParams) (err error) {
+func debBuild(dest platforms.Platform, tp TaskParams) (err error) {
 	metadata := tp.Settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata")
 	armArchName := getArmArchName(tp.Settings)
 	metadataDeb := tp.Settings.GetTaskSettingMap(TASK_PKG_BUILD, "metadata-deb")
@@ -135,7 +135,7 @@ func debBuild(destOs, destArch string, tp TaskParams) (err error) {
 			return err
 		}
 	}
-	controlContent := getDebControlFileContent(tp.AppName, maintainer, tp.Settings.GetFullVersionName(), destArch, armArchName, description, metadataDeb)
+	controlContent := getDebControlFileContent(tp.AppName, maintainer, tp.Settings.GetFullVersionName(), dest.Arch, armArchName, description, metadataDeb)
 	if tp.Settings.IsVerbose() {
 		log.Printf("Control file:\n%s", string(controlContent))
 	}
@@ -151,9 +151,18 @@ func debBuild(destOs, destArch string, tp TaskParams) (err error) {
 	items := []archive.ArchiveItem{}
 
 	for _, mainDir := range tp.MainDirs {
-		exeName := filepath.Base(mainDir)
-		relativeBin := core.GetRelativeBin(destOs, destArch, exeName, false, tp.Settings.GetFullVersionName())
-		items = append(items, archive.ArchiveItem{FileSystemPath: filepath.Join(tp.OutDestRoot, relativeBin), ArchivePath: "/usr/bin/" + exeName})
+		var exeName string
+		if len(tp.MainDirs) == 1 {
+			exeName = tp.Settings.AppName
+		} else {
+			exeName = filepath.Base(mainDir)
+
+		}
+		binPath, err := core.GetAbsoluteBin(dest.Os, dest.Arch, tp.Settings.AppName, exeName, tp.WorkingDirectory, tp.Settings.GetFullVersionName(), tp.Settings.ExecutablePathTemplate, tp.Settings.ArtifactsDest)
+		if err != nil {
+			return err
+		}
+		items = append(items, archive.ArchiveItem{FileSystemPath: binPath, ArchivePath: "/usr/bin/" + exeName})
 	}
 	//TODO add resources to /usr/share/appName/
 	err = archive.TarGz(filepath.Join(tmpDir, "data.tar.gz"), items)
@@ -161,7 +170,7 @@ func debBuild(destOs, destArch string, tp TaskParams) (err error) {
 		return err
 	}
 
-	targetFile := filepath.Join(debDir, fmt.Sprintf("%s_%s_%s.deb", tp.AppName, tp.Settings.GetFullVersionName(), getDebArch(destArch, armArchName))) //goxc_0.5.2_i386.deb")
+	targetFile := filepath.Join(debDir, fmt.Sprintf("%s_%s_%s.deb", tp.AppName, tp.Settings.GetFullVersionName(), getDebArch(dest.Arch, armArchName))) //goxc_0.5.2_i386.deb")
 	inputs := [][]string{
 		[]string{filepath.Join(tmpDir, "debian-binary"), "debian-binary"},
 		[]string{filepath.Join(tmpDir, "control.tar.gz"), "control.tar.gz"},

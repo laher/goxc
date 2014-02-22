@@ -19,8 +19,8 @@ package tasks
 import (
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
-	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/platforms"
 	"io/ioutil"
 	"log"
 	"os"
@@ -39,8 +39,14 @@ func init() {
 func runTaskRmBin(tp TaskParams) error {
 	for _, dest := range tp.DestPlatforms {
 		for _, mainDir := range tp.MainDirs {
-			exeName := filepath.Base(mainDir)
-			err := rmBinPlat(dest.Os, dest.Arch, exeName, tp.OutDestRoot, tp.Settings)
+			var exeName string
+			if len(tp.MainDirs) == 1 {
+				exeName = tp.Settings.AppName
+			} else {
+				exeName = filepath.Base(mainDir)
+
+			}
+			err := rmBinPlat(dest, tp, exeName)
 			if err != nil {
 				//todo - add a force option?
 				log.Printf("%v", err)
@@ -51,10 +57,12 @@ func runTaskRmBin(tp TaskParams) error {
 	return nil
 }
 
-func rmBinPlat(goos, arch, exeName, outDestRoot string, settings *config.Settings) error {
-	relativeBin := core.GetRelativeBin(goos, arch, exeName, false, settings.GetFullVersionName())
-	binPath := filepath.Join(outDestRoot, relativeBin)
-	err := os.Remove(binPath)
+func rmBinPlat(dest platforms.Platform, tp TaskParams, exeName string) error {
+	binPath, err := core.GetAbsoluteBin(dest.Os, dest.Arch, tp.Settings.AppName, exeName, tp.WorkingDirectory, tp.Settings.GetFullVersionName(), tp.Settings.ExecutablePathTemplate, tp.Settings.ArtifactsDest)
+	if err != nil {
+		return err
+	}
+	err = os.Remove(binPath)
 	if err != nil {
 		return err
 	}

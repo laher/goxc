@@ -47,9 +47,9 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION     = "0.12.5"
+	VERSION     = "0.13.1"
 	BUILD_DATE  = ""
-	SOURCE_DATE = "2013-12-24T23:30:03+13:00"
+	SOURCE_DATE = "2014-02-23T01:20:01+13:00"
 	// settings for this invocation of goxc
 	settings             config.Settings
 	fBuildSettings       config.BuildSettings
@@ -163,7 +163,7 @@ func goXC(call []string) {
 		//0.2.5 writeConfig now just exits after writing config
 	} else {
 		//0.2.3 fillDefaults should only happen after writing config
-		config.FillSettingsDefaults(&settings)
+		config.FillSettingsDefaults(&settings, workingDirectory)
 		tasks.FillTaskSettingsDefaults(&settings)
 
 		if settings.IsVerbose() {
@@ -171,7 +171,10 @@ func goXC(call []string) {
 		}
 		destPlatforms := platforms.GetDestPlatforms(settings.Os, settings.Arch)
 		destPlatforms = platforms.ApplyBuildConstraints(settings.BuildConstraints, destPlatforms)
-		tasks.RunTasks(workingDirectory, destPlatforms, &settings, maxProcessors)
+		err := tasks.RunTasks(workingDirectory, destPlatforms, &settings, maxProcessors)
+		if err != nil {
+			log.Printf("RunTasks returned error %+v", err)
+		}
 	}
 }
 
@@ -500,6 +503,10 @@ func setupFlags() *flag.FlagSet {
 	//	flagSet.StringVar(&settings.PreferredGoVersion, "goversion", "", "Preferred Go version")
 
 	flagSet.StringVar(&settings.ArtifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
+	flagSet.StringVar(&settings.AppName, "n", "", "Application name. By default this is the directory name.")
+
+	flagSet.StringVar(&settings.ExecutablePathTemplate, "o", "", "Output file name for compilation (this string is a template, with default -o=\""+core.OUTFILE_TEMPLATE_DEFAULT+"\")")
+
 	flagSet.StringVar(&codesignId, "codesign", "", "identity to sign darwin binaries with (only applied when host OS is 'darwin')")
 
 	flagSet.StringVar(&settings.ResourcesInclude, "resources-include", "", "Include resources in archives (default="+core.RESOURCES_INCLUDE_DEFAULT+")")

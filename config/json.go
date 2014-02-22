@@ -248,8 +248,12 @@ func loadSettingsSection(settingsSection map[string]interface{}) (settings Setti
 			settings.TasksAppend, err = typeutils.ToStringSlice(v, k)
 		case "TasksPrepend":
 			settings.TasksPrepend, err = typeutils.ToStringSlice(v, k)
+		case "AppName":
+			settings.AppName, err = typeutils.ToString(v, k)
 		case "ArtifactsDest":
 			settings.ArtifactsDest, err = typeutils.ToString(v, k)
+		case "ExecutablePathTemplate":
+			settings.ExecutablePathTemplate, err = typeutils.ToString(v, k)
 		case "Arch":
 			settings.Arch, err = typeutils.ToString(v, k)
 		case "Os":

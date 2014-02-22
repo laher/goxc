@@ -6,9 +6,10 @@
 		"default",
 		"pkg-source"
 	],
-	"ResourcesInclude": "README.md,.\\_test1/*",
+	"ResourcesInclude": "README.md,.\\_test1/*,_test2",
 	"ResourcesExclude": "*.go",
-	"PackageVersion": "0.12.6",
+	"MainDirsExclude": "Godeps",
+	"PackageVersion": "0.13.1",
 	"TaskSettings": {
 		"archive-zip": {},
 		"bintray": {

@@ -24,9 +24,11 @@ const (
 
 //defaults ...
 const (
-	ARTIFACTS_DEST_DEFAULT    = ""
-	BUILD_CONSTRAINTS_DEFAULT = ""
-	CODESIGN_DEFAULT          = ""
+	ARTIFACTS_DEST_TEMPLATE_DEFAULT = "{{.GoBin}}{{.PS}}{{.AppName}}-xc"
+	OUTFILE_TEMPLATE_DEFAULT        = "{{.Dest}}{{.PS}}{{.Version}}{{.PS}}{{.Os}}_{{.Arch}}{{.PS}}{{.AppName}}{{.Ext}}"
+	OUTFILE_TEMPLATE_FORMARKDOWN    = "{{.Dest}}{{.PS}}{{.Os}}_{{.Arch}}{{.PS}}{{.AppName}}{{.Ext}}"
+	BUILD_CONSTRAINTS_DEFAULT       = ""
+	CODESIGN_DEFAULT                = ""
 
 	// Default resources to include. Comma-separated list of globs.
 	RESOURCES_INCLUDE_DEFAULT = "INSTALL*,README*,LICENSE*"
@@ -34,7 +36,7 @@ const (
 
 	OS_DEFAULT              = ""
 	ARCH_DEFAULT            = ""
-	PACKAGE_VERSION_DEFAULT = "unknown"
+	PACKAGE_VERSION_DEFAULT = "snapshot"
 	PRERELEASE_INFO_DEFAULT = "SNAPSHOT"
 	BRANCH_ORIGINAL         = "original"
 

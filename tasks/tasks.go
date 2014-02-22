@@ -18,6 +18,7 @@ package tasks
 */
 
 import (
+	"errors"
 	"fmt"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
@@ -194,14 +195,17 @@ func ListTasks() []Task {
 }
 
 // run all given tasks
-func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, settings *config.Settings, maxProcessors int) {
+func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, settings *config.Settings, maxProcessors int) error {
 	log.Printf("Using Go root: %s", settings.GoRoot)
 	if settings.IsVerbose() {
 		log.Printf("looping through each platform")
 	}
-	appName := core.GetAppName(workingDirectory)
+	appName := core.GetAppName(settings.AppName, workingDirectory)
 
-	outDestRoot := core.GetOutDestRoot(appName, settings.ArtifactsDest, workingDirectory)
+	outDestRoot, err := core.GetOutDestRoot(appName, workingDirectory, settings.ArtifactsDest)
+	if err != nil {
+		return err
+	}
 	defer log.SetPrefix("[goxc] ")
 	exclusions := ResolveAliases(settings.TasksExclude)
 	appends := ResolveAliases(settings.TasksAppend)
@@ -228,7 +232,7 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 				log.Printf("'%s' looks like a directory, not a task - specify 'working directory' with -wd option", taskName)
 			}
 			log.Printf("Task %s does NOT exist!", taskName)
-			return
+			return errors.New("Task " + taskName + " does not exist")
 		}
 	}
 	mainDirs := []string{}
@@ -263,11 +267,12 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 		if err != nil {
 			// TODO: implement 'force' option.
 			log.Printf("Stopping after '%s' failed with error '%v'", taskName, err)
-			return
+			return err
 		} else {
 			log.Printf("Task %s succeeded", taskName)
 		}
 	}
+	return nil
 }
 
 // run named task

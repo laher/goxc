@@ -18,6 +18,7 @@ package core
 */
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
@@ -30,6 +31,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"text/template"
 )
 
 const ()
@@ -184,8 +186,11 @@ func ParseIncludeResources(basedir, includeResources, excludeResources string, i
 
 }
 
-// Get application name (uses dirname)
-func GetAppName(workingDirectory string) string {
+// Get application name (defaults to dirname)
+func GetAppName(specifiedAppName, workingDirectory string) string {
+	if specifiedAppName != "" {
+		return specifiedAppName
+	}
 	appDirname, err := filepath.Abs(workingDirectory)
 	if err != nil {
 		log.Printf("Error: %v", err)
@@ -244,8 +249,44 @@ func GetGoPathElement(workingDirectory string) string {
 	return gopath
 }
 
+func GetOutDestRoot(appName string, workingDirectory string, templateText string) (string, error) {
+	var outDestRoot string
+	tmpl, err := template.New("rootTemplate").Parse(templateText)
+	goBin := GoBin(workingDirectory)
+	homeDir := UserHomeDir()
+	myGoPath := GetGoPathElement(workingDirectory)
+	data := RootDirVars{goBin, myGoPath, homeDir, appName, string(os.PathSeparator)}
+	var out bytes.Buffer
+	err = tmpl.Execute(&out, data)
+	if err != nil {
+		return "", err
+	}
+	outDestRoot = out.String()
+	//normaliseAbs
+	if strings.HasPrefix(outDestRoot, "~/") {
+		outDestRoot = strings.Replace(outDestRoot, "~", UserHomeDir(), 1)
+	}
+	outDestRootAbs, err := filepath.Abs(outDestRoot)
+	if err != nil {
+		log.Printf("Error resolving absolute filename")
+		return outDestRoot, nil
+	} else {
+		return outDestRootAbs, nil
+	}
+}
+
+func GoBin(workingDirectory string) string {
+	gobin := os.Getenv("GOBIN")
+	if gobin == "" {
+		gopath := GetGoPathElement(workingDirectory)
+		// follow usual GO rules for making GOBIN
+		gobin = filepath.Join(gopath, "bin")
+	}
+	return gobin
+}
+
 // Get output folder
-func GetOutDestRoot(appName string, artifactsDestSetting string, workingDirectory string) string {
+func XGetOutDestRoot(appName string, artifactsDestSetting string, workingDirectory string) string {
 	var outDestRoot string
 	if artifactsDestSetting != "" {
 		outDestRoot = artifactsDestSetting
@@ -276,21 +317,69 @@ func UserHomeDir() string {
 		log.Printf("Could not get home directory: %s", err)
 		return os.Getenv("HOME")
 	}
-	log.Printf("user dir: %s", usr.HomeDir)
+	//log.Printf("user dir: %s", usr.HomeDir)
 	return usr.HomeDir
 }
 
 // get relative path for the binary.
-func GetRelativeBin(goos, arch string, appName string, isForMarkdown bool, fullVersionName string) string {
+/*
+func XGetRelativeBin(goos, arch string, appName string, isForMarkdown bool, fullVersionName string) string {
+	templateText := OUTFILE_TEMPLATE_DEFAULT
+	if isForMarkdown {
+		templateText = OUTFILE_TEMPLATE_FORMARKDOWN
+	}
+	ret, err := GetRelativeBinTemplate(goos, arch, appName, fullVersionName, templateText)
+	if err != nil {
+		log.Printf("Could not get output name: %s", err)
+	}
+	return ret
+}
+*/
+type RootDirVars struct {
+	GoBin    string
+	MyGoPath string
+	Home     string
+	AppName  string
+	PS       string
+}
+type BinNameVars struct {
+	RootDirVars
+	Dest    string
+	ExeName string
+	Version string
+	Os      string
+	Arch    string
+	Ext     string
+}
+
+func GetAbsoluteBin(goos, arch string, appName, exeName, workingDirectory, fullVersionName, templateText string, artifactsDestSetting string) (string, error) {
+	tmpl, err := template.New("binTemplate").Parse(templateText)
+	if err != nil {
+		return "", err
+	}
 	var ending = ""
 	if goos == WINDOWS {
 		ending = ".exe"
 	}
-	if isForMarkdown {
-		return filepath.Join(goos+"_"+arch, appName+ending)
+	root, err := GetOutDestRoot(appName, workingDirectory, artifactsDestSetting)
+	goBin := GoBin(workingDirectory)
+	homeDir := UserHomeDir()
+	myGoPath := GetGoPathElement(workingDirectory)
+	rdv := RootDirVars{goBin, myGoPath, homeDir, appName, string(os.PathSeparator)}
+	data := BinNameVars{rdv, root, exeName, fullVersionName, goos, arch, ending}
+	var out bytes.Buffer
+	err = tmpl.Execute(&out, data)
+	if err != nil {
+		return "", err
 	}
-	relativeDir := filepath.Join(fullVersionName, goos+"_"+arch)
-	return filepath.Join(relativeDir, appName+ending)
+	/*
+		if isForMarkdown {
+			return filepath.Join(goos+"_"+arch, appName+ending)
+		}
+		relativeDir := filepath.Join(fullVersionName, goos+"_"+arch)
+		return filepath.Join(relativeDir, appName+ending)
+	*/
+	return out.String(), nil
 }
 
 // Check if slice contains a string.

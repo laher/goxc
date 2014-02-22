@@ -11,7 +11,13 @@ func FillBuildSettingsDefaults(bs *BuildSettings) {
 }
 
 //TODO fulfil all defaults
-func FillSettingsDefaults(settings *Settings) {
+func FillSettingsDefaults(settings *Settings, workingDirectory string) {
+	if settings.AppName == "" {
+		settings.AppName = core.GetAppName(settings.AppName, workingDirectory)
+	}
+	if settings.ExecutablePathTemplate == "" {
+		settings.ExecutablePathTemplate = core.OUTFILE_TEMPLATE_DEFAULT
+	}
 	if settings.ResourcesInclude == "" {
 		settings.ResourcesInclude = core.RESOURCES_INCLUDE_DEFAULT
 	}

@@ -42,20 +42,30 @@ func init() {
 func runTaskCodesign(tp TaskParams) (err error) {
 	for _, dest := range tp.DestPlatforms {
 		for _, mainDir := range tp.MainDirs {
-			exeName := filepath.Base(mainDir)
-			relativeBin := core.GetRelativeBin(dest.Os, dest.Arch, exeName, false, tp.Settings.GetFullVersionName())
-			err = codesignPlat(dest.Os, dest.Arch, tp.OutDestRoot, relativeBin, tp.Settings)
+			var exeName string
+			if len(tp.MainDirs) == 1 {
+				exeName = tp.Settings.AppName
+			} else {
+				exeName = filepath.Base(mainDir)
+
+			}
+			binPath, err := core.GetAbsoluteBin(dest.Os, dest.Arch, tp.Settings.AppName, exeName, tp.WorkingDirectory, tp.Settings.GetFullVersionName(), tp.Settings.ExecutablePathTemplate, tp.Settings.ArtifactsDest)
+
+			if err != nil {
+				return err
+			}
+			err = codesignPlat(dest.Os, dest.Arch, binPath, tp.Settings)
 		}
 	}
 	//TODO return error
 	return err
 }
 
-func codesignPlat(goos, arch string, outDestRoot string, relativeBin string, settings *config.Settings) error {
+func codesignPlat(goos, arch string, binPath string, settings *config.Settings) error {
 	// settings.codesign only works on OS X for binaries generated for OS X.
 	id := settings.GetTaskSettingString("codesign", "id")
 	if id != "" && runtime.GOOS == platforms.DARWIN && goos == platforms.DARWIN {
-		if err := signBinary(filepath.Join(outDestRoot, relativeBin), id); err != nil {
+		if err := signBinary(binPath, id); err != nil {
 			log.Printf("codesign failed: %s", err)
 			return err
 		} else {

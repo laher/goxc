@@ -21,7 +21,6 @@ import (
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/archive/ar"
-	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
 	"github.com/laher/goxc/executils"
 	"github.com/laher/goxc/exefileparse"
@@ -78,12 +77,24 @@ func setupXc(tp TaskParams) ([]platforms.Platform, error) {
 }
 
 func runXc(tp TaskParams, dest platforms.Platform, errchan chan error) {
-	appName := core.GetAppName(tp.WorkingDirectory)
-	outDestRoot := core.GetOutDestRoot(appName, tp.Settings.ArtifactsDest, tp.WorkingDirectory)
+	/*
+		//outDestRoot, err := core.GetOutDestRoot(tp.AppName, tp.WorkingDirectory, tp.Settings.ArtifactsDest)
+		if err != nil {
+			log.Printf("Error: %v", err)
+			errchan <- err
+			return
+		}
+	*/
 	log.Printf("mainDirs : %v", tp.MainDirs)
 	for _, mainDir := range tp.MainDirs {
-		exeName := filepath.Base(mainDir)
-		absoluteBin, err := xcPlat(dest, mainDir, tp.Settings, outDestRoot, exeName)
+		var exeName string
+		if len(tp.MainDirs) == 1 {
+			exeName = tp.Settings.AppName
+		} else {
+			exeName = filepath.Base(mainDir)
+
+		}
+		absoluteBin, err := xcPlat(dest, tp, exeName)
 		if err != nil {
 			log.Printf("Error: %v", err)
 			log.Printf("Have you run `goxc -t` for this platform (%s,%s)???", dest.Arch, dest.Os)
@@ -195,29 +206,29 @@ func validatePlatToolchainBinExists(dest platforms.Platform, goroot string) erro
 
 // xcPlat: Cross compile for a particular platform
 // 0.3.0 - breaking change - changed 'call []string' to 'workingDirectory string'.
-func xcPlat(dest platforms.Platform, workingDirectory string, settings *config.Settings, outDestRoot string, exeName string) (string, error) {
+func xcPlat(dest platforms.Platform, tp TaskParams, exeName string) (string, error) {
 	log.Printf("building %s for platform %v.", exeName, dest)
-	relativeDir := filepath.Join(settings.GetFullVersionName(), dest.Os+"_"+dest.Arch)
-	outDir := filepath.Join(outDestRoot, relativeDir)
-	err := os.MkdirAll(outDir, 0755)
+	args := []string{}
+	absoluteBin, err := core.GetAbsoluteBin(dest.Os, dest.Arch, tp.Settings.AppName, exeName, tp.WorkingDirectory, tp.Settings.GetFullVersionName(), tp.Settings.ExecutablePathTemplate, tp.Settings.ArtifactsDest)
 	if err != nil {
 		return "", err
 	}
-	args := []string{}
-	relativeBin := core.GetRelativeBin(dest.Os, dest.Arch, exeName, false, settings.GetFullVersionName())
-	absoluteBin := filepath.Join(outDestRoot, relativeBin)
-	//args = append(args, executils.GetLdFlagVersionArgs(settings.GetFullVersionName())...)
+	outDir := filepath.Dir(absoluteBin)
+	err = os.MkdirAll(outDir, 0755)
+	if err != nil {
+		return "", err
+	}
 	args = append(args, "-o", absoluteBin, ".")
 	//log.Printf("building %s", exeName)
 	//v0.8.5 no longer using CGO_ENABLED
 	envExtra := []string{"GOOS=" + dest.Os, "GOARCH=" + dest.Arch}
 	if dest.Os == platforms.LINUX && dest.Arch == platforms.ARM {
 		// see http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go
-		goarm := settings.GetTaskSettingString(TASK_XC, "GOARM")
+		goarm := tp.Settings.GetTaskSettingString(TASK_XC, "GOARM")
 		if goarm != "" {
 			envExtra = append(envExtra, "GOARM="+goarm)
 		}
 	}
-	err = executils.InvokeGo(workingDirectory, "build", args, envExtra, settings)
+	err = executils.InvokeGo(tp.WorkingDirectory, "build", args, envExtra, tp.Settings)
 	return absoluteBin, err
 }

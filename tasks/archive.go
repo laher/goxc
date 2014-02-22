@@ -89,7 +89,7 @@ func runTaskZip(tp TaskParams, dest platforms.Platform, errchan chan error) {
 }
 
 func runArchiveTask(tp TaskParams, dest platforms.Platform, errchan chan error, ending string, archiver archive.Archiver, isIncludeTopLevelDir bool) {
-	err := archivePlat(dest.Os, dest.Arch, tp.MainDirs, tp.AppName, tp.WorkingDirectory, tp.OutDestRoot, tp.Settings, ending, archiver, isIncludeTopLevelDir)
+	err := archivePlat(dest.Os, dest.Arch, tp.MainDirs, tp.WorkingDirectory, tp.OutDestRoot, tp.Settings, ending, archiver, isIncludeTopLevelDir)
 	if err != nil {
 		//TODO - 'force' option?
 		errchan <- err
@@ -99,13 +99,23 @@ func runArchiveTask(tp TaskParams, dest platforms.Platform, errchan chan error, 
 	errchan <- nil
 }
 
-func archivePlat(goos, arch string, mainDirs []string, appName, workingDirectory, outDestRoot string, settings *config.Settings, ending string, archiver archive.Archiver, includeTopLevelDir bool) error {
+func archivePlat(goos, arch string, mainDirs []string, workingDirectory, outDestRoot string, settings *config.Settings, ending string, archiver archive.Archiver, includeTopLevelDir bool) error {
 	resources := core.ParseIncludeResources(workingDirectory, settings.ResourcesInclude, settings.ResourcesExclude, settings.IsVerbose())
+	//log.Printf("Resources: %v", resources)
 	exes := []string{}
 	for _, mainDir := range mainDirs {
-		exeName := filepath.Base(mainDir)
-		relativeBin := core.GetRelativeBin(goos, arch, exeName, false, settings.GetFullVersionName())
-		exes = append(exes, filepath.Join(outDestRoot, relativeBin))
+		var exeName string
+		if len(mainDirs) == 1 {
+			exeName = settings.AppName
+		} else {
+			exeName = filepath.Base(mainDir)
+		}
+		binPath, err := core.GetAbsoluteBin(goos, arch, settings.AppName, exeName, workingDirectory, settings.GetFullVersionName(), settings.ExecutablePathTemplate, settings.ArtifactsDest)
+
+		if err != nil {
+			return err
+		}
+		exes = append(exes, binPath)
 	}
 	outDir := filepath.Join(outDestRoot, settings.GetFullVersionName())
 	err := os.MkdirAll(outDir, 0777)
@@ -113,7 +123,7 @@ func archivePlat(goos, arch string, mainDirs []string, appName, workingDirectory
 		return err
 	}
 	archivePath, err := archive.ArchiveBinariesAndResources(outDir, goos+"_"+arch,
-		exes, appName, resources, *settings, archiver, ending, includeTopLevelDir)
+		exes, settings.AppName, resources, *settings, archiver, ending, includeTopLevelDir)
 	if err != nil {
 		log.Printf("ZIP error: %s", err)
 		return err
