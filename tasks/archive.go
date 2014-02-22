@@ -110,7 +110,7 @@ func archivePlat(goos, arch string, mainDirs []string, workingDirectory, outDest
 		} else {
 			exeName = filepath.Base(mainDir)
 		}
-		binPath, err := core.GetAbsoluteBin(goos, arch, settings.AppName, exeName, workingDirectory, settings.GetFullVersionName(), settings.ExecutablePathTemplate, settings.ArtifactsDest)
+		binPath, err := core.GetAbsoluteBin(goos, arch, settings.AppName, exeName, workingDirectory, settings.GetFullVersionName(), settings.OutPath, settings.ArtifactsDest)
 
 		if err != nil {
 			return err

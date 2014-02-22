@@ -35,8 +35,8 @@ type Resources struct {
 type Settings struct {
 	AppName       string `json:",omitempty"`
 	ArtifactsDest string `json:",omitempty"`
-	//0.14.x. If this starts with a FileSeparator then ignore top dir
-	ExecutablePathTemplate string `json:",omitempty"`
+	//0.13.x. If this starts with a FileSeparator then ignore top dir
+	OutPath string `json:",omitempty"`
 
 	//0.2.0 ArtifactTypes replaces ZipArchives bool
 	//0.5.0 ArtifactTypes is replaced by tasks
@@ -232,8 +232,8 @@ func Merge(high Settings, low Settings) Settings {
 	if high.ArtifactsDest == "" {
 		high.ArtifactsDest = low.ArtifactsDest
 	}
-	if high.ExecutablePathTemplate == "" {
-		high.ExecutablePathTemplate = low.ExecutablePathTemplate
+	if high.OutPath == "" {
+		high.OutPath = low.OutPath
 	}
 	//0.6 Adding BuildConstraints
 	if high.BuildConstraints == "" {

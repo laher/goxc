@@ -209,7 +209,7 @@ func validatePlatToolchainBinExists(dest platforms.Platform, goroot string) erro
 func xcPlat(dest platforms.Platform, tp TaskParams, exeName string) (string, error) {
 	log.Printf("building %s for platform %v.", exeName, dest)
 	args := []string{}
-	absoluteBin, err := core.GetAbsoluteBin(dest.Os, dest.Arch, tp.Settings.AppName, exeName, tp.WorkingDirectory, tp.Settings.GetFullVersionName(), tp.Settings.ExecutablePathTemplate, tp.Settings.ArtifactsDest)
+	absoluteBin, err := core.GetAbsoluteBin(dest.Os, dest.Arch, tp.Settings.AppName, exeName, tp.WorkingDirectory, tp.Settings.GetFullVersionName(), tp.Settings.OutPath, tp.Settings.ArtifactsDest)
 	if err != nil {
 		return "", err
 	}

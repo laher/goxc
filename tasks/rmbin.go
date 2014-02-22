@@ -58,7 +58,7 @@ func runTaskRmBin(tp TaskParams) error {
 }
 
 func rmBinPlat(dest platforms.Platform, tp TaskParams, exeName string) error {
-	binPath, err := core.GetAbsoluteBin(dest.Os, dest.Arch, tp.Settings.AppName, exeName, tp.WorkingDirectory, tp.Settings.GetFullVersionName(), tp.Settings.ExecutablePathTemplate, tp.Settings.ArtifactsDest)
+	binPath, err := core.GetAbsoluteBin(dest.Os, dest.Arch, tp.Settings.AppName, exeName, tp.WorkingDirectory, tp.Settings.GetFullVersionName(), tp.Settings.OutPath, tp.Settings.ArtifactsDest)
 	if err != nil {
 		return err
 	}

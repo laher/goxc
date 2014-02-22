@@ -49,7 +49,7 @@ var (
 	// So, goxc does this automatically during 'go build'
 	VERSION     = "0.13.1"
 	BUILD_DATE  = ""
-	SOURCE_DATE = "2014-02-23T01:20:01+13:00"
+	SOURCE_DATE = "2014-02-23T01:29:50+13:00"
 	// settings for this invocation of goxc
 	settings             config.Settings
 	fBuildSettings       config.BuildSettings
@@ -505,7 +505,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.ArtifactsDest, "d", "", "Destination root directory (default=$GOBIN/(appname)-xc)")
 	flagSet.StringVar(&settings.AppName, "n", "", "Application name. By default this is the directory name.")
 
-	flagSet.StringVar(&settings.ExecutablePathTemplate, "o", "", "Output file name for compilation (this string is a template, with default -o=\""+core.OUTFILE_TEMPLATE_DEFAULT+"\")")
+	flagSet.StringVar(&settings.OutPath, "o", "", "Output file name for compilation (this string is a template, with default -o=\""+core.OUTFILE_TEMPLATE_DEFAULT+"\")")
 
 	flagSet.StringVar(&codesignId, "codesign", "", "identity to sign darwin binaries with (only applied when host OS is 'darwin')")
 

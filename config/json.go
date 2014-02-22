@@ -252,8 +252,8 @@ func loadSettingsSection(settingsSection map[string]interface{}) (settings Setti
 			settings.AppName, err = typeutils.ToString(v, k)
 		case "ArtifactsDest":
 			settings.ArtifactsDest, err = typeutils.ToString(v, k)
-		case "ExecutablePathTemplate":
-			settings.ExecutablePathTemplate, err = typeutils.ToString(v, k)
+		case "OutPath":
+			settings.OutPath, err = typeutils.ToString(v, k)
 		case "Arch":
 			settings.Arch, err = typeutils.ToString(v, k)
 		case "Os":

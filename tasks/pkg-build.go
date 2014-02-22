@@ -158,7 +158,7 @@ func debBuild(dest platforms.Platform, tp TaskParams) (err error) {
 			exeName = filepath.Base(mainDir)
 
 		}
-		binPath, err := core.GetAbsoluteBin(dest.Os, dest.Arch, tp.Settings.AppName, exeName, tp.WorkingDirectory, tp.Settings.GetFullVersionName(), tp.Settings.ExecutablePathTemplate, tp.Settings.ArtifactsDest)
+		binPath, err := core.GetAbsoluteBin(dest.Os, dest.Arch, tp.Settings.AppName, exeName, tp.WorkingDirectory, tp.Settings.GetFullVersionName(), tp.Settings.OutPath, tp.Settings.ArtifactsDest)
 		if err != nil {
 			return err
 		}
