@@ -47,9 +47,9 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION     = "0.13.1"
+	VERSION     = "0.13.2"
 	BUILD_DATE  = ""
-	SOURCE_DATE = "2014-02-23T01:29:50+13:00"
+	SOURCE_DATE = "2014-02-23T19:39:32+13:00"
 	// settings for this invocation of goxc
 	settings             config.Settings
 	fBuildSettings       config.BuildSettings
@@ -151,7 +151,7 @@ func printVersion(output *os.File) {
 
 // goXC is the goxc startpoint
 // In theory you could call this with a slice of flags
-func goXC(call []string) {
+func goXC(call []string) error {
 	interpretFlags(call)
 	workingDirectory := getWorkingDir()
 	mergeConfigIntoSettings(workingDirectory)
@@ -161,6 +161,7 @@ func goXC(call []string) {
 			log.Printf("Could not write config file: %v", err)
 		}
 		//0.2.5 writeConfig now just exits after writing config
+		return err
 	} else {
 		//0.2.3 fillDefaults should only happen after writing config
 		config.FillSettingsDefaults(&settings, workingDirectory)
@@ -175,6 +176,7 @@ func goXC(call []string) {
 		if err != nil {
 			log.Printf("RunTasks returned error %+v", err)
 		}
+		return err
 	}
 }
 
@@ -657,5 +659,8 @@ func printFlag(flag *flag.Flag, isBool bool) {
 
 func main() {
 	log.SetPrefix("[goxc] ")
-	goXC(os.Args)
+	err := goXC(os.Args)
+	if err != nil {
+		os.Exit(1)
+	}
 }

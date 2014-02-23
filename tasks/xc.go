@@ -60,7 +60,7 @@ func setupXc(tp TaskParams) ([]platforms.Platform, error) {
 	goroot := tp.Settings.GoRoot
 	for _, dest := range tp.DestPlatforms {
 		if isValidateToolchain {
-			err := validateToolchain(dest, goroot)
+			err := validateToolchain(dest, goroot, tp.Settings.IsVerbose())
 			if err != nil {
 				log.Printf("Toolchain not ready for %v. Re-building toolchain. (%v)", dest, err)
 				isAutoToolchain := tp.Settings.GetTaskSettingBool(TASK_XC, "autoRebuildToolchain")
@@ -71,6 +71,28 @@ func setupXc(tp TaskParams) ([]platforms.Platform, error) {
 					return nil, err
 				}
 			}
+		}
+	}
+	//check for duplicate exePaths
+	exePaths := []string{}
+	for _, mainDir := range tp.MainDirs {
+		var exeName string
+		if len(tp.MainDirs) == 1 {
+			exeName = tp.Settings.AppName
+		} else {
+			exeName = filepath.Base(mainDir)
+		}
+		for _, dest := range tp.DestPlatforms {
+			absoluteBin, err := core.GetAbsoluteBin(dest.Os, dest.Arch, tp.Settings.AppName, exeName, tp.WorkingDirectory, tp.Settings.GetFullVersionName(), tp.Settings.OutPath, tp.Settings.ArtifactsDest)
+			if err != nil {
+				return nil, err
+			}
+			for _, existingPath := range exePaths {
+				if existingPath == absoluteBin {
+					return []platforms.Platform{}, errors.New("The xc task will attempt to compile multiple binaries to the same path (" + absoluteBin + "). Please make sure {{.Os}} and {{.Arch}} variables are used in the OutPath")
+				}
+			}
+			exePaths = append(exePaths, absoluteBin)
 		}
 	}
 	return tp.DestPlatforms, nil
@@ -116,12 +138,12 @@ func runXc(tp TaskParams, dest platforms.Platform, errchan chan error) {
 	errchan <- nil
 }
 
-func validateToolchain(dest platforms.Platform, goroot string) error {
+func validateToolchain(dest platforms.Platform, goroot string, verbose bool) error {
 	err := validatePlatToolchainBinExists(dest, goroot)
 	if err != nil {
 		return err
 	}
-	err = validatePlatToolchainPackageVersion(dest, goroot)
+	err = validatePlatToolchainPackageVersion(dest, goroot, verbose)
 	if err != nil {
 		return err
 	}
@@ -129,7 +151,7 @@ func validateToolchain(dest platforms.Platform, goroot string) error {
 	return nil
 }
 
-func validatePlatToolchainPackageVersion(dest platforms.Platform, goroot string) error {
+func validatePlatToolchainPackageVersion(dest platforms.Platform, goroot string, verbose bool) error {
 	platPkgFileRuntime := filepath.Join(goroot, "pkg", dest.Os+"_"+dest.Arch, "runtime.a")
 	nr, err := os.Open(platPkgFileRuntime)
 	if err != nil {
@@ -185,7 +207,9 @@ func validatePlatToolchainPackageVersion(dest platforms.Platform, goroot string)
 			if compiledVersion != goVersion {
 				return errors.New("static library version '" + compiledVersion + "' does NOT match `go version` '" + goVersion + "'!")
 			}
-			log.Printf("Toolchain version '%s' verified against 'go %s' for %v", compiledVersion, goVersion, dest)
+			if verbose {
+				log.Printf("Toolchain version '%s' verified against 'go %s' for %v", compiledVersion, goVersion, dest)
+			}
 			return nil
 		}
 	}
