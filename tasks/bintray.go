@@ -172,6 +172,10 @@ func walkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename string
 		return nil
 	}
 	subject := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "subject")
+	user := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "user")
+	if user == "" {
+		user = subject
+	}
 	apikey := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "apikey")
 	repository := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "repository")
 	pkg := tp.Settings.GetTaskSettingString(TASK_BINTRAY, "package")
@@ -243,7 +247,7 @@ func walkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename string
 	url := apiHost + "/content/" + subject + "/" + repository + "/" + pkg + "/" + tp.Settings.GetFullVersionName() + "/" + relativePath
 	// for some reason there's no /pkg/ level in the downloads url.
 	downloadsUrl := downloadsHost + "/content/" + subject + "/" + repository + "/" + relativePath + "?direct"
-	resp, err := uploadFile("PUT", url, subject, apikey, fullPath, relativePath)
+	resp, err := uploadFile("PUT", url, subject, user, apikey, fullPath, relativePath)
 	if err != nil {
 		if serr, ok := err.(httpError); ok {
 			if serr.statusCode == 409 {
@@ -287,12 +291,12 @@ func walkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename string
 	if err != nil {
 		return err
 	}
-	err = publish(apiHost, apikey, subject, repository, pkg, tp.Settings.GetFullVersionName())
+	err = publish(apiHost, user, apikey, subject, repository, pkg, tp.Settings.GetFullVersionName())
 	return err
 }
 
-func publish(apihost, apikey, subject, repository, pkg, version string) error {
-	resp, err := doHttp("POST", apihost+"/content/"+subject+"/"+repository+"/"+pkg+"/"+version+"/publish", subject, apikey, nil, 0)
+func publish(apihost, user, apikey, subject, repository, pkg, version string) error {
+	resp, err := doHttp("POST", apihost+"/content/"+subject+"/"+repository+"/"+pkg+"/"+version+"/publish", subject, user, apikey, nil, 0)
 	if err == nil {
 		log.Printf("File published. %v", resp)
 	}
@@ -300,7 +304,7 @@ func publish(apihost, apikey, subject, repository, pkg, version string) error {
 }
 
 //PUT /content/:subject/:repo/:package/:version/:path
-func uploadFile(method, url, subject, apikey, fullPath, relativePath string) (map[string]interface{}, error) {
+func uploadFile(method, url, subject, user, apikey, fullPath, relativePath string) (map[string]interface{}, error) {
 	file, err := os.Open(fullPath)
 	if err != nil {
 		log.Printf("Error reading file for upload: %v", err)
@@ -312,13 +316,13 @@ func uploadFile(method, url, subject, apikey, fullPath, relativePath string) (ma
 		log.Printf("Error statting file for upload: %v", err)
 		return nil, err
 	}
-	resp, err := doHttp(method, url, subject, apikey, file, fi.Size())
+	resp, err := doHttp(method, url, subject, user, apikey, file, fi.Size())
 	return resp, err
 }
 
 //NOTE: not necessary.
 //POST /packages/:subject/:repo/:package/versions
-func createVersion(apihost, apikey, subject, repository, pkg, version string) error {
+func createVersion(apihost, user, apikey, subject, repository, pkg, version string) error {
 	req := map[string]interface{}{"name": version, "release_notes": "built by goxc", "release_url": "http://x.x.x/x/x"}
 	requestData, err := json.Marshal(req)
 	if err != nil {
@@ -326,7 +330,7 @@ func createVersion(apihost, apikey, subject, repository, pkg, version string) er
 	}
 	requestLength := len(requestData)
 	reader := bytes.NewReader(requestData)
-	resp, err := doHttp("POST", apihost+"/packages/"+subject+"/"+repository+"/"+pkg+"/versions", subject, apikey, reader, int64(requestLength))
+	resp, err := doHttp("POST", apihost+"/packages/"+subject+"/"+repository+"/"+pkg+"/versions", subject, user, apikey, reader, int64(requestLength))
 	if err == nil {
 		log.Printf("Created new version. %v", resp)
 	}
@@ -342,13 +346,13 @@ func (e httpError) Error() string {
 	return fmt.Sprintf("Error code: %d, message: %s", e.statusCode, e.message)
 }
 
-func doHttp(method, url, subject, apikey string, requestReader io.Reader, requestLength int64) (map[string]interface{}, error) {
+func doHttp(method, url, subject, user, apikey string, requestReader io.Reader, requestLength int64) (map[string]interface{}, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest(method, url, requestReader)
 	if err != nil {
 		return nil, err
 	}
-	req.SetBasicAuth(subject, apikey)
+	req.SetBasicAuth(user, apikey)
 	if requestLength > 0 {
 		log.Printf("Adding Header - Content-Length: %s", strconv.FormatInt(requestLength, 10))
 		req.ContentLength = requestLength
