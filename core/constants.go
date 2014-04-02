@@ -25,8 +25,8 @@ const (
 //defaults ...
 const (
 	ARTIFACTS_DEST_TEMPLATE_DEFAULT = "{{.GoBin}}{{.PS}}{{.AppName}}-xc"
-	OUTFILE_TEMPLATE_DEFAULT        = "{{.Dest}}{{.PS}}{{.Version}}{{.PS}}{{.Os}}_{{.Arch}}{{.PS}}{{.AppName}}{{.Ext}}"
-	OUTFILE_TEMPLATE_FORMARKDOWN    = "{{.Dest}}{{.PS}}{{.Os}}_{{.Arch}}{{.PS}}{{.AppName}}{{.Ext}}"
+	OUTFILE_TEMPLATE_DEFAULT        = "{{.Dest}}{{.PS}}{{.Version}}{{.PS}}{{.Os}}_{{.Arch}}{{.PS}}{{.ExeName}}{{.Ext}}"
+	OUTFILE_TEMPLATE_FORMARKDOWN    = "{{.Dest}}{{.PS}}{{.Os}}_{{.Arch}}{{.PS}}{{.ExeName}}{{.Ext}}"
 	BUILD_CONSTRAINTS_DEFAULT       = ""
 	CODESIGN_DEFAULT                = ""
 

@@ -89,7 +89,7 @@ func setupXc(tp TaskParams) ([]platforms.Platform, error) {
 			}
 			for _, existingPath := range exePaths {
 				if existingPath == absoluteBin {
-					return []platforms.Platform{}, errors.New("The xc task will attempt to compile multiple binaries to the same path (" + absoluteBin + "). Please make sure {{.Os}} and {{.Arch}} variables are used in the OutPath")
+					return []platforms.Platform{}, errors.New("The xc task will attempt to compile multiple binaries to the same path (" + absoluteBin + "). Please make sure {{.Os}} and {{.Arch}} variables are used in the OutPath. Currently the template is "+tp.Settings.OutPath)
 				}
 			}
 			exePaths = append(exePaths, absoluteBin)

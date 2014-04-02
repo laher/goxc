@@ -298,7 +298,7 @@ func walkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename string
 func publish(apihost, user, apikey, subject, repository, pkg, version string) error {
 	resp, err := doHttp("POST", apihost+"/content/"+subject+"/"+repository+"/"+pkg+"/"+version+"/publish", subject, user, apikey, nil, 0)
 	if err == nil {
-		log.Printf("File published. %v", resp)
+		log.Printf("Version published. %v", resp)
 	}
 	return err
 }
