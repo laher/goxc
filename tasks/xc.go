@@ -89,7 +89,7 @@ func setupXc(tp TaskParams) ([]platforms.Platform, error) {
 			}
 			for _, existingPath := range exePaths {
 				if existingPath == absoluteBin {
-					return []platforms.Platform{}, errors.New("The xc task will attempt to compile multiple binaries to the same path (" + absoluteBin + "). Please make sure {{.Os}} and {{.Arch}} variables are used in the OutPath. Currently the template is "+tp.Settings.OutPath)
+					return []platforms.Platform{}, errors.New("The xc task will attempt to compile multiple binaries to the same path (" + absoluteBin + "). Please make sure {{.Os}} and {{.Arch}} variables are used in the OutPath. Currently the template is " + tp.Settings.OutPath)
 				}
 			}
 			exePaths = append(exePaths, absoluteBin)
@@ -110,13 +110,14 @@ func runXc(tp TaskParams, dest platforms.Platform, errchan chan error) {
 	log.Printf("mainDirs : %v", tp.MainDirs)
 	for _, mainDir := range tp.MainDirs {
 		var exeName string
+		var packagePath string
 		if len(tp.MainDirs) == 1 {
 			exeName = tp.Settings.AppName
 		} else {
 			exeName = filepath.Base(mainDir)
-
 		}
-		absoluteBin, err := xcPlat(dest, tp, exeName)
+		packagePath = mainDir
+		absoluteBin, err := xcPlat(dest, tp, exeName, packagePath)
 		if err != nil {
 			log.Printf("Error: %v", err)
 			log.Printf("Have you run `goxc -t` for this platform (%s,%s)???", dest.Arch, dest.Os)
@@ -230,7 +231,7 @@ func validatePlatToolchainBinExists(dest platforms.Platform, goroot string) erro
 
 // xcPlat: Cross compile for a particular platform
 // 0.3.0 - breaking change - changed 'call []string' to 'workingDirectory string'.
-func xcPlat(dest platforms.Platform, tp TaskParams, exeName string) (string, error) {
+func xcPlat(dest platforms.Platform, tp TaskParams, exeName string, packagePath string) (string, error) {
 	log.Printf("building %s for platform %v.", exeName, dest)
 	args := []string{}
 	absoluteBin, err := core.GetAbsoluteBin(dest.Os, dest.Arch, tp.Settings.AppName, exeName, tp.WorkingDirectory, tp.Settings.GetFullVersionName(), tp.Settings.OutPath, tp.Settings.ArtifactsDest)
@@ -253,6 +254,6 @@ func xcPlat(dest platforms.Platform, tp TaskParams, exeName string) (string, err
 			envExtra = append(envExtra, "GOARM="+goarm)
 		}
 	}
-	err = executils.InvokeGo(tp.WorkingDirectory, "build", args, envExtra, tp.Settings)
+	err = executils.InvokeGo(packagePath, "build", args, envExtra, tp.Settings)
 	return absoluteBin, err
 }

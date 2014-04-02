@@ -47,9 +47,9 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION     = "0.13.2"
+	VERSION     = "0.13.5"
 	BUILD_DATE  = ""
-	SOURCE_DATE = "2014-02-23T19:39:32+13:00"
+	SOURCE_DATE = "2014-04-02T23:05:35+13:00"
 	// settings for this invocation of goxc
 	settings             config.Settings
 	fBuildSettings       config.BuildSettings
