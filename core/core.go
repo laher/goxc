@@ -21,10 +21,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
-	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
-	//"github.com/laher/goxc/archive"
-	//"github.com/laher/goxc/config"
 	"log"
 	"os"
 	"os/user"
@@ -53,7 +49,6 @@ func GetMakeScriptPath(goroot string) string {
 // TODO: in future this could check for existence of gcc/mingw/alternative
 func SanityCheck(goroot string) error {
 	if goroot == "" {
-		//	return errors.New("go ROOT dir is set to ''. Try using '"+runtime.GOROOT()+"'")
 		goroot = runtime.GOROOT()
 	}
 	scriptpath := GetMakeScriptPath(goroot)
@@ -250,9 +245,14 @@ func GetGoPathElement(workingDirectory string) string {
 }
 
 func GetOutDestRoot(appName string, workingDirectory string, templateText string) (string, error) {
+	if templateText == "" {
+		templateText = ARTIFACTS_DEST_TEMPLATE_DEFAULT
+	}
 	var outDestRoot string
 	tmpl, err := template.New("rootTemplate").Parse(templateText)
 	goBin := GoBin(workingDirectory)
+	println("GoBin: ", goBin)
+	println("TemplateText: ", templateText)
 	homeDir := UserHomeDir()
 	myGoPath := GetGoPathElement(workingDirectory)
 	data := RootDirVars{goBin, myGoPath, homeDir, appName, string(os.PathSeparator)}
@@ -285,32 +285,6 @@ func GoBin(workingDirectory string) string {
 	return gobin
 }
 
-// Get output folder
-func XGetOutDestRoot(appName string, artifactsDestSetting string, workingDirectory string) string {
-	var outDestRoot string
-	if artifactsDestSetting != "" {
-		outDestRoot = artifactsDestSetting
-	} else {
-		gobin := os.Getenv("GOBIN")
-		if gobin == "" {
-			gopath := GetGoPathElement(workingDirectory)
-			// follow usual GO rules for making GOBIN
-			gobin = filepath.Join(gopath, "bin")
-		}
-		outDestRoot = filepath.Join(gobin, appName+"-xc")
-	}
-	if strings.HasPrefix(outDestRoot, "~/") {
-		outDestRoot = strings.Replace(outDestRoot, "~", UserHomeDir(), 1)
-	}
-	outDestRootAbs, err := filepath.Abs(outDestRoot)
-	if err != nil {
-		log.Printf("Error resolving absolute filename")
-		return outDestRoot
-	} else {
-		return outDestRootAbs
-	}
-}
-
 func UserHomeDir() string {
 	usr, err := user.Current()
 	if err != nil {
@@ -321,20 +295,6 @@ func UserHomeDir() string {
 	return usr.HomeDir
 }
 
-// get relative path for the binary.
-/*
-func XGetRelativeBin(goos, arch string, appName string, isForMarkdown bool, fullVersionName string) string {
-	templateText := OUTFILE_TEMPLATE_DEFAULT
-	if isForMarkdown {
-		templateText = OUTFILE_TEMPLATE_FORMARKDOWN
-	}
-	ret, err := GetRelativeBinTemplate(goos, arch, appName, fullVersionName, templateText)
-	if err != nil {
-		log.Printf("Could not get output name: %s", err)
-	}
-	return ret
-}
-*/
 type RootDirVars struct {
 	GoBin    string
 	MyGoPath string
@@ -361,7 +321,9 @@ func GetAbsoluteBin(goos, arch string, appName, exeName, workingDirectory, fullV
 	if goos == WINDOWS {
 		ending = ".exe"
 	}
-	root, err := GetOutDestRoot(appName, workingDirectory, artifactsDestSetting)
+	rootTemplate := artifactsDestSetting
+
+	root, err := GetOutDestRoot(appName, workingDirectory, rootTemplate)
 	goBin := GoBin(workingDirectory)
 	homeDir := UserHomeDir()
 	myGoPath := GetGoPathElement(workingDirectory)
@@ -372,13 +334,6 @@ func GetAbsoluteBin(goos, arch string, appName, exeName, workingDirectory, fullV
 	if err != nil {
 		return "", err
 	}
-	/*
-		if isForMarkdown {
-			return filepath.Join(goos+"_"+arch, appName+ending)
-		}
-		relativeDir := filepath.Join(fullVersionName, goos+"_"+arch)
-		return filepath.Join(relativeDir, appName+ending)
-	*/
 	return out.String(), nil
 }
 
