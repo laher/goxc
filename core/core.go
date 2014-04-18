@@ -251,8 +251,6 @@ func GetOutDestRoot(appName string, workingDirectory string, templateText string
 	var outDestRoot string
 	tmpl, err := template.New("rootTemplate").Parse(templateText)
 	goBin := GoBin(workingDirectory)
-	println("GoBin: ", goBin)
-	println("TemplateText: ", templateText)
 	homeDir := UserHomeDir()
 	myGoPath := GetGoPathElement(workingDirectory)
 	data := RootDirVars{goBin, myGoPath, homeDir, appName, string(os.PathSeparator)}

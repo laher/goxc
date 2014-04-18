@@ -47,9 +47,9 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION     = "0.13.5"
+	VERSION     = "0.13.7"
 	BUILD_DATE  = ""
-	SOURCE_DATE = "2014-04-02T23:05:35+13:00"
+	SOURCE_DATE = "2014-04-18T21:50:18+12:00"
 	// settings for this invocation of goxc
 	settings             config.Settings
 	fBuildSettings       config.BuildSettings
@@ -516,7 +516,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&settings.ResourcesInclude, "include", "", "Include resources in archives (default="+core.RESOURCES_INCLUDE_DEFAULT+")")
 
 	flagSet.StringVar(&settings.ResourcesExclude, "resources-exclude", "", "Include resources in archives (default="+core.RESOURCES_EXCLUDE_DEFAULT+")")
-	flagSet.StringVar(&settings.MainDirsExclude, "main-dirs-exclude", "", "Exclude given comma-separated directories from 'main' packages")
+	flagSet.StringVar(&settings.MainDirsExclude, "main-dirs-exclude", "", "Exclude given comma-separated directories from 'main' packages (default="+core.MAIN_DIRS_EXCLUDE_DEFAULT+")")
 
 	//0.2.0 Not easy to 'merge' boolean config items. More flexible to translate them to string options anyway
 	flagSet.BoolVar(&isHelp, "h", false, "Help - options")

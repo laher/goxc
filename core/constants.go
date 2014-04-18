@@ -33,6 +33,8 @@ const (
 	// Default resources to include. Comma-separated list of globs.
 	RESOURCES_INCLUDE_DEFAULT = "INSTALL*,README*,LICENSE*"
 	RESOURCES_EXCLUDE_DEFAULT = "*.go" //TODO
+	// Main dirs to exclude by default (Godeps!)
+	MAIN_DIRS_EXCLUDE_DEFAULT = "Godeps"
 
 	OS_DEFAULT              = ""
 	ARCH_DEFAULT            = ""

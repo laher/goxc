@@ -259,7 +259,7 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 	}
 	log.Printf("Running tasks: %v", tasksToRun)
 	if settings.IsVerbose() {
-		log.Printf("All packages: %v", tasksToRun, allPackages)
+		log.Printf("All packages: %v", allPackages)
 	}
 	for _, taskName := range tasksToRun {
 		log.SetPrefix("[goxc:" + taskName + "] ")

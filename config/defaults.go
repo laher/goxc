@@ -24,6 +24,9 @@ func FillSettingsDefaults(settings *Settings, workingDirectory string) {
 	if settings.ResourcesExclude == "" {
 		settings.ResourcesExclude = core.RESOURCES_EXCLUDE_DEFAULT
 	}
+	if settings.MainDirsExclude == "" {
+		settings.MainDirsExclude = core.MAIN_DIRS_EXCLUDE_DEFAULT
+	}
 	if settings.PackageVersion == "" {
 		settings.PackageVersion = core.PACKAGE_VERSION_DEFAULT
 	}
