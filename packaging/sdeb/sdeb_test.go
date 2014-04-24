@@ -12,10 +12,12 @@ func TestSdebBuild(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	/* SdebPrepare is old now
 	err = SdebPrepare(workingDirectory, "my-app-x", "A L", "1.2.3-alpha", "platform-x", "This package does x", "", *new(map[string]interface{}))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	*/
 	tmpDir := filepath.Join(workingDirectory, DIRNAME_TEMP)
 	destDir := filepath.Join(tmpDir, "src")
 	workingDirectory = "../.."

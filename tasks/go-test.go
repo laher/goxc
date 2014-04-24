@@ -28,12 +28,12 @@ func init() {
 		TASK_GO_TEST,
 		"runs `go test ./...`. (dir is configurable).",
 		runTaskGoTest,
-		map[string]interface{}{"dir": "./...", "i": true}})
+		map[string]interface{}{"dir": "./...", "i": false}})
 }
 
 func runTaskGoTest(tp TaskParams) error {
 	dir := tp.Settings.GetTaskSettingString(TASK_GO_TEST, "dir")
-	i := tp.Settings.GetTaskSettingBool(TASK_GO_TEST, "i")
+	i := tp.Settings.GetTaskSettingBool(TASK_GO_TEST, "i") //this should be false by default! leaving it exposed for invocation as a flag
 	args := []string{dir}
 	if i {
 		args = []string{"-i", dir}
