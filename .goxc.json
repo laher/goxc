@@ -1,5 +1,5 @@
 {
-	"AppName": "goxyboxy",
+	"AppName": "goxc",
 	"ArtifactsDest": "../goxc-pages/dl",
 	"Tasks": [
 		"interpolate-source",
@@ -10,7 +10,7 @@
 	"ResourcesInclude": "README.md,.\\_test1/*,_test2",
 	"ResourcesExclude": "*.go",
 	"MainDirsExclude": "Godeps",
-	"PackageVersion": "0.13.9",
+	"PackageVersion": "0.13.10",
 	"TaskSettings": {
 		"archive-zip": {},
 		"bintray": {

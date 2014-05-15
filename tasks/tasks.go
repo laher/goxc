@@ -127,24 +127,48 @@ func generateParallelizedRunFunc(pTask ParallelizableTask) func(TaskParams) erro
 		if err != nil {
 			return err
 		}
-		count := len(platforms)
-		if count < 1 {
+		platCount := len(platforms)
+		if platCount < 1 {
 			return nil
 		}
 		numProcs := runtime.NumCPU()
-		log.Printf("Parallelizing %s for %d platforms, using max %d of %d processors", pTask.Name, count, tp.MaxProcessors, numProcs)
+		log.Printf("Parallelizing %s for %d platforms, using max %d of %d processors", pTask.Name, platCount, tp.MaxProcessors, numProcs)
 		errchan := make(chan error)
-		for _, pl := range platforms {
-			go pTask.perPlatform(tp, pl, errchan)
-		}
+		roundIdx := 0
+		roundCount := tp.MaxProcessors
+		totIdx := 0
+		totCount := platCount
 		errs := []error{}
-		i := 0
-		for i < count {
-			err = <-errchan
-			if err != nil {
-				errs = append(errs, err)
+		for roundIdx < roundCount && totIdx < totCount {
+			pl := platforms[totIdx]
+			go pTask.perPlatform(tp, pl, errchan)
+			totIdx++
+			roundIdx++
+			if roundIdx >= roundCount {
+				//block until all of this round is complete.
+				i := 0
+				for i < roundCount {
+					err = <-errchan
+					if err != nil {
+						errs = append(errs, err)
+					}
+					i++
+				}
+				//reset roundIdx
+				roundIdx = 0
 			}
-			i++
+		}
+		if roundIdx > 0 {
+			//block until all remaining tasks are complete
+			i := 0
+			for i < roundIdx {
+				err = <-errchan
+				if err != nil {
+					errs = append(errs, err)
+				}
+				i++
+			}
+
 		}
 		//always tearDown incase you need to free resources
 		if pTask.tearDown != nil {
