@@ -515,7 +515,7 @@ func setupFlags() *flag.FlagSet {
 	//deprecated
 	flagSet.StringVar(&settings.ResourcesInclude, "include", "", "Include resources in archives (default="+core.RESOURCES_INCLUDE_DEFAULT+")")
 
-	flagSet.StringVar(&settings.ResourcesExclude, "resources-exclude", "", "Include resources in archives (default="+core.RESOURCES_EXCLUDE_DEFAULT+")")
+	flagSet.StringVar(&settings.ResourcesExclude, "resources-exclude", "", "Exclude resources in archives (default="+core.RESOURCES_EXCLUDE_DEFAULT+")")
 	flagSet.StringVar(&settings.MainDirsExclude, "main-dirs-exclude", "", "Exclude given comma-separated directories from 'main' packages (default="+core.MAIN_DIRS_EXCLUDE_DEFAULT+")")
 
 	//0.2.0 Not easy to 'merge' boolean config items. More flexible to translate them to string options anyway
