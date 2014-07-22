@@ -23,6 +23,7 @@ import (
 	//"github.com/laher/goxc/archive"
 	//"github.com/laher/goxc/config"
 	"log"
+	"runtime"
 	"strings"
 )
 
@@ -37,6 +38,7 @@ const (
 	OPENBSD = "openbsd"
 	WINDOWS = "windows"
 	PLAN9   = "plan9"
+	SOLARIS = "solaris"
 )
 
 // represents a target compilation platform
@@ -46,7 +48,7 @@ type Platform struct {
 }
 
 var (
-	OSES                    = []string{DARWIN, LINUX, FREEBSD, NETBSD, OPENBSD, PLAN9, WINDOWS}
+	OSES                    = []string{DARWIN, LINUX, FREEBSD, NETBSD, OPENBSD, PLAN9, WINDOWS, SOLARIS}
 	ARCHS                   = []string{X86, AMD64, ARM}
 	SUPPORTED_PLATFORMS_1_0 = []Platform{
 		Platform{DARWIN, X86},
@@ -70,14 +72,18 @@ var (
 		Platform{NETBSD, AMD64},
 		Platform{NETBSD, ARM},
 		Platform{PLAN9, X86}}
+	NEW_PLATFORMS_1_3 = []Platform{
+		Platform{SOLARIS, AMD64}}
 
 	SUPPORTED_PLATFORMS_1_1 = append(append([]Platform{}, SUPPORTED_PLATFORMS_1_0...), NEW_PLATFORMS_1_1...)
+	SUPPORTED_PLATFORMS_1_3 = append(SUPPORTED_PLATFORMS_1_1, NEW_PLATFORMS_1_3...)
 )
 
 func getSupportedPlatforms() []Platform {
-	//if strings.HasPrefix(runtime.Version(), "go1.0") {
-	//	return SUPPORTED_PLATFORMS_1_0
-	//}
+	if strings.HasPrefix(runtime.Version(), "go1.3") {
+		return SUPPORTED_PLATFORMS_1_3
+	}
+	// otherwise default to <= go1.2
 	return SUPPORTED_PLATFORMS_1_1
 }
 

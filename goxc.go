@@ -488,7 +488,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&configName, "c", "", "config name")
 
 	//TODO deprecate?
-	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (default is all - \"linux darwin windows freebsd openbsd\")")
+	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (default is all - \"linux darwin windows freebsd openbsd solaris\")")
 	flagSet.StringVar(&settings.Arch, "arch", "", "Specify Arch (default is all - \"386 amd64 arm\")")
 
 	//v0.6
