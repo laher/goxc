@@ -46,7 +46,7 @@ binary: binary-arch`
 	TEMPLATE_SOURCEDEB_CONTROL = `Source: {{.PackageName}}
 Build-Depends: {{.BuildDepends}}
 Priority: {{.Priority}}
-Maintainer: {{.Maintainer}}
+Maintainer: {{.Maintainer}} <{{.MaintainerEmail}}>
 Standards-Version: {{.StandardsVersion}}
 Section: {{.Section}}
 
