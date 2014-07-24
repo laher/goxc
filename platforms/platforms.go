@@ -18,27 +18,24 @@ package platforms
 */
 
 import (
-	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
-	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
-	//"github.com/laher/goxc/archive"
-	//"github.com/laher/goxc/config"
 	"log"
 	"runtime"
 	"strings"
 )
 
 const (
-	AMD64   = "amd64"
-	X86     = "386"
-	ARM     = "arm"
-	DARWIN  = "darwin"
-	LINUX   = "linux"
-	FREEBSD = "freebsd"
-	NETBSD  = "netbsd"
-	OPENBSD = "openbsd"
-	WINDOWS = "windows"
-	PLAN9   = "plan9"
-	SOLARIS = "solaris"
+	AMD64     = "amd64"
+	X86       = "386"
+	ARM       = "arm"
+	DARWIN    = "darwin"
+	DRAGONFLY = "dragonfly"
+	FREEBSD   = "freebsd"
+	LINUX     = "linux"
+	NETBSD    = "netbsd"
+	OPENBSD   = "openbsd"
+	PLAN9     = "plan9"
+	SOLARIS   = "solaris"
+	WINDOWS   = "windows"
 )
 
 // represents a target compilation platform
@@ -48,7 +45,7 @@ type Platform struct {
 }
 
 var (
-	OSES                    = []string{DARWIN, LINUX, FREEBSD, NETBSD, OPENBSD, PLAN9, WINDOWS, SOLARIS}
+	OSES                    = []string{DARWIN, LINUX, FREEBSD, NETBSD, OPENBSD, PLAN9, WINDOWS, SOLARIS, DRAGONFLY}
 	ARCHS                   = []string{X86, AMD64, ARM}
 	SUPPORTED_PLATFORMS_1_0 = []Platform{
 		Platform{DARWIN, X86},
@@ -58,10 +55,6 @@ var (
 		Platform{LINUX, ARM},
 		Platform{FREEBSD, X86},
 		Platform{FREEBSD, AMD64},
-		// Platform{FREEBSD, ARM},
-		// couldnt build toolchain for netbsd using a linux 386 host: 2013-02-19
-		//	Platform{NETBSD, X86},
-		//	Platform{NETBSD, AMD64},
 		Platform{OPENBSD, X86},
 		Platform{OPENBSD, AMD64},
 		Platform{WINDOWS, X86},
@@ -73,6 +66,8 @@ var (
 		Platform{NETBSD, ARM},
 		Platform{PLAN9, X86}}
 	NEW_PLATFORMS_1_3 = []Platform{
+		Platform{DRAGONFLY, X86},
+		Platform{DRAGONFLY, AMD64},
 		Platform{SOLARIS, AMD64}}
 
 	SUPPORTED_PLATFORMS_1_1 = append(append([]Platform{}, SUPPORTED_PLATFORMS_1_0...), NEW_PLATFORMS_1_1...)
