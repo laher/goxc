@@ -17,9 +17,9 @@ package tasks
 */
 
 import (
+	"fmt"
 	"github.com/debber/debber-v0.3/deb"
 	"github.com/debber/debber-v0.3/debgen"
-	"fmt"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/platforms"
@@ -67,7 +67,6 @@ func runTaskDebDev(tp TaskParams) (err error) {
 	}
 	return
 }
-
 
 func debDevBuild(tp TaskParams) error {
 	metadata := tp.Settings.GetTaskSettingMap(TASK_DEB_GEN, "metadata")
@@ -178,6 +177,7 @@ func debDevBuild(tp TaskParams) error {
 			if err != nil {
 				return fmt.Errorf("Error generating deb: %v", err)
 			}
+			log.Printf("Wrote -dev deb to %s", filepath.Join(build.DestDir, dgen.DebWriter.Filename))
 		}
 	}
 	return err

@@ -218,6 +218,7 @@ func debBuild(dest platforms.Platform, tp TaskParams) error {
 			if err != nil {
 				return fmt.Errorf("Error generating deb: %v", err)
 			}
+			log.Printf("Wrote deb to %s", filepath.Join(build.DestDir, dgen.DebWriter.Filename))
 		}
 	}
 	return err

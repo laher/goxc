@@ -257,6 +257,9 @@ func debSourceBuild(tp TaskParams) (err error) {
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
+	log.Printf("Wrote dsc file to %s", filepath.Join(build.DestDir, spgen.SourcePackage.DscFileName))
+	log.Printf("Wrote orig file to %s", filepath.Join(build.DestDir, spgen.SourcePackage.OrigFileName))
+	log.Printf("Wrote debian file to %s", filepath.Join(build.DestDir, spgen.SourcePackage.DebianFileName))
 
 	return nil
 }
