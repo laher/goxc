@@ -1,0 +1,46 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+export GOPATH=$(CURDIR)::/usr/share/gocode
+
+PKGDIR=debian/goxc
+
+%:
+	dh $@
+
+clean:
+	dh_clean
+	rm -rf $(CURDIR)/bin/* $(CURDIR)/pkg/*
+	rm -f $(CURDIR)/goinstall.log
+
+binary-arch: clean
+	dh_prep
+	dh_installdirs
+	cd $(CURDIR)/src && go install ./...
+
+	mkdir -p $(PKGDIR)/usr/bin $(CURDIR)/bin/
+	mkdir -p $(PKGDIR)/usr/share/gopkg/ $(CURDIR)/pkg/
+
+	BINFILES=$(wildcard $(CURDIR)/bin/*)
+
+	for x in$(BINFILES); do \
+		cp $$x $(PKGDIR)/usr/bin/; \
+	done;
+
+	PKGFILES=$(wildcard $(CURDIR)/pkg/*.a)
+	for x in$(PKGFILES); do \
+		cp $$x $(PKGDIR)/usr/share/gopkg/; \
+	done;
+
+	dh_strip
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-arch

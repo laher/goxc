@@ -47,9 +47,9 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION     = "0.13.11"
+	VERSION     = "0.14.1"
 	BUILD_DATE  = ""
-	SOURCE_DATE = "2014-07-24T21:59:34+12:00"
+	SOURCE_DATE = "2014-08-08T22:40:43+12:00"
 	// settings for this invocation of goxc
 	settings             config.Settings
 	fBuildSettings       config.BuildSettings
@@ -425,9 +425,13 @@ func mergeConfiguredSettings(dir string, configName string, isWriteMain, isWrite
 		log.Printf("Settings from config %s: %+v : %v", configName, configuredSettings, err)
 	}
 	//TODO: further error handling ?
-	if err == nil {
-		settings = config.Merge(settings, configuredSettings)
+	if err != nil {
+		return err
 	}
+	// v0.14.x merge certain settings (particularly for pkg-build!)
+	settings.MergeAliasedTaskSettings(tasks.TASK_ALIASES_FOR_MERGING_SETTINGS)
+	configuredSettings.MergeAliasedTaskSettings(tasks.TASK_ALIASES_FOR_MERGING_SETTINGS)
+	settings = config.Merge(settings, configuredSettings)
 	return err
 }
 
@@ -488,7 +492,7 @@ func setupFlags() *flag.FlagSet {
 	flagSet.StringVar(&configName, "c", "", "config name")
 
 	//TODO deprecate?
-	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (default is all - \"linux darwin windows freebsd openbsd solaris\")")
+	flagSet.StringVar(&settings.Os, "os", "", "Specify OS (default is all - \"linux darwin windows freebsd openbsd solaris dragonfly\")")
 	flagSet.StringVar(&settings.Arch, "arch", "", "Specify Arch (default is all - \"386 amd64 arm\")")
 
 	//v0.6
@@ -515,7 +519,7 @@ func setupFlags() *flag.FlagSet {
 	//deprecated
 	flagSet.StringVar(&settings.ResourcesInclude, "include", "", "Include resources in archives (default="+core.RESOURCES_INCLUDE_DEFAULT+")")
 
-	flagSet.StringVar(&settings.ResourcesExclude, "resources-exclude", "", "Exclude resources in archives (default="+core.RESOURCES_EXCLUDE_DEFAULT+")")
+	flagSet.StringVar(&settings.ResourcesExclude, "resources-exclude", "", "Include resources in archives (default="+core.RESOURCES_EXCLUDE_DEFAULT+")")
 	flagSet.StringVar(&settings.MainDirsExclude, "main-dirs-exclude", "", "Exclude given comma-separated directories from 'main' packages (default="+core.MAIN_DIRS_EXCLUDE_DEFAULT+")")
 
 	//0.2.0 Not easy to 'merge' boolean config items. More flexible to translate them to string options anyway

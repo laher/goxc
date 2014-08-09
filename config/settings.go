@@ -129,6 +129,29 @@ func (s *Settings) SetTaskSetting(taskName, settingName string, value interface{
 	value.(map[string]interface{})[settingName] = value
 }
 
+// this helps whenever a 'task' becomes an 'alias' (e.g. 'pkg-build' task renamed to 'deb', and 'pkg-build' became a task alias)
+// note that the task settings take precedence over the alias' settings.
+func (s *Settings) MergeAliasedTaskSettings(aliases map[string][]string) {
+	for taskSettingTaskName, taskSettingValue := range s.TaskSettings {
+		for staticSettingAlias, aliasedTasks := range aliases {
+			// if the TaskSetting name == this alias ...
+			if staticSettingAlias == taskSettingTaskName {
+				//merge into results ...
+				for _, aliasedTask := range aliasedTasks {
+					_, exists := s.TaskSettings[aliasedTask]
+					if exists {
+						// merge
+						s.TaskSettings[aliasedTask] = typeutils.MergeMaps(s.TaskSettings[aliasedTask], taskSettingValue)
+					} else {
+						//overwrite
+						s.TaskSettings[aliasedTask] = taskSettingValue
+					}
+				}
+			}
+		}
+	}
+}
+
 func (s *Settings) GetTaskSetting(taskName, settingName string) interface{} {
 	if value, keyExists := s.TaskSettings[taskName]; keyExists {
 		taskMap := value //.(map[string]interface{})

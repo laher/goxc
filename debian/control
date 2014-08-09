@@ -1,0 +1,17 @@
+Source: goxc
+Section: devel
+Priority: extra
+Maintainer: Am Laher <no-one@laher.net.nz>
+Build-Depends: debhelper (>= 9.1.0), golang-go
+Standards-Version: 3.9.4
+
+Package: goxc
+Architecture: any
+Description: build tool for go
+ goxc cross-compiles and packages go programs
+
+Package: goxc-dev
+Architecture: all
+Description: build tool for go - development package
+ goxc cross-compiles and packages go programs
+
