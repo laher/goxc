@@ -29,20 +29,27 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 //runs automatically
 func init() {
 	Register(Task{
-		TASK_DEBGEN,
+		TASK_DEB_GEN,
 		"Build a .deb package for Debian/Ubuntu Linux.",
 		runTaskDebGen,
-		map[string]interface{}{"metadata": map[string]interface{}{"maintainer": "unknown"},
-			"metadata-deb": map[string]interface{}{"Depends": ""},
-			"rmtemp":       true, "armarch": "",
-			"sources-glob":        "**.go",
-			"sources-dir":         ".",
-			"sources-relative-to": "",
+		map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"maintainer":      "unknown",
+				"maintainerEmail": "unknown@example.com",
+			},
+			"metadata-deb": map[string]interface{}{"Depends": "",
+				"Build-Depends": "debhelper (>=4.0.0), golang-go, gcc",
+			},
+			"rmtemp":              true,
+			"armarch":             "",
+			"go-sources-dir":      ".",
+			"other-mappped-files": map[string]interface{}{},
 		},
 	})
 }
@@ -64,7 +71,6 @@ func pkgDebPlat(dest platforms.Platform, tp TaskParams) (err error) {
 	return nil
 }
 
-
 // TODO fix armhf/armel distinction ...
 func getDebArch(destArch string, armArchName string) deb.Architecture {
 	var architecture deb.Architecture
@@ -80,7 +86,7 @@ func getDebArch(destArch string, armArchName string) deb.Architecture {
 }
 
 func getArmArchName(settings *config.Settings) string {
-	armArchName := settings.GetTaskSettingString(TASK_DEB, "armarch")
+	armArchName := settings.GetTaskSettingString(TASK_DEB_GEN, "armarch")
 	if armArchName == "" {
 		//derive it from GOARM version:
 		goArm := settings.GetTaskSettingString(TASK_XC, "GOARM")
@@ -94,10 +100,20 @@ func getArmArchName(settings *config.Settings) string {
 }
 
 func debBuild(dest platforms.Platform, tp TaskParams) error {
-	metadata := tp.Settings.GetTaskSettingMap(TASK_DEB, "metadata")
+	metadata := tp.Settings.GetTaskSettingMap(TASK_DEB_GEN, "metadata")
 	armArchName := getArmArchName(tp.Settings)
 	//maintain support for old configs ...
-	metadataDebX := tp.Settings.GetTaskSettingMap(TASK_DEB, "metadata-deb")
+	metadataDebX := tp.Settings.GetTaskSettingMap(TASK_DEB_GEN, "metadata-deb")
+	otherMappedFiles := map[string]string{}
+	otherMappedFilesFromSetting := tp.Settings.GetTaskSettingMap(TASK_DEB_GEN, "other-mapped-files")
+	if otherMappedFiles != nil {
+		for k, v := range otherMappedFilesFromSetting {
+			val, ok := v.(string)
+			if ok {
+				otherMappedFiles[k] = val
+			}
+		}
+	}
 	metadataDeb := map[string]string{}
 	for k, v := range metadataDebX {
 		val, ok := v.(string)
@@ -105,7 +121,7 @@ func debBuild(dest platforms.Platform, tp TaskParams) error {
 			metadataDeb[k] = val
 		}
 	}
-	rmtemp := tp.Settings.GetTaskSettingBool(TASK_DEB, "rmtemp")
+	rmtemp := tp.Settings.GetTaskSettingBool(TASK_DEB_GEN, "rmtemp")
 	debDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName()) //v0.8.1 dont use platform dir
 	tmpDir := filepath.Join(debDir, ".goxc-temp")
 
@@ -167,9 +183,6 @@ func debBuild(dest platforms.Platform, tp TaskParams) error {
 			return fmt.Errorf("%v", err)
 		}
 	}
-	build.SourcesGlob = tp.Settings.GetTaskSettingString(TASK_DEB, "sources-glob")
-	build.SourceDir = tp.Settings.GetTaskSettingString(TASK_DEB, "sources-dir")
-	build.SourcesRelativeTo = tp.Settings.GetTaskSettingString(TASK_DEB, "sources-relative-to")
 	debArch := getDebArch(dest.Arch, armArchName)
 	build.Arches = []deb.Architecture{debArch}
 	build.Version = tp.Settings.GetFullVersionName()
@@ -180,102 +193,33 @@ func debBuild(dest platforms.Platform, tp TaskParams) error {
 	//there should only be one for this platform.
 	// Anyway this part maps all binaries.
 	for _, dgen := range dgens {
-		for _, mainDir := range tp.MainDirs {
-			var exeName string
-			if len(tp.MainDirs) == 1 {
-				exeName = tp.Settings.AppName
-			} else {
-				exeName = filepath.Base(mainDir)
+		// -dev paragraphs handled by 'deb-dev' task.
+		if !strings.HasSuffix(dgen.DebWriter.Control.Get(deb.PackageFName), "-dev") {
+			for _, mainDir := range tp.MainDirs {
+				var exeName string
+				if len(tp.MainDirs) == 1 {
+					exeName = tp.Settings.AppName
+				} else {
+					exeName = filepath.Base(mainDir)
+				}
+				binPath, err := core.GetAbsoluteBin(dest.Os, dest.Arch, tp.Settings.AppName, exeName, tp.WorkingDirectory, tp.Settings.GetFullVersionName(), tp.Settings.OutPath, tp.Settings.ArtifactsDest)
+				if err != nil {
+					return err
+				}
+				if dgen.DataFiles == nil {
+					dgen.DataFiles = map[string]string{}
+				}
+				dgen.DataFiles["./usr/bin/"+exeName] = binPath
 			}
-			binPath, err := core.GetAbsoluteBin(dest.Os, dest.Arch, tp.Settings.AppName, exeName, tp.WorkingDirectory, tp.Settings.GetFullVersionName(), tp.Settings.OutPath, tp.Settings.ArtifactsDest)
+			for k, v := range otherMappedFiles {
+				dgen.DataFiles[k] = v
+			}
+			err = dgen.GenerateAllDefault()
 			if err != nil {
-				return err
+				return fmt.Errorf("Error generating deb: %v", err)
 			}
-			if dgen.DataFiles == nil {
-				dgen.DataFiles = map[string]string{}
-			}
-			dgen.DataFiles["./usr/bin/"+exeName] = binPath
-		}
-		err = dgen.GenerateAllDefault()
-		if err != nil {
-			return fmt.Errorf("Error generating deb: %v", err)
 		}
 	}
 	return err
 
-	/*
-		artifacts, err := deb.GetDebs(pkg)
-		if err != nil {
-			return err
-		}
-		log.Printf("Building arch: %s", debArch)
-		artifact := artifacts[debArch]
-		for _, mainDir := range tp.MainDirs {
-			var exeName string
-			if len(tp.MainDirs) == 1 {
-				exeName = tp.Settings.AppName
-			} else {
-				exeName = filepath.Base(mainDir)
-
-			}
-			binPath, err := core.GetAbsoluteBin(dest.Os, dest.Arch, tp.Settings.AppName, exeName, tp.WorkingDirectory, tp.Settings.GetFullVersionName(), tp.Settings.OutPath, tp.Settings.ArtifactsDest)
-			if err != nil {
-				return err
-			}
-			if artifact.MappedFiles == nil {
-				artifact.MappedFiles = map[string]string{}
-			}
-			artifact.MappedFiles["./usr/bin/"+exeName] = binPath
-		}
-		log.Printf("generating artifact '%v'", debArch)
-		err = debgen.GenBinaryArtifact(artifact, build)
-		if err != nil {
-			return err
-		}
-
-		return err*/
-	/*
-		controlContent := getDebControlFileContent(tp.AppName, maintainer, tp.Settings.GetFullVersionName(), dest.Arch, armArchName, description, metadataDeb)
-		if tp.Settings.IsVerbose() {
-			log.Printf("Control file:\n%s", string(controlContent))
-		}
-		err = ioutil.WriteFile(filepath.Join(tmpDir, "control"), controlContent, 0644)
-		if err != nil {
-			return err
-		}
-		err = archive.TarGz(filepath.Join(tmpDir, "control.tar.gz"), []archive.ArchiveItem{archive.ArchiveItem{FileSystemPath: filepath.Join(tmpDir, "control"), ArchivePath: "control"}})
-		if err != nil {
-			return err
-		}
-		//build
-		items := []archive.ArchiveItem{}
-
-		for _, mainDir := range tp.MainDirs {
-			var exeName string
-			if len(tp.MainDirs) == 1 {
-				exeName = tp.Settings.AppName
-			} else {
-				exeName = filepath.Base(mainDir)
-
-			}
-			binPath, err := core.GetAbsoluteBin(dest.Os, dest.Arch, tp.Settings.AppName, exeName, tp.WorkingDirectory, tp.Settings.GetFullVersionName(), tp.Settings.OutPath, tp.Settings.ArtifactsDest)
-			if err != nil {
-				return err
-			}
-			items = append(items, archive.ArchiveItem{FileSystemPath: binPath, ArchivePath: "/usr/bin/" + exeName})
-		}
-		//TODO add resources to /usr/share/appName/
-		err = archive.TarGz(filepath.Join(tmpDir, "data.tar.gz"), items)
-		if err != nil {
-			return err
-		}
-
-		targetFile := filepath.Join(debDir, fmt.Sprintf("%s_%s_%s.deb", tp.AppName, tp.Settings.GetFullVersionName(), getDebArch(dest.Arch, armArchName))) //goxc_0.5.2_i386.deb")
-		inputs := [][]string{
-			[]string{filepath.Join(tmpDir, "debian-binary"), "debian-binary"},
-			[]string{filepath.Join(tmpDir, "control.tar.gz"), "control.tar.gz"},
-			[]string{filepath.Join(tmpDir, "data.tar.gz"), "data.tar.gz"}}
-		err = ar.ArForDeb(targetFile, inputs)
-		return
-	*/
 }

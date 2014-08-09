@@ -50,32 +50,49 @@ const (
 	TASK_ARCHIVE_TAR_GZ = "archive-tar-gz"
 	TASK_REMOVE_BIN     = "rmbin" //after zipping
 	TASK_DOWNLOADS_PAGE = "downloads-page"
-	TASK_DEB_GEN            = "deb-gen"
+	TASK_DEB_GEN        = "deb"
+	TASK_DEB_DEV        = "deb-dev"
 	TASK_DEB_SOURCE     = "deb-source"
 
+	TASKALIAS_ALL        = "all"
+	TASKALIAS_ARCHIVE    = "archive"
+	TASKALIAS_CLEAN      = "clean"
+	TASKALIAS_COMPILE    = "compile"
+	TASKALIAS_DEBS       = "debs"
+	TASKALIAS_DEFAULT    = "default"
+	TASKALIAS_PACKAGE    = "package"
 	TASKALIAS_PKG_BUILD  = "pkg-build"
 	TASKALIAS_PKG_SOURCE = "pkg-source"
-	TASKALIAS_CLEAN      = "clean"
 	TASKALIAS_VALIDATE   = "validate"
-	TASKALIAS_COMPILE    = "compile"
-	TASKALIAS_PACKAGE    = "package"
-	TASKALIAS_ARCHIVE    = "archive"
-	TASKALIAS_DEFAULT    = "default"
-	TASKALIAS_ALL        = "all"
 )
 
 var (
-	TASKS_CLEAN                       = []string{TASK_GO_CLEAN, TASK_CLEAN_DESTINATION}
-	TASKS_VALIDATE                    = []string{TASK_GO_VET, TASK_GO_TEST}
-	TASKS_COMPILE                     = []string{TASK_GO_INSTALL, TASK_XC, TASK_CODESIGN, TASK_COPY_RESOURCES}
 	TASKS_ARCHIVE                     = []string{TASK_ARCHIVE_ZIP, TASK_ARCHIVE_TAR_GZ}
-	TASKS_PKG_BUILD                   = []string{TASK_DEB_GEN}
+	TASKS_CLEAN                       = []string{TASK_GO_CLEAN, TASK_CLEAN_DESTINATION}
+	TASKS_COMPILE                     = []string{TASK_GO_INSTALL, TASK_XC, TASK_CODESIGN, TASK_COPY_RESOURCES}
+	TASKS_DEBS                        = []string{TASK_DEB_GEN, TASK_DEB_DEV, TASK_DEB_SOURCE}
+	TASKS_PACKAGE                     = []string{TASK_ARCHIVE_ZIP, TASK_ARCHIVE_TAR_GZ, TASK_DEB_GEN, TASK_DEB_DEV, TASK_REMOVE_BIN, TASK_DOWNLOADS_PAGE}
+	TASKS_PKG_BUILD                   = []string{TASK_DEB_GEN, TASK_DEB_DEV}
 	TASKS_PKG_SOURCE                  = []string{TASK_DEB_SOURCE}
-	TASKS_PACKAGE                     = []string{TASK_ARCHIVE_ZIP, TASK_ARCHIVE_TAR_GZ, TASK_DEB_GEN, TASK_REMOVE_BIN, TASK_DOWNLOADS_PAGE}
+	TASKS_VALIDATE                    = []string{TASK_GO_VET, TASK_GO_TEST}
 	TASKS_DEFAULT                     = append(append(append([]string{}, TASKS_VALIDATE...), TASKS_COMPILE...), TASKS_PACKAGE...)
 	TASKS_OTHER                       = []string{TASK_BUILD_TOOLCHAIN, TASK_GO_FMT}
 	TASKS_ALL                         = append(append([]string{}, TASKS_OTHER...), TASKS_DEFAULT...)
-	TASK_ALIASES_FOR_MERGING_SETTINGS = map[string][]string{TASKALIAS_PKG_BUILD: TASKS_PKG_BUILD, TASKALIAS_PKG_SOURCE: TASKS_PKG_SOURCE}
+	TASK_ALIASES_FOR_MERGING_SETTINGS = map[string][]string{TASKALIAS_PKG_BUILD: TASKS_PKG_BUILD, TASKALIAS_PKG_SOURCE: TASKS_PKG_SOURCE, TASKALIAS_DEBS: TASKS_DEBS}
+
+	allTasks = make(map[string]Task)
+	//Aliases are one or more tasks, in a specific order.
+	Aliases = map[string][]string{
+		TASKALIAS_ALL:        TASKS_ALL,
+		TASKALIAS_ARCHIVE:    TASKS_ARCHIVE,
+		TASKALIAS_CLEAN:      TASKS_CLEAN,
+		TASKALIAS_COMPILE:    TASKS_COMPILE,
+		TASKALIAS_DEFAULT:    TASKS_DEFAULT,
+		TASKALIAS_PACKAGE:    TASKS_PACKAGE,
+		TASKALIAS_PKG_BUILD:  TASKS_PKG_BUILD,
+		TASKALIAS_PKG_SOURCE: TASKS_PKG_SOURCE,
+		TASKALIAS_VALIDATE:   TASKS_VALIDATE,
+	}
 )
 
 // Parameter object passed to a task.
@@ -105,20 +122,6 @@ type ParallelizableTask struct {
 	tearDown        func(TaskParams) error
 	DefaultSettings map[string]interface{}
 }
-
-var (
-	allTasks = make(map[string]Task)
-	//Aliases are one or more tasks, in a specific order.
-	Aliases = map[string][]string{
-		TASKALIAS_CLEAN:     TASKS_CLEAN,
-		TASKALIAS_VALIDATE:  TASKS_VALIDATE,
-		TASKALIAS_COMPILE:   TASKS_COMPILE,
-		TASKALIAS_ARCHIVE:   TASKS_ARCHIVE,
-		TASKALIAS_PKG_BUILD: TASKS_PKG_BUILD,
-		TASKALIAS_PACKAGE:   TASKS_PACKAGE,
-		TASKALIAS_DEFAULT:   TASKS_DEFAULT,
-		TASKALIAS_ALL:       TASKS_ALL}
-)
 
 // Register a task for use by goxc. Call from an 'init' function
 func Register(task Task) {
