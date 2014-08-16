@@ -110,10 +110,34 @@ func debBuild(dest platforms.Platform, tp TaskParams) error {
 		for k, v := range otherMappedFilesFromSetting {
 			val, ok := v.(string)
 			if ok {
-				otherMappedFiles[k] = val
+				finf, err := os.Stat(val)
+				if err != nil {
+					return err
+				}
+				if finf.IsDir() {
+					filepath.Walk(val, func(path string, info os.FileInfo, err error) error {
+						if !info.IsDir() {
+							kpath, err := filepath.Rel(val, path)
+							if err != nil {
+								return err
+							}
+							var key string
+							if strings.HasSuffix(k, "/") {
+								key = k + kpath
+							} else {
+								key = k+"/"+kpath
+							}
+							otherMappedFiles[key] = path
+						}
+						return nil
+					})
+				} else {
+					otherMappedFiles[k] = val
+				}
 			}
 		}
 	}
+	log.Printf("other mapped files: %+v", otherMappedFiles)
 	metadataDeb := map[string]string{}
 	for k, v := range metadataDebX {
 		val, ok := v.(string)

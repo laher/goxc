@@ -129,21 +129,26 @@ func (s *Settings) SetTaskSetting(taskName, settingName string, value interface{
 	value.(map[string]interface{})[settingName] = value
 }
 
-// this helps whenever a 'task' becomes an 'alias' (e.g. 'pkg-build' task renamed to 'deb', and 'pkg-build' became a task alias)
+// this helps whenever a 'task' gets refactored to become an 'alias' (e.g. 'pkg-build' task renamed to 'deb', and 'pkg-build' became a task alias)
 // note that the task settings take precedence over the alias' settings.
 func (s *Settings) MergeAliasedTaskSettings(aliases map[string][]string) {
+	//for each per-task setting name/value pair:
 	for taskSettingTaskName, taskSettingValue := range s.TaskSettings {
+		//loop through aliases, getting alias,tasks:
 		for staticSettingAlias, aliasedTasks := range aliases {
-			// if the TaskSetting name == this alias ...
+			// if the specified TaskSetting == this alias:
 			if staticSettingAlias == taskSettingTaskName {
 				//merge into results ...
 				for _, aliasedTask := range aliasedTasks {
-					_, exists := s.TaskSettings[aliasedTask]
+					aliasedTaskValue, exists := s.TaskSettings[aliasedTask]
+					//if settings already exists for the actual task - merge
 					if exists {
+						log.Printf("Task settings specified for %s. Merging %v with %v", aliasedTask, aliasedTaskValue, taskSettingValue)
 						// merge
-						s.TaskSettings[aliasedTask] = typeutils.MergeMaps(s.TaskSettings[aliasedTask], taskSettingValue)
+						s.TaskSettings[aliasedTask] = typeutils.MergeMaps(aliasedTaskValue, taskSettingValue)
 					} else {
-						//overwrite
+						log.Printf("alias didnt exist. Setting %s to %v", aliasedTask, taskSettingValue)
+						//add ...
 						s.TaskSettings[aliasedTask] = taskSettingValue
 					}
 				}

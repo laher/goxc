@@ -10,7 +10,7 @@
 	"ResourcesInclude": "README.md,.\\_test1/*,_test2",
 	"ResourcesExclude": "*.go",
 	"MainDirsExclude": "Godeps",
-	"PackageVersion": "0.14.1",
+	"PackageVersion": "0.14.2",
 	"TaskSettings": {
 		"archive-zip": {},
 		"bintray": {
@@ -22,7 +22,7 @@
 		"codesign": {
 			"id": "goxc"
 		},
-		"deb-gen": {
+		"deb": {
 			"metadata": {
 				"description": "Cross-compiler utility for Go",
 				"maintainer": "Am Laher (https://github.com/laher)"
@@ -30,21 +30,14 @@
 			"metadata-deb": {
 				"Depends": "golang",
 				"Homepage": "https://github.com/laher/goxc"
+			},
+			"other-mapped-files": {
+				"/": "deb-contents/"
 			}
 		},
 		"downloads-page": {
 			"filename": "index.md",
 			"templateFile": "downloads.tpl"
-		},
-		"pkg-build": {
-			"metadata": {
-				"description": "Cross-compiler utility for Go",
-				"maintainer": "Am Laher (https://github.com/laher)"
-			},
-			"metadata-deb": {
-				"Depends": "golang",
-				"Homepage": "https://github.com/laher/goxc"
-			}
 		},
 		"xc": {
 			"test-setting": "test-value"
