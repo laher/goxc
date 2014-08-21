@@ -52,7 +52,7 @@ func (this BuildSettings) IsEmpty() bool {
 func buildSettingsFromMap(m map[string]interface{}) (*BuildSettings, error) {
 	var err error
 	bs := BuildSettings{}
-	//FillBuildSettingsDefaults(&bs)
+	FillBuildSettingsDefaults(&bs)
 	for k, v := range m {
 		switch k {
 		//case "GoRoot":

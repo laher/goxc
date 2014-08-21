@@ -159,6 +159,8 @@ func InvokeGo(workingDirectory string, subCmd string, subCmdArgs []string, env [
 		if buildSettings.LdFlagsXVars != nil {
 			//TODO!
 			ldflags = ldflags + " " + buildFlags(buildInterpolationVars(*buildSettings.LdFlagsXVars, fullVersionName), "-X")
+		} else {
+			log.Printf("WARNING: LdFlagsXVars is nil. Not passing package version into compiler")
 		}
 		if ldflags != "" {
 			args = append(args, "-ldflags", ldflags)
