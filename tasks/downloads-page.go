@@ -18,7 +18,6 @@ package tasks
 
 import (
 	htemplate "html/template"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -168,7 +167,6 @@ func downloadsWalkFunc(fullPath string, Version string, fi2 os.FileInfo, err err
 	category := getCategory(relativePath)
 
 	//log.Printf("Adding: %s", relativePath)
-	log.Printf("Adding: %s", Version)
 	download := Download{text, Version, relativePath}
 	v, ok := report.Categories[category]
 	var existing []Download
