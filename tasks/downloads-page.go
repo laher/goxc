@@ -54,6 +54,7 @@ title: Downloads
 
 type Download struct {
 	Text         string
+	Version      string
 	RelativeLink string
 }
 type Report struct {
@@ -89,7 +90,7 @@ func runTaskDownloadsPage(tp TaskParams) error {
 	report := Report{tp.AppName, tp.Settings.GetFullVersionName(), map[string]*[]Download{}, templateVars}
 	versionDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
 	err = filepath.Walk(versionDir, func(path string, info os.FileInfo, e error) error {
-		return downloadsWalkFunc(path, info, e, tp, report, outFilename, format)
+		return downloadsWalkFunc(path, tp.Settings.GetFullVersionName(), info, e, tp, report, outFilename, format)
 	})
 	if err != nil {
 		return err
@@ -151,7 +152,7 @@ func getCategory(relativePath string) string {
 	return category
 }
 
-func downloadsWalkFunc(fullPath string, fi2 os.FileInfo, err error, tp TaskParams, report Report, reportFilename, format string) error {
+func downloadsWalkFunc(fullPath string, Version string, fi2 os.FileInfo, err error, tp TaskParams, report Report, reportFilename, format string) error {
 	if fi2.IsDir() || fi2.Name() == reportFilename {
 		return nil
 	}
@@ -166,7 +167,7 @@ func downloadsWalkFunc(fullPath string, fi2 os.FileInfo, err error, tp TaskParam
 	category := getCategory(relativePath)
 
 	//log.Printf("Adding: %s", relativePath)
-	download := Download{text, relativePath}
+	download := Download{text, Version, relativePath}
 	v, ok := report.Categories[category]
 	var existing []Download
 	if !ok {
