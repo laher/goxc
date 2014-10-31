@@ -334,7 +334,9 @@ func writeJsonFile(settings Settings, jsonFile string) error {
 	}
 	//0.6 StripEmpties no longer required (use omitempty tag instead)
 
-	log.Printf("Writing file %s", jsonFile)
+	if settings.IsVerbose() {
+		log.Printf("Writing file %s", jsonFile)
+	}
 	return ioutil.WriteFile(jsonFile, data, 0644)
 }
 
@@ -346,7 +348,9 @@ func readJson(js []byte) (Settings, error) {
 	if err != nil {
 		log.Printf("Error: %v", err)
 	}
-	log.Printf("Settings: %+v", settings)
+	if settings.IsVerbose() {
+		log.Printf("Settings: %+v", settings)
+	}
 	return settings, err
 }
 

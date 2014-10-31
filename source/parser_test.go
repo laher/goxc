@@ -16,16 +16,16 @@ func TestLearning(t *testing.T) {
 			return
 		}
 		for _, f := range files {
-			version := FindConstantValue(f, "PKG_VERSION")
+			version := FindConstantValue(f, "PKG_VERSION", true)
 			t.Logf("Version = %v", version)
-			name := FindConstantValue(f, "PKG_NAME")
+			name := FindConstantValue(f, "PKG_NAME", true)
 			t.Logf("Name = %v", name)
 		}
 	}
 }
 
 func TestMainDirs(t *testing.T) {
-	mds, err := FindMainDirs("..", []string{})
+	mds, err := FindMainDirs("..", []string{}, true)
 	if err != nil {
 		t.Logf("%v", err)
 		return

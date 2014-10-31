@@ -47,9 +47,9 @@ var (
 	// e.g. go build -ldflags "-X main.VERSION 0.1.2-abcd" goxc.go
 	// thanks to minux for this advice
 	// So, goxc does this automatically during 'go build'
-	VERSION     = "0.14.2"
+	VERSION     = "0.15.1"
 	BUILD_DATE  = ""
-	SOURCE_DATE = "2014-08-16T23:13:37+12:00"
+	SOURCE_DATE = "2014-10-31T22:12:14+13:00"
 	// settings for this invocation of goxc
 	settings             config.Settings
 	fBuildSettings       config.BuildSettings
@@ -68,6 +68,7 @@ var (
 	isWriteConfig        bool
 	isWriteLocalConfig   bool
 	isVerbose            bool
+	isQuiet              bool
 	workingDirectoryFlag string
 	buildConstraints     string
 	maxProcessors        int
@@ -174,7 +175,7 @@ func goXC(call []string) error {
 		destPlatforms = platforms.ApplyBuildConstraints(settings.BuildConstraints, destPlatforms)
 		err := tasks.RunTasks(workingDirectory, destPlatforms, &settings, maxProcessors)
 		if err != nil {
-			log.Printf("RunTasks returned error %+v", err)
+			log.Printf("RunTasks error: %+v", err)
 		}
 		return err
 	}
@@ -279,8 +280,11 @@ func interpretFlags(call []string) {
 		flagSet.Visit(func(flg *flag.Flag) { specifiedFlags[flg.Name] = flg.Value  })
 		log.Printf("Specified cli flags: %s", specifiedFlags)
 		*/
+		if isQuiet {
+			settings.Verbosity = core.VerbosityQuiet
+		}
 		if isVerbose {
-			settings.Verbosity = core.VERBOSITY_VERBOSE
+			settings.Verbosity = core.VerbosityVerbose
 		}
 
 		//0.6 use args. Parse into slice.
@@ -447,7 +451,6 @@ func mergeConfigIntoSettings(workingDirectory string) {
 		}
 	}
 
-	log.Printf("Working directory: '%s', Config name: '%s'", workingDirectory, configName)
 	err := mergeConfiguredSettings(workingDirectory, configName, isWriteConfig, isWriteLocalConfig)
 	//log.Printf("TaskSettings: %+v", settings.TaskSettings)
 	if err != nil {
@@ -455,6 +458,9 @@ func mergeConfigIntoSettings(workingDirectory string) {
 			log.Printf("Configuration file error. %s", err.Error())
 			os.Exit(1)
 		}
+	}
+	if settings.IsVerbose() {
+		log.Printf("Working directory: '%s', Config name: '%s'", workingDirectory, configName)
 	}
 }
 
@@ -530,7 +536,8 @@ func setupFlags() *flag.FlagSet {
 	flagSet.BoolVar(&isHelpTasks, "help-tasks", false, "Help about tasks")
 	flagSet.BoolVar(&isVersion, "version", false, "Print version")
 
-	flagSet.BoolVar(&isVerbose, "v", false, "Verbose")
+	flagSet.BoolVar(&isVerbose, "v", false, "Verbose output")
+	flagSet.BoolVar(&isQuiet, "q", false, "Quiet (no output except for errors)")
 	flagSet.StringVar(&isCliZipArchives, "z", "", "DEPRECATED (use archive & rmbin tasks instead): create ZIP archives instead of directories (true/false. default=true)")
 	flagSet.StringVar(&tasksToRun, "tasks", "", "Tasks to run. Use `goxc -ht` for more details")
 	flagSet.StringVar(&tasksPrepend, "+tasks", "", "Additional tasks to run first. See '-help tasks' for tasks list")

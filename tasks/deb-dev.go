@@ -72,15 +72,10 @@ func debDevBuild(tp TaskParams) error {
 	metadata := tp.Settings.GetTaskSettingMap(TASK_DEB_GEN, "metadata")
 	//maintain support for old configs ...
 	metadataDebX := tp.Settings.GetTaskSettingMap(TASK_DEB_GEN, "metadata-deb")
-	otherMappedFiles := map[string]string{}
 	otherMappedFilesFromSetting := tp.Settings.GetTaskSettingMap(TASK_DEB_GEN, "other-mapped-files")
-	if otherMappedFiles != nil {
-		for k, v := range otherMappedFilesFromSetting {
-			val, ok := v.(string)
-			if ok {
-				otherMappedFiles[k] = val
-			}
-		}
+	otherMappedFiles, err := calcOtherMappedFiles(otherMappedFilesFromSetting)
+	if err != nil {
+		return err
 	}
 	metadataDeb := map[string]string{}
 	for k, v := range metadataDebX {
@@ -177,7 +172,9 @@ func debDevBuild(tp TaskParams) error {
 			if err != nil {
 				return fmt.Errorf("Error generating deb: %v", err)
 			}
-			log.Printf("Wrote -dev deb to %s", filepath.Join(build.DestDir, dgen.DebWriter.Filename))
+			if !tp.Settings.IsQuiet() {
+				log.Printf("Wrote -dev deb to %s", filepath.Join(build.DestDir, dgen.DebWriter.Filename))
+			}
 		}
 	}
 	return err

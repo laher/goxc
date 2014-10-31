@@ -69,7 +69,9 @@ func codesignPlat(goos, arch string, binPath string, settings *config.Settings) 
 			log.Printf("codesign failed: %s", err)
 			return err
 		} else {
-			log.Printf("Signed with ID: %q", id)
+			if !settings.IsQuiet() {
+				log.Printf("Signed with ID: %q", id)
+			}
 			return nil
 		}
 	}

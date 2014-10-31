@@ -103,14 +103,18 @@ func runTaskPkgSource(tp TaskParams) (err error) {
 	}
 	//TODO rpm
 	if makeSourceDeb {
-		log.Printf("Building 'source deb' for Ubuntu/Debian Linux.")
+		if tp.Settings.IsVerbose() {
+			log.Printf("Building 'source deb' for Ubuntu/Debian Linux.")
+		}
 		//	log.Printf("WARNING: 'source deb' functionality requires more documentation and config options to make it properly useful. More coming soon.")
 		err = debSourceBuild(tp)
 		if err != nil {
 			return
 		}
 	} else {
-		log.Printf("Not building source debs because Linux has not been selected as a target OS")
+		if !tp.Settings.IsQuiet() {
+			log.Printf("Not building source debs because Linux has not been selected as a target OS")
+		}
 	}
 	//OK
 	return
@@ -160,15 +164,10 @@ func debSourceBuild(tp TaskParams) (err error) {
 	metadata := tp.Settings.GetTaskSettingMap(TASK_DEB_SOURCE, "metadata")
 	//armArchName := getArmArchName(tp.Settings)
 	metadataDebX := tp.Settings.GetTaskSettingMap(TASK_DEB_SOURCE, "metadata-deb")
-	otherMappedFiles := map[string]string{}
 	otherMappedFilesFromSetting := tp.Settings.GetTaskSettingMap(TASK_DEB_GEN, "other-mapped-files")
-	if otherMappedFiles != nil {
-		for k, v := range otherMappedFilesFromSetting {
-			val, ok := v.(string)
-			if ok {
-				otherMappedFiles[k] = val
-			}
-		}
+	otherMappedFiles, err := calcOtherMappedFiles(otherMappedFilesFromSetting)
+	if err != nil {
+		return err
 	}
 	metadataDeb := map[string]string{}
 	for k, v := range metadataDebX {
@@ -257,9 +256,10 @@ func debSourceBuild(tp TaskParams) (err error) {
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
-	log.Printf("Wrote dsc file to %s", filepath.Join(build.DestDir, spgen.SourcePackage.DscFileName))
-	log.Printf("Wrote orig file to %s", filepath.Join(build.DestDir, spgen.SourcePackage.OrigFileName))
-	log.Printf("Wrote debian file to %s", filepath.Join(build.DestDir, spgen.SourcePackage.DebianFileName))
-
+	if tp.Settings.IsVerbose() {
+		log.Printf("Wrote dsc file to %s", filepath.Join(build.DestDir, spgen.SourcePackage.DscFileName))
+		log.Printf("Wrote orig file to %s", filepath.Join(build.DestDir, spgen.SourcePackage.OrigFileName))
+		log.Printf("Wrote debian file to %s", filepath.Join(build.DestDir, spgen.SourcePackage.DebianFileName))
+	}
 	return nil
 }

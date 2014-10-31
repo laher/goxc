@@ -100,7 +100,7 @@ func runArchiveTask(tp TaskParams, dest platforms.Platform, errchan chan error, 
 }
 
 func archivePlat(goos, arch string, mainDirs []string, workingDirectory, outDestRoot string, settings *config.Settings, ending string, archiver archive.Archiver, includeTopLevelDir bool) error {
-	resources := core.ParseIncludeResources(workingDirectory, settings.ResourcesInclude, settings.ResourcesExclude, settings.IsVerbose())
+	resources := core.ParseIncludeResources(workingDirectory, settings.ResourcesInclude, settings.ResourcesExclude, !settings.IsQuiet())
 	//log.Printf("Resources: %v", resources)
 	exes := []string{}
 	for _, mainDir := range mainDirs {
@@ -128,7 +128,9 @@ func archivePlat(goos, arch string, mainDirs []string, workingDirectory, outDest
 		log.Printf("ZIP error: %s", err)
 		return err
 	} else {
-		log.Printf("Artifact(s) archived to %s", archivePath)
+		if !settings.IsQuiet() {
+			log.Printf("Artifact(s) archived to %s", archivePath)
+		}
 	}
 	return nil
 }

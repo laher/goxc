@@ -107,7 +107,9 @@ func runXc(tp TaskParams, dest platforms.Platform, errchan chan error) {
 			return
 		}
 	*/
-	log.Printf("mainDirs : %v", tp.MainDirs)
+	if tp.Settings.IsVerbose() {
+		log.Printf("mainDirs : %v", tp.MainDirs)
+	}
 	for _, mainDir := range tp.MainDirs {
 		var exeName string
 		var packagePath string
@@ -126,7 +128,7 @@ func runXc(tp TaskParams, dest platforms.Platform, errchan chan error) {
 		} else {
 			isVerifyExe := tp.Settings.GetTaskSettingBool(TASK_XC, "verifyExe")
 			if isVerifyExe {
-				err = exefileparse.Test(absoluteBin, dest.Arch, dest.Os)
+				err = exefileparse.Test(absoluteBin, dest.Arch, dest.Os, tp.Settings.IsVerbose())
 				if err != nil {
 					log.Printf("Error: %v", err)
 					log.Printf("Something fishy is going on: have you run `goxc -t` for this platform (%s,%s)???", dest.Arch, dest.Os)
@@ -232,7 +234,9 @@ func validatePlatToolchainBinExists(dest platforms.Platform, goroot string) erro
 // xcPlat: Cross compile for a particular platform
 // 0.3.0 - breaking change - changed 'call []string' to 'workingDirectory string'.
 func xcPlat(dest platforms.Platform, tp TaskParams, exeName string, packagePath string) (string, error) {
-	log.Printf("building %s for platform %v.", exeName, dest)
+	if tp.Settings.IsVerbose() {
+		log.Printf("building %s for platform %v.", exeName, dest)
+	}
 	args := []string{}
 	absoluteBin, err := core.GetAbsoluteBin(dest.Os, dest.Arch, tp.Settings.AppName, exeName, tp.WorkingDirectory, tp.Settings.GetFullVersionName(), tp.Settings.OutPath, tp.Settings.ArtifactsDest)
 	if err != nil {

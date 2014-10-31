@@ -139,7 +139,9 @@ func generateParallelizedRunFunc(pTask ParallelizableTask) func(TaskParams) erro
 			return nil
 		}
 		numProcs := runtime.NumCPU()
-		log.Printf("Parallelizing %s for %d platforms, using max %d of %d processors", pTask.Name, platCount, tp.MaxProcessors, numProcs)
+		if !tp.Settings.IsQuiet() {
+			log.Printf("Parallelizing %s for %d platforms, using max %d of %d processors", pTask.Name, platCount, tp.MaxProcessors, numProcs)
+		}
 		errchan := make(chan error)
 		roundIdx := 0
 		roundCount := tp.MaxProcessors
@@ -227,8 +229,8 @@ func ListTasks() []Task {
 
 // run all given tasks
 func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, settings *config.Settings, maxProcessors int) error {
-	log.Printf("Using Go root: %s", settings.GoRoot)
 	if settings.IsVerbose() {
+		log.Printf("Using Go root: %s", settings.GoRoot)
 		log.Printf("looping through each platform")
 	}
 	appName := core.GetAppName(settings.AppName, workingDirectory)
@@ -262,8 +264,10 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 			if e, _ := core.FileExists(taskName); e {
 				log.Printf("'%s' looks like a directory, not a task - specify 'working directory' with -wd option", taskName)
 			}
-			log.Printf("Task %s does NOT exist!", taskName)
-			return errors.New("Task " + taskName + " does not exist")
+			if settings.IsVerbose() {
+				log.Printf("Task '%s' does NOT exist!", taskName)
+			}
+			return errors.New("Task '" + taskName + "' does not exist")
 		}
 	}
 	mainDirs := []string{}
@@ -276,20 +280,22 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 		excludes := core.ParseCommaGlobs(settings.MainDirsExclude)
 		excludesSource := core.ParseCommaGlobs(settings.SourceDirsExclude)
 		excludesSource = append(excludesSource, excludes...)
-		allPackages, err = source.FindSourceDirs(workingDirectory, "", excludesSource)
+		allPackages, err = source.FindSourceDirs(workingDirectory, "", excludesSource, settings.IsVerbose())
 		if err != nil || len(allPackages) == 0 {
 			log.Printf("Warning: could not establish list of source packages. Using working directory")
 			allPackages = []string{workingDirectory}
 		}
-		mainDirs, err = source.FindMainDirs(workingDirectory, excludes)
+		mainDirs, err = source.FindMainDirs(workingDirectory, excludes, settings.IsVerbose())
 		if err != nil || len(mainDirs) == 0 {
 			log.Printf("Warning: could not find any main dirs: %v", err)
 		} else {
-			log.Printf("Found 'main package' dirs (len %d): %v", len(mainDirs), mainDirs)
+			if settings.IsVerbose() {
+				log.Printf("Found 'main package' dirs (len %d): %v", len(mainDirs), mainDirs)
+			}
 		}
 	}
-	log.Printf("Running tasks: %v", tasksToRun)
 	if settings.IsVerbose() {
+		log.Printf("Running tasks: %v", tasksToRun)
 		log.Printf("All packages: %v", allPackages)
 	}
 	for _, taskName := range tasksToRun {
@@ -300,7 +306,9 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 			log.Printf("Stopping after '%s' failed with error '%v'", taskName, err)
 			return err
 		} else {
-			log.Printf("Task %s succeeded", taskName)
+			if !settings.IsQuiet() {
+				log.Printf("Task %s succeeded", taskName)
+			}
 		}
 	}
 	return nil

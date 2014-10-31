@@ -15,21 +15,21 @@ var (
 	MAGIC_PLAN9_386 = []byte{0, 0, 1, 235}
 )
 
-func Test(filename, expectedArch, expectedOs string) error {
+func Test(filename, expectedArch, expectedOs string, isVerbose bool) error {
 	switch expectedOs {
 	case platforms.WINDOWS:
-		return TestPE(filename, expectedArch, expectedOs)
+		return TestPE(filename, expectedArch, expectedOs, isVerbose)
 	case platforms.DARWIN:
-		return TestMachO(filename, expectedArch, expectedOs)
+		return TestMachO(filename, expectedArch, expectedOs, isVerbose)
 	case platforms.PLAN9:
-		return TestPlan9Exe(filename, expectedArch, expectedOs)
+		return TestPlan9Exe(filename, expectedArch, expectedOs, isVerbose)
 	default:
-		return TestElf(filename, expectedArch, expectedOs)
+		return TestElf(filename, expectedArch, expectedOs, isVerbose)
 	}
 
 }
 
-func TestElf(filename, expectedArch, expectedOs string) error {
+func TestElf(filename, expectedArch, expectedOs string, isVerbose bool) error {
 	file, err := elf.Open(filename)
 
 	if err != nil {
@@ -37,7 +37,9 @@ func TestElf(filename, expectedArch, expectedOs string) error {
 		return err
 	}
 	defer file.Close()
-	log.Printf("File '%s' is an ELF file (arch: %s, osabi: %s)\n", filename, file.FileHeader.Machine.String(), file.FileHeader.OSABI.String())
+	if isVerbose {
+		log.Printf("File '%s' is an ELF file (arch: %s, osabi: %s)\n", filename, file.FileHeader.Machine.String(), file.FileHeader.OSABI.String())
+	}
 	if expectedOs == platforms.LINUX {
 		if file.FileHeader.OSABI != elf.ELFOSABI_NONE && file.FileHeader.OSABI != elf.ELFOSABI_LINUX {
 			return errors.New("Not a Linux executable")
@@ -79,7 +81,7 @@ func TestElf(filename, expectedArch, expectedOs string) error {
 	return nil
 }
 
-func TestMachO(filename, expectedArch, expectedOs string) error {
+func TestMachO(filename, expectedArch, expectedOs string, isVerbose bool) error {
 	file, err := macho.Open(filename)
 	if err != nil {
 
@@ -87,7 +89,9 @@ func TestMachO(filename, expectedArch, expectedOs string) error {
 		return err
 	}
 	defer file.Close()
-	log.Printf("File '%s' is a Mach-O file (arch: %s)\n", filename, file.FileHeader.Cpu.String())
+	if isVerbose {
+		log.Printf("File '%s' is a Mach-O file (arch: %s)\n", filename, file.FileHeader.Cpu.String())
+	}
 	if expectedArch == platforms.X86 {
 		if file.FileHeader.Cpu != macho.Cpu386 {
 			return errors.New("Not a 386 executable")
@@ -103,13 +107,15 @@ func TestMachO(filename, expectedArch, expectedOs string) error {
 	return nil
 }
 
-func TestPE(filename, expectedArch, expectedOs string) error {
+func TestPE(filename, expectedArch, expectedOs string, isVerbose bool) error {
 	file, err := pe.Open(filename)
 	if err != nil {
 		return errors.New("NOT a PE file")
 	}
 	defer file.Close()
-	log.Printf("File '%s' is a PE file, arch: %d (%d='X86' and %d='AMD64')\n", filename, file.FileHeader.Machine, pe.IMAGE_FILE_MACHINE_I386, pe.IMAGE_FILE_MACHINE_AMD64)
+	if isVerbose {
+		log.Printf("File '%s' is a PE file, arch: %d (%d='X86' and %d='AMD64')\n", filename, file.FileHeader.Machine, pe.IMAGE_FILE_MACHINE_I386, pe.IMAGE_FILE_MACHINE_AMD64)
+	}
 	if expectedArch == platforms.X86 {
 		if file.FileHeader.Machine != pe.IMAGE_FILE_MACHINE_I386 {
 			return errors.New("Not a 386 executable")
@@ -126,7 +132,7 @@ func TestPE(filename, expectedArch, expectedOs string) error {
 
 }
 
-func TestPlan9Exe(filename, expectedArch, expectedOs string) error {
+func TestPlan9Exe(filename, expectedArch, expectedOs string, isVerbose bool) error {
 	file, err := os.Open(filename)
 	if err != nil {
 		return errors.New("Could not open file")
@@ -144,7 +150,9 @@ func TestPlan9Exe(filename, expectedArch, expectedOs string) error {
 				return errors.New("NOT a known Plan9 executable format")
 			}
 		}
-		log.Printf("File '%s' is a Plan9 executable", filename)
+		if isVerbose {
+			log.Printf("File '%s' is a Plan9 executable", filename)
+		}
 	}
 	return nil
 

@@ -154,7 +154,9 @@ func ParseIncludeResources(basedir, includeResources, excludeResources string, i
 									log.Printf("Exclude-GLOB error: %s: %s", excludeGlob, err)
 								}
 								if excludedThisTime {
-									log.Printf("Excluded: %s with %s", file, excludeGlob)
+									if isVerbose {
+										log.Printf("Excluded: %s with %s", file, excludeGlob)
+									}
 									exclude = true
 								}
 							}

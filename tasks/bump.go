@@ -40,7 +40,7 @@ func init() {
 }
 
 func bump(tp TaskParams) error {
-	c, err := config.LoadJsonConfigs(tp.WorkingDirectory, []string{core.GOXC_CONFIGNAME_BASE + core.GOXC_FILE_EXT}, tp.Settings.IsVerbose())
+	c, err := config.LoadJsonConfigs(tp.WorkingDirectory, []string{core.GOXC_CONFIGNAME_BASE + core.GOXC_FILE_EXT}, !tp.Settings.IsQuiet())
 	if err != nil {
 		return nil
 	}
@@ -78,7 +78,9 @@ func bump(tp TaskParams) error {
 		}
 		pvNew := strings.Join(pvparts, ".")
 		c.PackageVersion = pvNew
-		log.Printf("Bumping from %s to %s", pv, c.PackageVersion)
+		if !tp.Settings.IsQuiet() {
+			log.Printf("Bumping from %s to %s", pv, c.PackageVersion)
+		}
 		tp.Settings.PackageVersion = pvNew
 		return config.WriteJsonConfig(tp.WorkingDirectory, c, "", false)
 	} else {

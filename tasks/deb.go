@@ -99,20 +99,16 @@ func getArmArchName(settings *config.Settings) string {
 	return armArchName
 }
 
-func debBuild(dest platforms.Platform, tp TaskParams) error {
-	metadata := tp.Settings.GetTaskSettingMap(TASK_DEB_GEN, "metadata")
-	armArchName := getArmArchName(tp.Settings)
-	//maintain support for old configs ...
-	metadataDebX := tp.Settings.GetTaskSettingMap(TASK_DEB_GEN, "metadata-deb")
+func calcOtherMappedFiles(otherMappedFilesFromSetting map[string]interface{}) (map[string]string, error) {
+
 	otherMappedFiles := map[string]string{}
-	otherMappedFilesFromSetting := tp.Settings.GetTaskSettingMap(TASK_DEB_GEN, "other-mapped-files")
-	if otherMappedFiles != nil {
+	if otherMappedFilesFromSetting != nil {
 		for k, v := range otherMappedFilesFromSetting {
 			val, ok := v.(string)
 			if ok {
 				finf, err := os.Stat(val)
 				if err != nil {
-					return err
+					return otherMappedFiles, err
 				}
 				if finf.IsDir() {
 					filepath.Walk(val, func(path string, info os.FileInfo, err error) error {
@@ -125,7 +121,7 @@ func debBuild(dest platforms.Platform, tp TaskParams) error {
 							if strings.HasSuffix(k, "/") {
 								key = k + kpath
 							} else {
-								key = k+"/"+kpath
+								key = k + "/" + kpath
 							}
 							otherMappedFiles[key] = path
 						}
@@ -137,7 +133,23 @@ func debBuild(dest platforms.Platform, tp TaskParams) error {
 			}
 		}
 	}
-	log.Printf("other mapped files: %+v", otherMappedFiles)
+	return otherMappedFiles, nil
+}
+
+func debBuild(dest platforms.Platform, tp TaskParams) error {
+	metadata := tp.Settings.GetTaskSettingMap(TASK_DEB_GEN, "metadata")
+	armArchName := getArmArchName(tp.Settings)
+	//maintain support for old configs ...
+	metadataDebX := tp.Settings.GetTaskSettingMap(TASK_DEB_GEN, "metadata-deb")
+	otherMappedFilesFromSetting := tp.Settings.GetTaskSettingMap(TASK_DEB_GEN, "other-mapped-files")
+	otherMappedFiles, err := calcOtherMappedFiles(otherMappedFilesFromSetting)
+	if err != nil {
+		return err
+	}
+
+	if tp.Settings.IsVerbose() {
+		log.Printf("other mapped files: %+v", otherMappedFiles)
+	}
 	metadataDeb := map[string]string{}
 	for k, v := range metadataDebX {
 		val, ok := v.(string)
@@ -242,7 +254,9 @@ func debBuild(dest platforms.Platform, tp TaskParams) error {
 			if err != nil {
 				return fmt.Errorf("Error generating deb: %v", err)
 			}
-			log.Printf("Wrote deb to %s", filepath.Join(build.DestDir, dgen.DebWriter.Filename))
+			if !tp.Settings.IsQuiet() {
+				log.Printf("Wrote deb to %s", filepath.Join(build.DestDir, dgen.DebWriter.Filename))
+			}
 		}
 	}
 	return err
