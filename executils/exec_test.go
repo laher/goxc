@@ -1,8 +1,5 @@
 package executils
 
-//	"github.com/laher/goxc/typeutils"
-//	"testing"
-
 /*
 func TestGetLdFlagVersionArgs(t *testing.T) {
 	actual := GetLdFlagVersionArgs("1.1")
