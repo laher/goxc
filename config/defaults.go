@@ -1,9 +1,10 @@
 package config
 
 import (
-	"github.com/laher/goxc/core"
 	"log"
 	"runtime"
+
+	"github.com/laher/goxc/core"
 )
 
 func FillBuildSettingsDefaults(bs *BuildSettings) {

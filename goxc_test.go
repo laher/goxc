@@ -2,8 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/laher/goxc/config"
 	"testing"
+
+	"github.com/laher/goxc/config"
 )
 
 func TestRemove(t *testing.T) {

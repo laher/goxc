@@ -1,9 +1,7 @@
 package executils
 
-import (
 //	"github.com/laher/goxc/typeutils"
 //	"testing"
-)
 
 /*
 func TestGetLdFlagVersionArgs(t *testing.T) {

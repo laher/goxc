@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/laher/goxc/typeutils"
 	"log"
+
+	"github.com/laher/goxc/typeutils"
 )
 
 type BuildSettings struct {

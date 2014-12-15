@@ -19,13 +19,14 @@ package sdeb
 import (
 	"errors"
 	"fmt"
-	"github.com/laher/goxc/archive"
-	"github.com/laher/goxc/core"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/laher/goxc/archive"
+	"github.com/laher/goxc/core"
 	//"text/template"
 )
 
