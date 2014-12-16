@@ -5,9 +5,10 @@ import (
 	"debug/macho"
 	"debug/pe"
 	"errors"
-	"github.com/laher/goxc/platforms"
 	"log"
 	"os"
+
+	"github.com/laher/goxc/platforms"
 )
 
 //I think plan9 uses a plain old a.out file format

@@ -19,12 +19,13 @@ package config
 import (
 	"encoding/json"
 	"errors"
-	"github.com/laher/goxc/core"
-	"github.com/laher/goxc/typeutils"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/typeutils"
 )
 
 const (

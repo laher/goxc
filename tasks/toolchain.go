@@ -18,15 +18,16 @@ package tasks
 
 import (
 	"errors"
-	"github.com/laher/goxc/config"
-	"github.com/laher/goxc/core"
-	"github.com/laher/goxc/executils"
-	"github.com/laher/goxc/platforms"
 	"log"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+
+	"github.com/laher/goxc/config"
+	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/executils"
+	"github.com/laher/goxc/platforms"
 )
 
 //runs automatically

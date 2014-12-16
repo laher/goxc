@@ -18,9 +18,10 @@ package config
 */
 
 import (
+	"log"
+
 	"github.com/laher/goxc/core"
 	"github.com/laher/goxc/typeutils"
-	"log"
 )
 
 /* 0.9: removed!
