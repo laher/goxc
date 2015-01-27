@@ -30,8 +30,8 @@ import (
 	"strings"
 )
 
-// HTTPTask is the task name to be used in the CLI
-const HTTPTask = "http"
+// TASK_PUBLISH_HTTP is the task name to be used in the CLI
+const TASK_PUBLISH_HTTP = "publish-http"
 
 type httpTaskConfig struct {
 	includePatterns string
@@ -43,8 +43,7 @@ type httpTaskConfig struct {
 }
 
 func init() {
-	Register(Task{
-		HTTPTask,
+	Register(Task{TASK_PUBLISH_HTTP,
 		"Upload artifacts to an HTTP server using a PUT request. Configuration required, see `goxc -h http` output.",
 		httpRunTask,
 		map[string]interface{}{
@@ -57,7 +56,7 @@ func init() {
 }
 
 func httpRunTask(tp TaskParams) error {
-	urlTemplateString := tp.Settings.GetTaskSettingString(HTTPTask, "url-template")
+	urlTemplateString := tp.Settings.GetTaskSettingString(TASK_PUBLISH_HTTP, "url-template")
 	missing := []string{}
 	if urlTemplateString == "" {
 		missing = append(missing, "url-template")
@@ -70,10 +69,10 @@ func httpRunTask(tp TaskParams) error {
 		return err
 	}
 	config := &httpTaskConfig{
-		includePatterns: tp.Settings.GetTaskSettingString(HTTPTask, "include"),
-		excludePatterns: tp.Settings.GetTaskSettingString(HTTPTask, "exclude"),
-		username:        tp.Settings.GetTaskSettingString(HTTPTask, "username"),
-		password:        tp.Settings.GetTaskSettingString(HTTPTask, "password"),
+		includePatterns: tp.Settings.GetTaskSettingString(TASK_PUBLISH_HTTP, "include"),
+		excludePatterns: tp.Settings.GetTaskSettingString(TASK_PUBLISH_HTTP, "exclude"),
+		username:        tp.Settings.GetTaskSettingString(TASK_PUBLISH_HTTP, "username"),
+		password:        tp.Settings.GetTaskSettingString(TASK_PUBLISH_HTTP, "password"),
 		urlTemplate:     template,
 		client:          &http.Client{},
 	}
