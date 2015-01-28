@@ -131,23 +131,39 @@ func httpWalk(config *httpTaskConfig, fullPath string, fi os.FileInfo, err error
 	return httpUploadFile(config, fullPath, fi, tp)
 }
 
+func httpURLTemplateContext(tp TaskParams, fi os.FileInfo) map[string]interface{} {
+	return map[string]interface{}{
+		"AppName":        tp.Settings.AppName,
+		"Version":        tp.Settings.GetFullVersionName(),
+		"Arch":           tp.Settings.Arch,
+		"Os":             tp.Settings.Os,
+		"PackageVersion": tp.Settings.PackageVersion,
+		"BranchName":     tp.Settings.BranchName,
+		"PrereleaseInfo": tp.Settings.PrereleaseInfo,
+		"BuildName":      tp.Settings.BuildName,
+		"FormatVersion":  tp.Settings.FormatVersion,
+		"FileName":       fi.Name(),
+		"FileSize":       fi.Size(),
+		"FileModTime":    fi.ModTime(),
+		"FileMode":       fi.Mode(),
+	}
+}
+
 func httpUploadFile(config *httpTaskConfig, fullPath string, fi os.FileInfo, tp TaskParams) error {
-	var url bytes.Buffer
-	err := config.urlTemplate.Execute(&url, map[string]interface{}{
-		"TaskParams": tp,
-		"FileInfo":   fi,
-	})
+	var urlb bytes.Buffer
+	err := config.urlTemplate.Execute(&urlb, httpURLTemplateContext(tp, fi))
+	var url = urlb.String()
 	if err != nil {
 		return err
 	}
 	if !tp.Settings.IsQuiet() {
-		log.Printf("Putting %s to %s", fi.Name(), url.String())
+		log.Printf("Putting %s to %s", fi.Name(), url)
 	}
 	b, err := os.Open(fullPath)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest("PUT", url.String(), b)
+	req, err := http.NewRequest("PUT", url, b)
 	if err != nil {
 		return err
 	}
