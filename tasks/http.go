@@ -38,6 +38,7 @@ type httpTaskConfig struct {
 	excludePatterns string
 	username        string
 	password        string
+	exists          string
 	urlTemplate     *template.Template
 	client          *http.Client
 }
@@ -47,11 +48,12 @@ func init() {
 		"Upload artifacts to an HTTP server using a PUT request. Configuration required, see `goxc -h http` output.",
 		httpRunTask,
 		map[string]interface{}{
-			"url-template": "",
-			"username":     "",
-			"password":     "",
-			"include":      "*.zip,*.tar.gz,*.deb",
-			"exclude":      "*.orig.tar.gz,data.tar.gz,control.tar.gz,*.debian.tar.gz,*-dev_*.deb",
+			"url-template":  "",
+			"username":      "",
+			"password":      "",
+			"include":       "*.zip,*.tar.gz,*.deb",
+			"exclude":       "*.orig.tar.gz,data.tar.gz,control.tar.gz,*.debian.tar.gz,*-dev_*.deb",
+			"exists-action": "fail",
 		}})
 }
 
@@ -69,6 +71,7 @@ func httpRunTask(tp TaskParams) error {
 		return err
 	}
 	config := &httpTaskConfig{
+		exists:          strings.ToLower(tp.Settings.GetTaskSettingString(TASK_PUBLISH_HTTP, "exists-action")),
 		includePatterns: tp.Settings.GetTaskSettingString(TASK_PUBLISH_HTTP, "include"),
 		excludePatterns: tp.Settings.GetTaskSettingString(TASK_PUBLISH_HTTP, "exclude"),
 		username:        tp.Settings.GetTaskSettingString(TASK_PUBLISH_HTTP, "username"),
@@ -149,12 +152,64 @@ func httpURLTemplateContext(tp TaskParams, fi os.FileInfo) map[string]interface{
 	}
 }
 
+func httpExistsFile(config *httpTaskConfig, url string) (bool, error) {
+	res, err := config.client.Head(url)
+	if err != nil {
+		return false, err
+	}
+	switch res.StatusCode {
+	case 200:
+		return true, nil
+	case 404:
+		return false, nil
+	default:
+		return false, fmt.Errorf("Unexpected status code %v when testing for existence of %v", res.StatusCode, url)
+	}
+}
+
+func httpDeleteFile(config *httpTaskConfig, url string) error {
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		return err
+	}
+	res, err := config.client.Do(req)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode/100 != 2 {
+		return fmt.Errorf("Unable to delete %v: %v", url, res.Status)
+	}
+	return nil
+}
+
 func httpUploadFile(config *httpTaskConfig, fullPath string, fi os.FileInfo, tp TaskParams) error {
 	var urlb bytes.Buffer
 	err := config.urlTemplate.Execute(&urlb, httpURLTemplateContext(tp, fi))
-	var url = urlb.String()
 	if err != nil {
 		return err
+	}
+	var url = urlb.String()
+	exists, err := httpExistsFile(config, url)
+	if err != nil {
+		return err
+	}
+	if exists {
+		switch config.exists {
+		case "replace":
+			if !tp.Settings.IsQuiet() {
+				log.Printf("Deleting existent file %v at %v", fi.Name(), url)
+			}
+			if err := httpDeleteFile(config, url); err != nil {
+				return err
+			}
+		case "omit":
+			if !tp.Settings.IsQuiet() {
+				log.Printf("Omitting existent file %v at %v", fi.Name(), url)
+			}
+			return nil
+		case "fail":
+			return fmt.Errorf("Failing http publish of %v because it already exists at %v", fi.Name(), url)
+		}
 	}
 	if !tp.Settings.IsQuiet() {
 		log.Printf("Putting %s to %s", fi.Name(), url)
