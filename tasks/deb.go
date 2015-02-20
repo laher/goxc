@@ -170,7 +170,7 @@ func debBuild(dest platforms.Platform, tp TaskParams) error {
 			return err
 		}
 	}
-	longDescription := " "
+	longDescription := ""
 	if ldesc, keyExists := metadata["long-description"]; keyExists {
 		var err error
 		longDescription, err = typeutils.ToString(ldesc, "long-description")
