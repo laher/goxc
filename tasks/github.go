@@ -128,6 +128,23 @@ func runTaskPubGH(tp TaskParams) error {
 			return err
 		}
 	}
+	prefix := tp.Settings.GetTaskSettingString(TASK_TAG, "prefix")
+	tagName := prefix + tp.Settings.GetFullVersionName()
+	err = createRelease(apiHost, owner, apikey, repository, tagName, tp.Settings.GetFullVersionName(), tp.Settings.IsVerbose())
+	if err != nil {
+		if serr, ok := err.(httpError); ok {
+			if serr.statusCode == 422 {
+				//existing release. ignore.
+				if !tp.Settings.IsQuiet() {
+					log.Printf("Note: release already exists. %v", serr)
+				}
+			} else {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
 	report := BtReport{tp.AppName, tp.Settings.GetFullVersionName(), map[string]*[]BtDownload{}, templateVars}
 	flags := os.O_WRONLY | os.O_TRUNC | os.O_CREATE
 	out, err := os.OpenFile(reportFilename, flags, 0600)
@@ -241,10 +258,13 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 		}
 	*/
 	//POST /repos/:owner/:repo/releases/:id/assets?name=foo.zip
-	url := apiHost + "/repos/" + owner + "/" + repository + "/" + tp.Settings.GetFullVersionName() + "/assets?name=" + relativePath
+	url := apiHost + "/repos/" + owner + "/" + repository + "/releases/" + tp.Settings.GetFullVersionName() + "/assets?name=" + relativePath
 	// for some reason there's no /pkg/ level in the downloads url.
 	downloadsUrl := downloadsHost + "/content/" + owner + "/" + repository + "/" + relativePath + "?direct"
-	resp, err := uploadFile("PUT", url, owner, user, apikey, fullPath, relativePath, !tp.Settings.IsQuiet())
+	if !tp.Settings.IsQuiet() {
+		log.Printf("Uploading to %v", url)
+	}
+	resp, err := uploadFile("POST", url, repository, owner, apikey, fullPath, relativePath, !tp.Settings.IsQuiet())
 	if err != nil {
 		if serr, ok := err.(httpError); ok {
 			if serr.statusCode == 409 {
@@ -324,7 +344,7 @@ func uploadFile(method, url, owner, user, apikey, fullPath, relativePath string,
 
 //NOTE: not necessary.
 //POST /repos/:owner/:repo/releases
-func createRelease(apihost, owner, apikey, repo, repository, pkg, version string, isVerbose bool) error {
+func createRelease(apihost, owner, apikey, repo, tagName, version string, isVerbose bool) error {
 	req := map[string]interface{}{"tag_name": version, "name": version, "body": "built by goxc"}
 	requestData, err := json.Marshal(req)
 	if err != nil {
