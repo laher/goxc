@@ -1,9 +1,8 @@
 language: go
 sudo: false
 go: 
- - 1.4
- - release
- - tip
+ - 1.4.2
+ - master
 os:
  - linux
  - osx
