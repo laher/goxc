@@ -301,6 +301,9 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 	}
 	for _, taskName := range tasksToRun {
 		log.SetPrefix("[goxc:" + taskName + "] ")
+		if settings.IsVerbose() {
+			log.Printf("Running task %s with settings: %v", taskName, settings.TaskSettings[taskName])
+		}
 		err := runTask(taskName, destPlatforms, allPackages, mainDirs, appName, workingDirectory, outDestRoot, settings, maxProcessors)
 		if err != nil {
 			// TODO: implement 'force' option.
