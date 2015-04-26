@@ -28,17 +28,21 @@ func init() {
 		TASK_GO_TEST,
 		"runs `go test ./...`. (dir is configurable).",
 		runTaskGoTest,
-		map[string]interface{}{"dir": "./...", "i": false}})
+		map[string]interface{}{"dir": "./...", "i": false, "short": false}})
 }
 
 func runTaskGoTest(tp TaskParams) error {
 	dir := tp.Settings.GetTaskSettingString(TASK_GO_TEST, "dir")
 	i := tp.Settings.GetTaskSettingBool(TASK_GO_TEST, "i") //this should be false by default! leaving it exposed for invocation as a flag
-	args := []string{dir}
+	short := tp.Settings.GetTaskSettingBool(TASK_GO_TEST, "short")
+	args := []string{}
 	if i {
-		args = []string{"-i", dir}
+		args = append(args, "-i")
 	}
-	//args = append(args, executils.GetLdFlagVersionArgs(tp.Settings.GetFullVersionName())...)
+	if short {
+		args = append(args, "-short")
+	}
+	args = append(args, dir)
 	err := executils.InvokeGo(tp.WorkingDirectory, "test", args, []string{}, tp.Settings)
 	return err
 }

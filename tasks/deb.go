@@ -51,6 +51,7 @@ func init() {
 			"armarch":             "",
 			"go-sources-dir":      ".",
 			"other-mappped-files": map[string]interface{}{},
+			"bin-dir":             "/usr/bin",
 		},
 	})
 }
@@ -170,7 +171,7 @@ func debBuild(dest platforms.Platform, tp TaskParams) error {
 			return err
 		}
 	}
-	longDescription := " "
+	longDescription := ""
 	if ldesc, keyExists := metadata["long-description"]; keyExists {
 		var err error
 		longDescription, err = typeutils.ToString(ldesc, "long-description")
@@ -227,6 +228,7 @@ func debBuild(dest platforms.Platform, tp TaskParams) error {
 	if err != nil {
 		return fmt.Errorf("Error preparing deb generator: %v", err)
 	}
+	binDir := tp.Settings.GetTaskSettingString(TASK_DEB_GEN, "bin-dir")
 	//there should only be one for this platform.
 	// Anyway this part maps all binaries.
 	for _, dgen := range dgens {
@@ -246,7 +248,7 @@ func debBuild(dest platforms.Platform, tp TaskParams) error {
 				if dgen.DataFiles == nil {
 					dgen.DataFiles = map[string]string{}
 				}
-				dgen.DataFiles["./usr/bin/"+exeName] = binPath
+				dgen.DataFiles["."+binDir+"/"+exeName] = binPath
 			}
 			for k, v := range otherMappedFiles {
 				dgen.DataFiles[k] = v

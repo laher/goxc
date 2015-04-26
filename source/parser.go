@@ -39,7 +39,14 @@ func FindSourceDirs(root string, packageNameFilter string, excludingGlobs []stri
 		log.Printf("Error resolving root dir: %v", err)
 		return []string{}, err
 	}
-	err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	root, err = filepath.EvalSymlinks(root)
+	if err != nil {
+		log.Printf("Error resolving root dir (EvalSymlinks): %v", err)
+		return []string{}, err
+	}
+	err = filepath.Walk(root, func(path string, info os.FileInfo, inerr error) error {
+
+		var err error
 		//find files ending with .go
 		//check for 'package main'
 		//if strings.Contains(path, string(filepath.Separator) + ".") {
@@ -58,11 +65,9 @@ func FindSourceDirs(root string, packageNameFilter string, excludingGlobs []stri
 					log.Printf("Ignoring '.hidden' file %s", path)
 				}
 			}
-		} else {
-			if strings.HasSuffix(path, ".go") {
-				//read file and check package
-				sourceFiles = append(sourceFiles, path)
-			}
+		} else if strings.HasSuffix(path, ".go") {
+			//read file and check package
+			sourceFiles = append(sourceFiles, path)
 		}
 		return err
 	})
