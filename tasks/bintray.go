@@ -252,7 +252,8 @@ func walkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename string
 	url := apiHost + "/content/" + subject + "/" + repository + "/" + pkg + "/" + tp.Settings.GetFullVersionName() + "/" + relativePath
 	// for some reason there's no /pkg/ level in the downloads url.
 	downloadsUrl := downloadsHost + "/content/" + subject + "/" + repository + "/" + relativePath + "?direct"
-	resp, err := uploadFile("PUT", url, subject, user, apikey, fullPath, relativePath, !tp.Settings.IsQuiet())
+	contentType := getContentType(text)
+	resp, err := uploadFile("PUT", url, subject, user, apikey, fullPath, relativePath, contentType, !tp.Settings.IsQuiet())
 	if err != nil {
 		if serr, ok := err.(httpError); ok {
 			if serr.statusCode == 409 {
@@ -301,8 +302,20 @@ func walkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename string
 	return err
 }
 
+func getContentType(text string) string {
+	contentType := "text/plain"
+	if strings.HasSuffix(text, ".zip") {
+		contentType = "application/zip"
+	} else if strings.HasSuffix(text, ".deb") {
+		contentType = "application/vnd.debian.binary-package"
+	} else if strings.HasSuffix(text, ".tar.gz") {
+		contentType = "application/x-gzip"
+	}
+	return contentType
+}
+
 func publish(apihost, user, apikey, subject, repository, pkg, version string, isVerbose bool) error {
-	resp, err := doHttp("POST", apihost+"/content/"+subject+"/"+repository+"/"+pkg+"/"+version+"/publish", subject, user, apikey, nil, 0, isVerbose)
+	resp, err := doHttp("POST", apihost+"/content/"+subject+"/"+repository+"/"+pkg+"/"+version+"/publish", subject, user, apikey, "", nil, 0, isVerbose)
 	if err == nil {
 		log.Printf("Version published. %v", resp)
 	}
@@ -310,7 +323,7 @@ func publish(apihost, user, apikey, subject, repository, pkg, version string, is
 }
 
 //PUT /content/:subject/:repo/:package/:version/:path
-func uploadFile(method, url, subject, user, apikey, fullPath, relativePath string, isVerbose bool) (map[string]interface{}, error) {
+func uploadFile(method, url, subject, user, apikey, fullPath, relativePath, contentType string, isVerbose bool) (map[string]interface{}, error) {
 	file, err := os.Open(fullPath)
 	if err != nil {
 		log.Printf("Error reading file for upload: %v", err)
@@ -322,7 +335,7 @@ func uploadFile(method, url, subject, user, apikey, fullPath, relativePath strin
 		log.Printf("Error statting file for upload: %v", err)
 		return nil, err
 	}
-	resp, err := doHttp(method, url, subject, user, apikey, file, fi.Size(), isVerbose)
+	resp, err := doHttp(method, url, subject, user, apikey, contentType, file, fi.Size(), isVerbose)
 	return resp, err
 }
 
@@ -336,7 +349,7 @@ func createVersion(apihost, user, apikey, subject, repository, pkg, version stri
 	}
 	requestLength := len(requestData)
 	reader := bytes.NewReader(requestData)
-	resp, err := doHttp("POST", apihost+"/packages/"+subject+"/"+repository+"/"+pkg+"/versions", subject, user, apikey, reader, int64(requestLength), isVerbose)
+	resp, err := doHttp("POST", apihost+"/packages/"+subject+"/"+repository+"/"+pkg+"/versions", subject, user, apikey, "", reader, int64(requestLength), isVerbose)
 	if err == nil {
 		if isVerbose {
 			log.Printf("Created new version. %v", resp)
@@ -354,7 +367,7 @@ func (e httpError) Error() string {
 	return fmt.Sprintf("Error code: %d, message: %s", e.statusCode, e.message)
 }
 
-func doHttp(method, url, subject, user, apikey string, requestReader io.Reader, requestLength int64, isVerbose bool) (map[string]interface{}, error) {
+func doHttp(method, url, _deprecated, user, apikey, contentType string, requestReader io.Reader, requestLength int64, isVerbose bool) (map[string]interface{}, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest(method, url, requestReader)
 	if err != nil {
@@ -367,7 +380,17 @@ func doHttp(method, url, subject, user, apikey string, requestReader io.Reader, 
 		}
 		req.ContentLength = requestLength
 	}
+	if contentType != "" {
+		if isVerbose {
+			log.Printf("Adding Header - Content-Type: %s", contentType)
+		}
+
+		req.Header.Add("Content-Type", contentType)
+	}
 	//log.Printf("req: %v", req)
+		if isVerbose {
+			log.Printf("%s to %s", method, url)
+		}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err

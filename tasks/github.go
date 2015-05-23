@@ -257,14 +257,43 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 			text = "executable"
 		}
 	*/
-	//POST /repos/:owner/:repo/releases/:id/assets?name=foo.zip
-	url := apiHost + "/repos/" + owner + "/" + repository + "/releases/" + tp.Settings.GetFullVersionName() + "/assets?name=" + relativePath
+	version := tp.Settings.GetFullVersionName()
+	isquiet := tp.Settings.IsQuiet()
+	contentType := getContentType(text)
+	err = ghDoUpload(apiHost, apikey, owner, repository, version, relativePath, fullPath, contentType, isquiet)
+	if first {
+		first = false
+	} else {
+		//commaIfRequired = ","
+	}
+	if format == "markdown" {
+		text = strings.Replace(text, "_", "\\_", -1)
+	}
+	category := getCategory(relativePath)
 	// for some reason there's no /pkg/ level in the downloads url.
 	downloadsUrl := downloadsHost + "/content/" + owner + "/" + repository + "/" + relativePath + "?direct"
-	if !tp.Settings.IsQuiet() {
+	download := BtDownload{text, downloadsUrl}
+	v, ok := report.Categories[category]
+	var existing []BtDownload
+	if !ok {
+		existing = []BtDownload{}
+	} else {
+		existing = *v
+	}
+	existing = append(existing, download)
+	report.Categories[category] = &existing
+
+	return err
+}
+
+//POST https://<upload_url>/repos/:owner/:repo/releases/:id/assets?name=foo.zip
+func ghDoUpload(apiHost, apikey, owner, repository, version, relativePath, fullPath, contentType string, isQuiet bool) error {
+	//POST /repos/:owner/:repo/releases/:id/assets?name=foo.zip
+	url := apiHost + "/repos/" + owner + "/" + repository + "/releases/" + version + "/assets?name=" + relativePath
+	if !isQuiet {
 		log.Printf("Uploading to %v", url)
 	}
-	resp, err := uploadFile("POST", url, repository, owner, apikey, fullPath, relativePath, !tp.Settings.IsQuiet())
+	resp, err := uploadFile("POST", url, repository, owner, apikey, fullPath, relativePath, contentType, !isQuiet)
 	if err != nil {
 		if serr, ok := err.(httpError); ok {
 			if serr.statusCode == 409 {
@@ -281,29 +310,11 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 			return err
 		}
 	}
-	if !tp.Settings.IsQuiet() {
+	if !isQuiet {
 		log.Printf("File uploaded. (expected empty map[]): %v", resp)
 	}
 	//commaIfRequired := ""
-	if first {
-		first = false
-	} else {
-		//commaIfRequired = ","
-	}
-	if format == "markdown" {
-		text = strings.Replace(text, "_", "\\_", -1)
-	}
-	category := getCategory(relativePath)
-	download := BtDownload{text, downloadsUrl}
-	v, ok := report.Categories[category]
-	var existing []BtDownload
-	if !ok {
-		existing = []BtDownload{}
-	} else {
-		existing = *v
-	}
-	existing = append(existing, download)
-	report.Categories[category] = &existing
+
 
 	//_, err = fmt.Fprintf(f, "%s [[%s](%s)]", commaIfRequired, text, downloadsUrl)
 	/*
@@ -323,24 +334,6 @@ func ghPublish(apihost, user, apikey, owner, repository, version string, isVerbo
 	return err
 }
 */
-/*
-//POST /repos/:owner/:repo/releases/:id/assets?name=foo.zip
-func uploadFile(method, url, owner, user, apikey, fullPath, relativePath string, isVerbose bool) (map[string]interface{}, error) {
-	file, err := os.Open(fullPath)
-	if err != nil {
-		log.Printf("Error reading file for upload: %v", err)
-		return nil, err
-	}
-	defer file.Close()
-	fi, err := file.Stat()
-	if err != nil {
-		log.Printf("Error statting file for upload: %v", err)
-		return nil, err
-	}
-	resp, err := doHttp(method, url, owner, user, apikey, file, fi.Size(), isVerbose)
-	return resp, err
-}
-*/
 
 //NOTE: not necessary.
 //POST /repos/:owner/:repo/releases
@@ -352,7 +345,7 @@ func createRelease(apihost, owner, apikey, repo, tagName, version string, isVerb
 	}
 	requestLength := len(requestData)
 	reader := bytes.NewReader(requestData)
-	resp, err := doHttp("POST", apihost+"/repos/"+owner+"/"+repo+"/releases", owner, owner, apikey, reader, int64(requestLength), isVerbose)
+	resp, err := doHttp("POST", apihost+"/repos/"+owner+"/"+repo+"/releases", owner, owner, apikey, "", reader, int64(requestLength), isVerbose)
 	if err == nil {
 		if isVerbose {
 			log.Printf("Created new version. %v", resp)
@@ -361,104 +354,3 @@ func createRelease(apihost, owner, apikey, repo, tagName, version string, isVerb
 	return err
 }
 
-/*
-type httpError struct {
-	statusCode int
-	message    string
-}
-
-func (e httpError) Error() string {
-	return fmt.Sprintf("Error code: %d, message: %s", e.statusCode, e.message)
-}
-
-func doHttp(method, url, owner, user, apikey string, requestReader io.Reader, requestLength int64, isVerbose bool) (map[string]interface{}, error) {
-	client := &http.Client{}
-	req, err := http.NewRequest(method, url, requestReader)
-	if err != nil {
-		return nil, err
-	}
-	req.SetBasicAuth(user, apikey)
-	if requestLength > 0 {
-		if isVerbose {
-			log.Printf("Adding Header - Content-Length: %s", strconv.FormatInt(requestLength, 10))
-		}
-		req.ContentLength = requestLength
-	}
-	//log.Printf("req: %v", req)
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	if isVerbose {
-		log.Printf("Http response received")
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	resp.Body.Close()
-
-	//200 is OK, 201 is Created, etc
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		log.Printf("Error code: %s", resp.Status)
-		log.Printf("Error body: %s", body)
-		return nil, httpError{resp.StatusCode, resp.Status}
-	}
-	if isVerbose {
-		log.Printf("Response status: '%s', Body: %s", resp.Status, body)
-	}
-	var b map[string]interface{}
-	if len(body) > 0 {
-		err = json.Unmarshal(body, &b)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return b, err
-}
-
-func getVersions(apihost, apikey, owner, repository, pkg string, isVerbose bool) ([]string, error) {
-	client := &http.Client{}
-	url := apihost + "/packages/" + owner + "/" + repository + "/" + pkg
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.SetBasicAuth(owner, apikey)
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Printf("Error calling %s - %v", url, err)
-		return nil, err
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Printf("Error reading response body - %v", err)
-		return nil, err
-	}
-	resp.Body.Close()
-	var b map[string]interface{}
-	err = json.Unmarshal(body, &b)
-	if err != nil {
-		log.Printf("Error parsing json body - %v", err)
-		log.Printf("Body: %s", body)
-		return nil, err
-	}
-	if isVerbose {
-		log.Printf("Body: %s", body)
-	}
-	if versions, keyExists := b["versions"]; keyExists {
-		versionsSlice, err := typeutils.ToStringSlice(versions, "versions")
-
-		return versionsSlice, err
-	}
-	return nil, errors.New("Versions not listed!")
-}
-*/
-/*
-// sample usage
-func main() {
-  target_url := "http://localhost:8888/"
-  filename := "/path/to/file.rtf"
-  postFile(filename, target_url)
-}
-*/

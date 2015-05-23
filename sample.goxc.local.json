@@ -5,7 +5,12 @@
 		"bintray": {
 			"apihost": "http://localhost:2020/",
 			"apikey": "12d312314235afe56090932ea13234"
+		},
+		"publish-github": {
+			"apihost": "http://localhost:2020/",
+			"apikey": "12d312314235afe56090932ea13234"
 		}
+
 	},
 	"FormatVersion": "0.8"
 }
