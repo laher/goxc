@@ -46,9 +46,9 @@ func init() {
 		nil,
 		map[string]interface{}{"GOARM": "",
 			//"validation" : "tcBinExists,exeParse",
-			"validateToolchain":    true,
-			"verifyExe":            true,
-			"autoRebuildToolchain": true}})
+			"validateToolchain":    false,
+			"verifyExe":            false,
+			"autoRebuildToolchain": false}})
 }
 
 func setupXc(tp TaskParams) ([]platforms.Platform, error) {

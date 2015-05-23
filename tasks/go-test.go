@@ -20,6 +20,8 @@ import (
 	// Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	// see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/executils"
+
+	"log"
 )
 
 //runs automatically
@@ -43,6 +45,9 @@ func runTaskGoTest(tp TaskParams) error {
 		args = append(args, "-short")
 	}
 	args = append(args, dir)
+	if tp.Settings.IsVerbose() {
+		log.Printf("Running `go test` with args: %v", args)
+	}
 	err := executils.InvokeGo(tp.WorkingDirectory, "test", args, []string{}, tp.Settings)
 	return err
 }

@@ -219,6 +219,9 @@ func (s *Settings) GetTaskSettingString(taskName, settingName string) string {
 
 func (s *Settings) GetTaskSettingBool(taskName, settingName string) bool {
 	retUntyped := s.GetTaskSetting(taskName, settingName)
+	if s.IsVerbose() {
+		log.Printf("Setting %s.%s resolves to %v", taskName, settingName, retUntyped)
+	}
 	if retUntyped == nil {
 		return false
 	}
