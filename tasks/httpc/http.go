@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-"os"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -21,7 +21,7 @@ func (e HttpError) Error() string {
 	return fmt.Sprintf("Error code: %d, message: %s", e.StatusCode, e.message)
 }
 
-func DoHttp(method, url, _deprecated, user, apikey, contentType string, requestReader io.Reader, requestLength int64, isVerbose bool) (map[string]interface{}, error) {
+func DoHttp(method, url, _deprecated, user, apikey, contentType string, requestReader io.Reader, requestLength int64, isVerbose bool) (*http.Response, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest(method, url, requestReader)
 	if err != nil {
@@ -52,12 +52,47 @@ func DoHttp(method, url, _deprecated, user, apikey, contentType string, requestR
 	if isVerbose {
 		log.Printf("Http response received")
 	}
+
+	return resp, nil
+}
+
+func ParseSlice(resp *http.Response, isVerbose bool) ([]map[string]interface{}, error) {
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	resp.Body.Close()
+	err = resp.Body.Close()
+	if err != nil {
+		log.Printf("Error closing response body: %v", err)
+	}
+	//200 is OK, 201 is Created, etc
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		log.Printf("Error code: %s", resp.Status)
+		log.Printf("Error body: %s", body)
+		return nil, HttpError{resp.StatusCode, resp.Status}
+	}
+	if isVerbose {
+		log.Printf("Response status: '%s', Body: %s", resp.Status, body)
+	}
+	var b []map[string]interface{}
+	if len(body) > 0 {
+		err = json.Unmarshal(body, &b)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return b, err
+}
 
+func ParseMap(resp *http.Response, isVerbose bool) (map[string]interface{}, error) {
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	err = resp.Body.Close()
+	if err != nil {
+		log.Printf("Error closing response body: %v", err)
+	}
 	//200 is OK, 201 is Created, etc
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		log.Printf("Error code: %s", resp.Status)
@@ -102,5 +137,6 @@ func UploadFile(method, url, subject, user, apikey, fullPath, relativePath, cont
 		return nil, err
 	}
 	resp, err := DoHttp(method, url, subject, user, apikey, contentType, file, fi.Size(), isVerbose)
-	return resp, err
+	r, err := ParseMap(resp, isVerbose)
+	return r, err
 }
