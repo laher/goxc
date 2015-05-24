@@ -54,6 +54,7 @@ const (
 	TASK_DEB_GEN        = "deb"
 	TASK_DEB_DEV        = "deb-dev"
 	TASK_DEB_SOURCE     = "deb-source"
+	TASK_PUBLISH_GITHUB = "publish-github"
 
 	TASKALIAS_ALL        = "all"
 	TASKALIAS_ARCHIVE    = "archive"
@@ -77,7 +78,7 @@ var (
 	TASKS_PKG_SOURCE                  = []string{TASK_DEB_SOURCE}
 	TASKS_VALIDATE                    = []string{TASK_GO_VET, TASK_GO_TEST}
 	TASKS_DEFAULT                     = append(append(append([]string{}, TASKS_VALIDATE...), TASKS_COMPILE...), TASKS_PACKAGE...)
-	TASKS_OTHER                       = []string{TASK_BUILD_TOOLCHAIN, TASK_GO_FMT}
+	TASKS_OTHER                       = []string{TASK_BUILD_TOOLCHAIN, TASK_GO_FMT, TASK_PUBLISH_GITHUB}
 	TASKS_ALL                         = append(append([]string{}, TASKS_OTHER...), TASKS_DEFAULT...)
 	TASK_ALIASES_FOR_MERGING_SETTINGS = map[string][]string{TASKALIAS_PKG_BUILD: TASKS_PKG_BUILD, TASKALIAS_PKG_SOURCE: TASKS_PKG_SOURCE, TASKALIAS_DEBS: TASKS_DEBS}
 
@@ -111,7 +112,7 @@ type TaskParams struct {
 type Task struct {
 	Name            string
 	Description     string
-	run             func(TaskParams) error
+	Run             func(TaskParams) error
 	DefaultSettings map[string]interface{}
 }
 
@@ -200,7 +201,7 @@ func RegisterParallelizable(pTask ParallelizableTask) {
 	task := Task{
 		Name:            pTask.Name,
 		Description:     pTask.Description,
-		run:             generateParallelizedRunFunc(pTask),
+		Run:             generateParallelizedRunFunc(pTask),
 		DefaultSettings: pTask.DefaultSettings}
 	allTasks[task.Name] = task
 }
@@ -322,7 +323,7 @@ func RunTasks(workingDirectory string, destPlatforms []platforms.Platform, setti
 func runTask(taskName string, destPlatforms []platforms.Platform, mainDirs []string, allPackages []string, appName, workingDirectory, outDestRoot string, settings *config.Settings, maxProcessors int) error {
 	if taskV, keyExists := allTasks[taskName]; keyExists {
 		tp := TaskParams{destPlatforms, mainDirs, allPackages, appName, workingDirectory, outDestRoot, settings, maxProcessors}
-		return taskV.run(tp)
+		return taskV.Run(tp)
 	}
 	log.Printf("Unrecognised task '%s'", taskName)
 	return fmt.Errorf("Unrecognised task '%s'", taskName)

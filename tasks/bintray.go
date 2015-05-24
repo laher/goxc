@@ -22,18 +22,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	// Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	// see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/tasks/httpc"
 	"github.com/laher/goxc/typeutils"
 )
 
@@ -159,7 +158,7 @@ func runTaskBintray(tp TaskParams) error {
 	if err != nil {
 		return err
 	}
-	err = runTemplate(reportFilename, templateFile, templateText, out, report, format)
+	err = RunTemplate(reportFilename, templateFile, templateText, out, report, format)
 	if err != nil {
 		return err
 	}
@@ -249,14 +248,15 @@ func walkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename string
 			text = "executable"
 		}
 	*/
+	//PUT /content/:subject/:repo/:package/:version/:path
 	url := apiHost + "/content/" + subject + "/" + repository + "/" + pkg + "/" + tp.Settings.GetFullVersionName() + "/" + relativePath
 	// for some reason there's no /pkg/ level in the downloads url.
 	downloadsUrl := downloadsHost + "/content/" + subject + "/" + repository + "/" + relativePath + "?direct"
-	contentType := getContentType(text)
-	resp, err := uploadFile("PUT", url, subject, user, apikey, fullPath, relativePath, contentType, !tp.Settings.IsQuiet())
+	contentType := httpc.GetContentType(text)
+	resp, err := httpc.UploadFile("PUT", url, subject, user, apikey, fullPath, relativePath, contentType, !tp.Settings.IsQuiet())
 	if err != nil {
-		if serr, ok := err.(httpError); ok {
-			if serr.statusCode == 409 {
+		if serr, ok := err.(httpc.HttpError); ok {
+			if serr.StatusCode == 409 {
 				//conflict. skip
 				//continue but dont publish.
 				//TODO - provide an option to replace existing artifact
@@ -282,7 +282,7 @@ func walkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename string
 	if format == "markdown" {
 		text = strings.Replace(text, "_", "\\_", -1)
 	}
-	category := getCategory(relativePath)
+	category := GetCategory(relativePath)
 	download := BtDownload{text, downloadsUrl}
 	v, ok := report.Categories[category]
 	var existing []BtDownload
@@ -302,42 +302,15 @@ func walkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename string
 	return err
 }
 
-func getContentType(text string) string {
-	contentType := "text/plain"
-	if strings.HasSuffix(text, ".zip") {
-		contentType = "application/zip"
-	} else if strings.HasSuffix(text, ".deb") {
-		contentType = "application/vnd.debian.binary-package"
-	} else if strings.HasSuffix(text, ".tar.gz") {
-		contentType = "application/x-gzip"
-	}
-	return contentType
-}
-
 func publish(apihost, user, apikey, subject, repository, pkg, version string, isVerbose bool) error {
-	resp, err := doHttp("POST", apihost+"/content/"+subject+"/"+repository+"/"+pkg+"/"+version+"/publish", subject, user, apikey, "", nil, 0, isVerbose)
+	resp, err := httpc.DoHttp("POST", apihost+"/content/"+subject+"/"+repository+"/"+pkg+"/"+version+"/publish", subject, user, apikey, "", nil, 0, isVerbose)
 	if err == nil {
 		log.Printf("Version published. %v", resp)
 	}
 	return err
 }
 
-//PUT /content/:subject/:repo/:package/:version/:path
-func uploadFile(method, url, subject, user, apikey, fullPath, relativePath, contentType string, isVerbose bool) (map[string]interface{}, error) {
-	file, err := os.Open(fullPath)
-	if err != nil {
-		log.Printf("Error reading file for upload: %v", err)
-		return nil, err
-	}
-	defer file.Close()
-	fi, err := file.Stat()
-	if err != nil {
-		log.Printf("Error statting file for upload: %v", err)
-		return nil, err
-	}
-	resp, err := doHttp(method, url, subject, user, apikey, contentType, file, fi.Size(), isVerbose)
-	return resp, err
-}
+
 
 //NOTE: not necessary.
 //POST /packages/:subject/:repo/:package/versions
@@ -349,78 +322,13 @@ func createVersion(apihost, user, apikey, subject, repository, pkg, version stri
 	}
 	requestLength := len(requestData)
 	reader := bytes.NewReader(requestData)
-	resp, err := doHttp("POST", apihost+"/packages/"+subject+"/"+repository+"/"+pkg+"/versions", subject, user, apikey, "", reader, int64(requestLength), isVerbose)
+	resp, err := httpc.DoHttp("POST", apihost+"/packages/"+subject+"/"+repository+"/"+pkg+"/versions", subject, user, apikey, "", reader, int64(requestLength), isVerbose)
 	if err == nil {
 		if isVerbose {
 			log.Printf("Created new version. %v", resp)
 		}
 	}
 	return err
-}
-
-type httpError struct {
-	statusCode int
-	message    string
-}
-
-func (e httpError) Error() string {
-	return fmt.Sprintf("Error code: %d, message: %s", e.statusCode, e.message)
-}
-
-func doHttp(method, url, _deprecated, user, apikey, contentType string, requestReader io.Reader, requestLength int64, isVerbose bool) (map[string]interface{}, error) {
-	client := &http.Client{}
-	req, err := http.NewRequest(method, url, requestReader)
-	if err != nil {
-		return nil, err
-	}
-	req.SetBasicAuth(user, apikey)
-	if requestLength > 0 {
-		if isVerbose {
-			log.Printf("Adding Header - Content-Length: %s", strconv.FormatInt(requestLength, 10))
-		}
-		req.ContentLength = requestLength
-	}
-	if contentType != "" {
-		if isVerbose {
-			log.Printf("Adding Header - Content-Type: %s", contentType)
-		}
-
-		req.Header.Add("Content-Type", contentType)
-	}
-	//log.Printf("req: %v", req)
-		if isVerbose {
-			log.Printf("%s to %s", method, url)
-		}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	if isVerbose {
-		log.Printf("Http response received")
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	resp.Body.Close()
-
-	//200 is OK, 201 is Created, etc
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		log.Printf("Error code: %s", resp.Status)
-		log.Printf("Error body: %s", body)
-		return nil, httpError{resp.StatusCode, resp.Status}
-	}
-	if isVerbose {
-		log.Printf("Response status: '%s', Body: %s", resp.Status, body)
-	}
-	var b map[string]interface{}
-	if len(body) > 0 {
-		err = json.Unmarshal(body, &b)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return b, err
 }
 
 func getVersions(apihost, apikey, subject, repository, pkg string, isVerbose bool) ([]string, error) {

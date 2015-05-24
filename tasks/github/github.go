@@ -1,4 +1,4 @@
-package tasks
+package github
 
 /*
    Copyright 2013 Am Laher
@@ -30,14 +30,15 @@ import (
 	// Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	// see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/tasks"
+	"github.com/laher/goxc/tasks/httpc"
 )
 
-const TASK_PUBLISH_GITHUB = "publish-github"
 
 //runs automatically
 func init() {
-	Register(Task{
-		TASK_PUBLISH_GITHUB,
+	tasks.Register(tasks.Task{
+		tasks.TASK_PUBLISH_GITHUB,
 		"Upload artifacts to github.com, and generate a local markdown page of links (github project details required in goxc config. See `goxc -h publish-github`)",
 		runTaskPubGH,
 		map[string]interface{}{"owner": "", "apikey": "", "repository": "",
@@ -79,12 +80,12 @@ type GhReport struct {
 	ExtraVars  map[string]interface{}
 }
 */
-func runTaskPubGH(tp TaskParams) error {
-	owner := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "owner")
-	apikey := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "apikey")
-	repository := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "repository")
-	apiHost := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "apihost")
-	//downloadsHost := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "downloadshost")
+func runTaskPubGH(tp tasks.TaskParams) error {
+	owner := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "owner")
+	apikey := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "apikey")
+	repository := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "repository")
+	apiHost := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "apihost")
+	//downloadsHost := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "downloadshost")
 	versionDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
 
 	missing := []string{}
@@ -104,10 +105,10 @@ func runTaskPubGH(tp TaskParams) error {
 	if len(missing) > 0 {
 		return errors.New(fmt.Sprintf("github configuration missing (%v)", missing))
 	}
-	outFilename := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "downloadspage")
-	templateText := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "templateText")
-	templateFile := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "templateFile")
-	format := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "outputFormat")
+	outFilename := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "downloadspage")
+	templateText := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "templateText")
+	templateFile := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "templateFile")
+	format := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "outputFormat")
 	if format == "by-file-extension" {
 		if strings.HasSuffix(outFilename, ".md") || strings.HasSuffix(outFilename, ".markdown") {
 			format = "markdown"
@@ -118,7 +119,7 @@ func runTaskPubGH(tp TaskParams) error {
 			format = ""
 		}
 	}
-	templateVars := tp.Settings.GetTaskSettingMap(TASK_DOWNLOADS_PAGE, "templateExtraVars")
+	templateVars := tp.Settings.GetTaskSettingMap(tasks.TASK_DOWNLOADS_PAGE, "templateExtraVars")
 	reportFilename := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName(), outFilename)
 	_, err := os.Stat(filepath.Dir(reportFilename))
 	if err != nil {
@@ -128,12 +129,12 @@ func runTaskPubGH(tp TaskParams) error {
 			return err
 		}
 	}
-	prefix := tp.Settings.GetTaskSettingString(TASK_TAG, "prefix")
+	prefix := tp.Settings.GetTaskSettingString(tasks.TASK_TAG, "prefix")
 	tagName := prefix + tp.Settings.GetFullVersionName()
 	err = createRelease(apiHost, owner, apikey, repository, tagName, tp.Settings.GetFullVersionName(), tp.Settings.IsVerbose())
 	if err != nil {
-		if serr, ok := err.(httpError); ok {
-			if serr.statusCode == 422 {
+		if serr, ok := err.(httpc.HttpError); ok {
+			if serr.StatusCode == 422 {
 				//existing release. ignore.
 				if !tp.Settings.IsQuiet() {
 					log.Printf("Note: release already exists. %v", serr)
@@ -145,14 +146,14 @@ func runTaskPubGH(tp TaskParams) error {
 			return err
 		}
 	}
-	report := BtReport{tp.AppName, tp.Settings.GetFullVersionName(), map[string]*[]BtDownload{}, templateVars}
+	report := tasks.BtReport{tp.AppName, tp.Settings.GetFullVersionName(), map[string]*[]tasks.BtDownload{}, templateVars}
 	flags := os.O_WRONLY | os.O_TRUNC | os.O_CREATE
 	out, err := os.OpenFile(reportFilename, flags, 0600)
 	if err != nil {
 		return err
 	}
 	defer out.Close()
-	//	fileheader := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "fileheader")
+	//	fileheader := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "fileheader")
 	//if fileheader != "" {
 	//_, err = fmt.Fprintf(f, "%s\n\n", fileheader)
 	//}
@@ -168,7 +169,7 @@ func runTaskPubGH(tp TaskParams) error {
 	if err != nil {
 		return err
 	}
-	err = runTemplate(reportFilename, templateFile, templateText, out, report, format)
+	err = tasks.RunTemplate(reportFilename, templateFile, templateText, out, report, format)
 	if err != nil {
 		return err
 	}
@@ -176,22 +177,22 @@ func runTaskPubGH(tp TaskParams) error {
 	return out.Close()
 }
 
-func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename string, dirs []string, tp TaskParams, format string, report BtReport) error {
+func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename string, dirs []string, tp tasks.TaskParams, format string, report tasks.BtReport) error {
 	if fi2.IsDir() || fi2.Name() == reportFilename {
 
 		return nil
 	}
-	owner := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "owner")
-	user := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "user")
+	owner := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "owner")
+	user := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "user")
 	if user == "" {
 		user = owner
 	}
-	apikey := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "apikey")
-	repository := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "repository")
-	apiHost := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "apihost")
-	downloadsHost := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "downloadshost")
-	includeResources := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "include")
-	excludeResources := tp.Settings.GetTaskSettingString(TASK_PUBLISH_GITHUB, "exclude")
+	apikey := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "apikey")
+	repository := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "repository")
+	apiHost := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "apihost")
+	downloadsHost := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "downloadshost")
+	includeResources := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "include")
+	excludeResources := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "exclude")
 	versionDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
 
 	relativePath := strings.Replace(fullPath, versionDir, "", -1)
@@ -259,7 +260,7 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 	*/
 	version := tp.Settings.GetFullVersionName()
 	isquiet := tp.Settings.IsQuiet()
-	contentType := getContentType(text)
+	contentType := httpc.GetContentType(text)
 	err = ghDoUpload(apiHost, apikey, owner, repository, version, relativePath, fullPath, contentType, isquiet)
 	if first {
 		first = false
@@ -269,14 +270,14 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 	if format == "markdown" {
 		text = strings.Replace(text, "_", "\\_", -1)
 	}
-	category := getCategory(relativePath)
+	category := tasks.GetCategory(relativePath)
 	// for some reason there's no /pkg/ level in the downloads url.
 	downloadsUrl := downloadsHost + "/content/" + owner + "/" + repository + "/" + relativePath + "?direct"
-	download := BtDownload{text, downloadsUrl}
+	download := tasks.BtDownload{text, downloadsUrl}
 	v, ok := report.Categories[category]
-	var existing []BtDownload
+	var existing []tasks.BtDownload
 	if !ok {
-		existing = []BtDownload{}
+		existing = []tasks.BtDownload{}
 	} else {
 		existing = *v
 	}
@@ -293,10 +294,10 @@ func ghDoUpload(apiHost, apikey, owner, repository, version, relativePath, fullP
 	if !isQuiet {
 		log.Printf("Uploading to %v", url)
 	}
-	resp, err := uploadFile("POST", url, repository, owner, apikey, fullPath, relativePath, contentType, !isQuiet)
+	resp, err := httpc.UploadFile("POST", url, repository, owner, apikey, fullPath, relativePath, contentType, !isQuiet)
 	if err != nil {
-		if serr, ok := err.(httpError); ok {
-			if serr.statusCode == 409 {
+		if serr, ok := err.(httpc.HttpError); ok {
+			if serr.StatusCode == 409 {
 				//conflict. skip
 				//continue but dont publish.
 				//TODO - provide an option to replace existing artifact
@@ -327,7 +328,7 @@ func ghDoUpload(apiHost, apikey, owner, repository, version, relativePath, fullP
 
 /*
 func ghPublish(apihost, user, apikey, owner, repository, version string, isVerbose bool) error {
-	resp, err := doHttp("POST", apihost+"/content/"+owner+"/"+repository+"/"+pkg+"/"+version+"/publish", owner, user, apikey, nil, 0, isVerbose)
+	resp, err := httpc.DoHttp("POST", apihost+"/content/"+owner+"/"+repository+"/"+pkg+"/"+version+"/publish", owner, user, apikey, nil, 0, isVerbose)
 	if err == nil {
 		log.Printf("Version published. %v", resp)
 	}
@@ -345,7 +346,7 @@ func createRelease(apihost, owner, apikey, repo, tagName, version string, isVerb
 	}
 	requestLength := len(requestData)
 	reader := bytes.NewReader(requestData)
-	resp, err := doHttp("POST", apihost+"/repos/"+owner+"/"+repo+"/releases", owner, owner, apikey, "", reader, int64(requestLength), isVerbose)
+	resp, err := httpc.DoHttp("POST", apihost+"/repos/"+owner+"/"+repo+"/releases", owner, owner, apikey, "", reader, int64(requestLength), isVerbose)
 	if err == nil {
 		if isVerbose {
 			log.Printf("Created new version. %v", resp)

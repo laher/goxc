@@ -95,13 +95,13 @@ func runTaskDownloadsPage(tp TaskParams) error {
 	if err != nil {
 		return err
 	}
-	err = runTemplate(reportFilename, templateFile, templateText, out, report, format)
+	err = RunTemplate(reportFilename, templateFile, templateText, out, report, format)
 	if err != nil {
 		return err
 	}
 	return out.Close()
 }
-func runTemplate(reportFilename, templateFile, templateText string, out *os.File, data interface{}, format string) (err error) {
+func RunTemplate(reportFilename, templateFile, templateText string, out *os.File, data interface{}, format string) (err error) {
 	var tmpl *template.Template
 	var htmpl *htemplate.Template
 	if templateFile != "" {
@@ -132,7 +132,7 @@ func runTemplate(reportFilename, templateFile, templateText string, out *os.File
 	return err
 }
 
-func getCategory(relativePath string) string {
+func GetCategory(relativePath string) string {
 	category := "Other files"
 	if strings.Contains(relativePath, "linux") || strings.HasSuffix(relativePath, ".deb") {
 		category = "Linux"
@@ -164,7 +164,7 @@ func downloadsWalkFunc(fullPath string, Version string, fi2 os.FileInfo, err err
 	if format == "markdown" {
 		text = strings.Replace(text, "_", "\\_", -1)
 	}
-	category := getCategory(relativePath)
+	category := GetCategory(relativePath)
 
 	//log.Printf("Adding: %s", relativePath)
 	download := Download{text, Version, relativePath}

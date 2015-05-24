@@ -1,8 +1,10 @@
-package tasks
+package github
 
 import (
 	"os"
 	"testing"
+	"github.com/laher/goxc/tasks"
+	"github.com/laher/goxc/tasks/httpc"
 )
 
 var (
@@ -23,7 +25,7 @@ func TestCreateRelease(t *testing.T) {
 	}
 }
 func TestGetRelease(t *testing.T) {
-	_, err := doHttp("GET", apihost+"/repos/"+owner+"/"+repo+"/releases", "", owner, apikey, "", nil, 0, isVerbose)
+	_, err := httpc.DoHttp("GET", apihost+"/repos/"+owner+"/"+repo+"/releases", "", owner, apikey, "", nil, 0, isVerbose)
 	if err != nil {
 		t.Errorf("Error getting release %v", err)
 	}
@@ -49,8 +51,8 @@ func TestGhWalkFunc(t *testing.T) {
 	var errIn error
 	reportFilename := ""
 	dirs := []string{}
-	var tp TaskParams
-	var report BtReport
+	var tp tasks.TaskParams
+	var report tasks.BtReport
 	format := ""
 	err := ghWalkFunc(fullPath, fi2, errIn, reportFilename, dirs, tp, format, report)
 	if err != nil {
