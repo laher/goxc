@@ -9,7 +9,7 @@
 	],
 	"ResourcesInclude": "README.md,.\\_test1/*,_test2",
 	"ResourcesExclude": "*.go",
-	"PackageVersion": "0.16.1",
+	"PackageVersion": "0.16.2",
 	"TaskSettings": {
 		"archive-zip": {},
 		"bintray": {
@@ -38,13 +38,13 @@
 			"filename": "index.md",
 			"templateFile": "downloads.tpl"
 		},
+		"go-test": {
+			"i": true,
+			"short": true
+		},
 		"publish-github": {
 			"owner": "laher",
 			"repository": "goxc"
-		},
-		"go-test": {
-			"short": true,
-			"i": true
 		},
 		"xc": {
 			"test-setting": "test-value"
