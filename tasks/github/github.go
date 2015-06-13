@@ -218,7 +218,8 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 	if err != nil {
 		return err
 	}
-	err = ghDoUpload(apiHost, apikey, owner, repository, release, relativePath, fullPath, contentType, isquiet)
+	uploadApiHost := "https://uploads.github.com"
+	err = ghDoUpload(uploadApiHost, apikey, owner, repository, release, relativePath, fullPath, contentType, isquiet)
 	if err != nil {
 		return err
 	}
