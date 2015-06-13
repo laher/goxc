@@ -36,17 +36,11 @@ func TestGetTagRelease(t *testing.T) {
 	if *apikey == "" {
 		t.Skip("api-key is required to run this integration test")
 	}
-	r, err := httpc.DoHttp("GET", apihost+"/repos/"+owner+"/"+repo+"/releases/tags/"+tagName, "", owner, *apikey, "", nil, 0, isVerbose)
+	id, err := ghGetReleaseForTag(apihost, owner, *apikey, repo, tagName, isVerbose)
 	if err != nil {
 		t.Errorf("Error getting release %v", err)
 	}
-	i, err := httpc.ParseMap(r, isVerbose)
-	if err != nil {
-		t.Errorf("Error getting release %v", err)
-	}
-	id := i["id"]
-	name := i["name"]
-	t.Logf("ID: %0.f  Name: %s", id, name)
+	t.Logf("ID: %s", id)
 }
 
 func TestGetReleases(t *testing.T) {

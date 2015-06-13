@@ -34,6 +34,7 @@ import (
 	"github.com/laher/goxc/core"
 	"github.com/laher/goxc/platforms"
 	"github.com/laher/goxc/tasks"
+	_ "github.com/laher/goxc/tasks/github"
 )
 
 const (
