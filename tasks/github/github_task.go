@@ -10,11 +10,11 @@ func init() {
 		RunTaskPubGH,
 		map[string]interface{}{"owner": "", "apikey": "", "repository": "",
 			"apihost":       "https://api.github.com",
-			"downloadshost": "https://dl.github.com/",
+			"downloadshost": "https://github.com/",
 			"downloadspage": "github.md",
 			"fileheader":    "---\nlayout: default\ntitle: Downloads\n---\nFiles hosted at [github.com](https://github.com)\n\n",
 			"include":       "*.zip,*.tar.gz,*.deb",
-			"exclude":       "github.md",
+			"exclude":       "github.md,.goxc-temp",
 			"outputFormat":  "by-file-extension", // use by-file-extension, markdown or html
 			"templateText": `---
 layout: default

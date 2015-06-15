@@ -130,9 +130,31 @@ func RunTaskPubGH(tp tasks.TaskParams) error {
 	//close explicitly for return value
 	return out.Close()
 }
-func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename string, dirs []string, tp tasks.TaskParams, format string, report tasks.BtReport) error {
-	if fi2.IsDir() || fi2.Name() == reportFilename {
 
+func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename string, dirs []string, tp tasks.TaskParams, format string, report tasks.BtReport) error {
+	excludeResources := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "exclude")
+	excludeGlobs := core.ParseCommaGlobs(excludeResources)
+	versionDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
+	relativePath := strings.Replace(fullPath, versionDir, "", -1)
+	relativePath = strings.TrimPrefix(relativePath, "/")
+	fmt.Printf("relative path %s, full path %s\n", relativePath, fullPath)
+	if fi2.IsDir() {
+		//check globs ...
+		for _, excludeGlob := range excludeGlobs {
+			ok, err := filepath.Match(excludeGlob, fi2.Name())
+			if err != nil {
+				return err
+			}
+			if ok {
+				if !tp.Settings.IsQuiet() {
+					log.Printf("Excluded: %s (pattern %v)", relativePath, excludeGlob)
+				}
+				return filepath.SkipDir
+			}
+		}
+		return nil
+	}
+	if fi2.Name() == reportFilename {
 		return nil
 	}
 	owner := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "owner")
@@ -143,18 +165,12 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 	apikey := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "apikey")
 	repository := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "repository")
 	apiHost := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "apihost")
+	uploadApiHost := "https://uploads.github.com"
 	downloadsHost := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "downloadshost")
 	includeResources := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "include")
-	excludeResources := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "exclude")
-	versionDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
-
-	relativePath := strings.Replace(fullPath, versionDir, "", -1)
-	relativePath = strings.TrimPrefix(relativePath, "/")
-	fmt.Printf("relative path %s, full path %s\n", relativePath, fullPath)
 
 	resourceGlobs := core.ParseCommaGlobs(includeResources)
 	//log.Printf("IncludeGlobs: %v", resourceGlobs)
-	excludeGlobs := core.ParseCommaGlobs(excludeResources)
 	//log.Printf("ExcludeGlobs: %v", excludeGlobs)
 	matches := false
 	for _, resourceGlob := range resourceGlobs {
@@ -199,18 +215,6 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 	}
 	//fmt.Printf("relative path %s, platform %s\n", relativePath, parent)
 	text := fi2.Name()
-	/*
-		text := strings.Replace(fi2.Name(), "_", "\\_", -1)
-		if strings.HasSuffix(fi2.Name(), ".zip") {
-			text = "zip"
-		} else if strings.HasSuffix(fi2.Name(), ".deb") {
-			text = "deb"
-		} else if strings.HasSuffix(fi2.Name(), ".tar.gz") {
-			text = "tar.gz"
-		} else if fi2.Name() == tp.AppName || fi2.Name() == tp.AppName+".exe" {
-			text = "executable"
-		}
-	*/
 	version := tp.Settings.GetFullVersionName()
 	isquiet := tp.Settings.IsQuiet()
 	contentType := httpc.GetContentType(text)
@@ -218,7 +222,6 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 	if err != nil {
 		return err
 	}
-	uploadApiHost := "https://uploads.github.com"
 	err = ghDoUpload(uploadApiHost, apikey, owner, repository, release, relativePath, fullPath, contentType, isquiet)
 	if err != nil {
 		return err
@@ -232,8 +235,7 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 		text = strings.Replace(text, "_", "\\_", -1)
 	}
 	category := tasks.GetCategory(relativePath)
-	// for some reason there's no /pkg/ level in the downloads url.
-	downloadsUrl := downloadsHost + "/content/" + owner + "/" + repository + "/" + relativePath + "?direct"
+	downloadsUrl := downloadsHost + "/" + owner + "/" + repository + "/releases/download/" + version + "/" + relativePath + ""
 	download := tasks.BtDownload{text, downloadsUrl}
 	v, ok := report.Categories[category]
 	var existing []tasks.BtDownload
