@@ -115,15 +115,9 @@ func buildToolchain(goos string, arch string, settings *config.Settings) error {
 		log.Printf("Invoking '%v' from %s", executils.PrintableArgs(cmd.Args), cmd.Dir)
 	}
 	executils.RedirectIO(cmd)
-	err := cmd.Start()
+	err := executils.StartAndWait(cmd)
 	if err != nil {
-		log.Printf("Build toolchain: Launch error: %s", err)
-		return err
-	}
-	err = cmd.Wait()
-	if err != nil {
-		log.Printf("Build Toolchain: wait error: %s", err)
-		return err
+		log.Printf("Build toolchain: %s", err)
 	}
 	if settings.IsVerbose() {
 		log.Printf("Complete")

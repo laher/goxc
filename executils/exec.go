@@ -233,20 +233,14 @@ func InvokeGo(workingDirectory string, subCmd string, subCmdArgs []string, env [
 	if settings.IsVerbose() {
 		log.Printf("invoking '%s %v' from '%s'", cmdPath, PrintableArgs(args), workingDirectory)
 	}
-	err = cmd.Start()
+
+	err = StartAndWait(cmd)
 	if err != nil {
-		log.Printf("Launch error: %s", err)
+		log.Printf("'go' returned error: %s", err)
 		return err
-	} else {
-		err = cmd.Wait()
-		if err != nil {
-			log.Printf("'go' returned error: %s", err)
-			return err
-		} else {
-			if settings.IsVerbose() {
-				log.Printf("'go' completed successfully")
-			}
-		}
+	}
+	if settings.IsVerbose() {
+		log.Printf("'go' completed successfully")
 	}
 	return nil
 
@@ -265,6 +259,31 @@ func PrepareCmd(cmd *exec.Cmd, workingDirectory string, args []string, env []str
 	cmd.Dir = workingDirectory
 	cmd.Env = CombineActualEnv(append(cmd.Env, env...), isVeryVerbose)
 	return nil
+}
+
+// StartAndWait starts the given command and waits for it to exit.  If the
+// command started successfully but exited with an error, any output to stderr
+// is included in the error message.
+func StartAndWait(cmd *exec.Cmd) error {
+	stderr := &bytes.Buffer{}
+	if cmd.Stderr == nil {
+		cmd.Stderr = stderr
+	} else {
+		cmd.Stderr = io.MultiWriter(cmd.Stderr, stderr)
+	}
+	err := cmd.Start()
+	if err != nil {
+		return fmt.Errorf("Launch error: %s", err)
+	} else {
+		err = cmd.Wait()
+		if err != nil {
+			if stderr.Len() > 0 {
+				return fmt.Errorf("Wait error: %s: %s", err, strings.TrimSpace(stderr.String()))
+			}
+			return fmt.Errorf("Wait error: %s", err)
+		}
+		return err
+	}
 }
 
 func CombineActualEnv(env []string, isVeryVerbose bool) []string {
