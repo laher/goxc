@@ -64,12 +64,13 @@ goxc requires the go source and the go toolchain.
 
 		go get github.com/laher/goxc
 			
- 3. a. *Optional*: to pre-build the toolchains for all platforms:
+ 3. a. (just once per Go version): to pre-build the toolchains for all platforms:
 
 		goxc -t
 
 
-	* Note that this step is now optional, because goxc now builds/rebuilds the cross-compiler toolchains automatically, as necessary). 
+	* Note that rebuilding the toolchain is only required for Go up until v1.4. This step will become unnecessary in Go 1.5.
+	* Note that, until goxc v0.16.0, rebuilding the toolchain was triggered automatically. This has now been switched off (by default). Automatic rebuilding was causing a number of subtle bugs for different users, and has been switched off since v0.16.0.
 	* Also note that building the toolchain takes a while. Cross-compilation itself is quite fast.
 
 Basic Usage
