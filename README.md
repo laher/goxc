@@ -158,32 +158,32 @@ Github Releases
 
 This is the good stuff, so let’s go from the top.
 
-# *First, install Go from source. See above*
+ * *First, install Go from source. See above*
 
-# If you haven’t already, build toolchain (all platforms!). This takes a while.
+ * If you haven’t already, build toolchain (all platforms!). This takes a while.
 
     goxc -t
 
-# Write a config file with info about your repo
+ * Write a config file with info about your repo
 
     goxc -wc default publish-github -owner=<username> 
     goxc -wc default publish-github -repository=<reponame>
     cat .goxc.json
 
-# Bump a version, to get a meaningful version number.
+ * Bump a version, to get a meaningful version number.
 
     goxc bump
 
-# *Go to your github account and create a personal access token*
+ * *Go to your github account and create a personal access token*
 
 [https://github.com/settings/tokens](https://github.com/settings/tokens)
 
-# Write a local config file with your key info. Note that you can put a dummy key into the commandline and edit the file later with the real key.
+ * Write a local config file with your key info. Note that you can put a dummy key into the commandline and edit the file later with the real key.
 
     goxc -wcl default publish-github -apikey=123456789012
     echo “.goxc.local.json” >> .gitignore
 
-# Now, cross-compile, package and upload. All in one go.
+ * Now, cross-compile, package and upload. All in one go.
 
     goxc
 
