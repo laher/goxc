@@ -184,12 +184,14 @@ This is the good stuff, so let’s go from the top.
 
 [https://github.com/settings/tokens](https://github.com/settings/tokens)
 
- * Write a local config file with your key info. Note that you can put a dummy key into the commandline and edit the file later with the real key.
+ * Write a local config file with your key info, ensuring that the key doesn’t end up in your git repo. 
 
 ```
 	goxc -wcl default publish-github -apikey=123456789012
 	echo “.goxc.local.json” >> .gitignore
 ```
+
+*Note that you can put a dummy key into the commandline and edit the file later with the real key.*
 
  * Now, cross-compile, package and upload. All in one go.
 
