@@ -26,6 +26,7 @@ import (
 	// see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/config"
 	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/executils"
 	"github.com/laher/goxc/platforms"
 )
 
@@ -82,11 +83,6 @@ func codesignPlat(goos, arch string, binPath string, settings *config.Settings) 
 func signBinary(binPath string, id string) error {
 	cmd := exec.Command("codesign")
 	cmd.Args = append(cmd.Args, "-s", id, binPath)
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-	if err := cmd.Wait(); err != nil {
-		return err
-	}
-	return nil
+
+	return executils.StartAndWait(cmd)
 }

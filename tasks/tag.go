@@ -49,13 +49,7 @@ func tag(tp TaskParams) error {
 		if err != nil {
 			return err
 		}
-		err = cmd.Start()
-		if err != nil {
-			return err
-		} else {
-			err = cmd.Wait()
-			return err
-		}
+		return executils.StartAndWait(cmd)
 	} else {
 		return errors.New("Only 'git' is supported at this stage")
 	}
