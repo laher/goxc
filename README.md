@@ -4,17 +4,18 @@ goxc  [![build status](http://img.shields.io/travis/laher/goxc.svg)](https://tra
 [goxc](https://github.com/laher/goxc) is a build tool for Go, with a focus on cross-compiling and packaging.
 
 
-By default, goxc [g]zips (& .debs for Linux) the programs, and generates a 'downloads page' in markdown (with a Jekyll header). Goxc also provides integration with [bintray.com](https://bintray.com) for simple uploads.
+By default, goxc [g]zips (& .debs for Linux) the programs, and generates a 'downloads page' in markdown (with a Jekyll header).
 
 goxc is written in Go but uses *os.exec* to call 'go build' with the appropriate flags & env variables for each supported platform.
 
 goxc was inspired by Dave Cheney's Bash script [golang-crosscompile](https://github.com/davecheney/golang-crosscompile).
-BUT, goxc crosscompiles to all platforms at once. The artifacts are saved into a directory structure along with a markdown file of relative links.
 
-Thanks to [dchest](https://github.com/dchest) for the tidy-up and adding the zip feature, and [matrixik](https://bitbucket.org/matrixik) for his improvements and input. Thanks also to all the helpful issue reporters.
+ * goxc crosscompiles to all platforms at once. 
+ * The artifacts are saved into a directory structure along with a markdown file of relative links.
+ * Artifacts are packaged as zips, tgzs, or debs. Defaults for each OS/architecture.
+ * AND, goxc can now upload your files to github releases OR bintray.com. 
+ * **See ‘Github Releases’ section below.**
 
-**NOTE: Version 0.8.5 no longer supports go1.0. If you want go1.0 support please use goxc version 0.8.4 (see the git tag 'v0.8.4')**
-*the reason why I dropped go1.0 support is mentioned in issue #16*
 
 Notable Features
 ----------------
@@ -34,6 +35,7 @@ Notable Features
  * Packaging & distribution
  	* Zip (or tar.gz) archiving of cross-compiled artifacts & accompanying resources (READMEs etc)
  	* Packaging into .debs (for Debian/Ubuntu Linux)
+    * Upload to github.com releases.
  	* bintray.com integration (deploys binaries to bintray.com). *bintray.com registration required*
  	* 'downloads page' generation (markdown/html format; templatable).
  * Versioning:
@@ -150,10 +152,47 @@ You can also use multiple config files to support different paremeters for each 
 
 The configuration file(s) feature is documented in much more detail in [the wiki](https://github.com/laher/goxc/wiki/config)
 
+
+Github Releases
+---------------
+
+This is the good stuff, so let’s go from the top.
+
+# *First, install Go from source. See above*
+
+# If you haven’t already, build toolchain (all platforms!). This takes a while.
+
+    goxc -t
+
+# Write a config file with info about your repo
+
+    goxc -wc default publish-github -owner=<username> 
+    goxc -wc default publish-github -repository=<reponame>
+    cat .goxc.json
+
+# Bump a version, to get a meaningful version number.
+
+    goxc bump
+
+# *Go to your github account and create a personal access token*
+
+[https://github.com/settings/tokens](https://github.com/settings/tokens)
+
+# Write a local config file with your key info. Note that you can put a dummy key into the commandline and edit the file later with the real key.
+
+    goxc -wcl default publish-github -apikey=123456789012
+    echo “.goxc.local.json” >> .gitignore
+
+# Now, cross-compile, package and upload. All in one go.
+
+    goxc
+
+There’s heaps of ways to reconfigure each task to get the outcome you really want, but this produces some pretty sensible defaults. Have fun.
+
 Limitations
 -----------
 
- * Tested on Linux, Windows (and Mac during an early version). Please test on Mac and \*BSD
+ * Tested on Linux and Mac recently. Windows - some time ago now.
  * Currently goxc is only designed to build standalone Go apps without linked libraries. You can try but YMMV
  * The *API* is not considered stable yet, so please don't start embedding goxc method calls in your code yet - unless you 'Contact us' first! Then I can freeze some API details as required.
  * Bug: issue with config overriding. Empty strings do not currently override non-empty strings. e.g. `-pi=""` doesnt override the associated config setting PackageInfo
@@ -177,8 +216,6 @@ License
 
 See also
 --------
- * [Changelog](https://github.com/laher/goxc/wiki/changelog)
  * [Package Versioning](https://github.com/laher/goxc/wiki/versioning)
  * [Wiki home](https://github.com/laher/goxc/wiki)
  * [Contributions](https://github.com/laher/goxc/wiki/contributions)
- * [TODOs](https://github.com/laher/goxc/wiki/todo)
