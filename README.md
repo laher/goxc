@@ -162,17 +162,17 @@ This is the good stuff, so let’s go from the top.
 
  * If you haven’t already, build toolchain (all platforms!). This takes a while.
 
-    goxc -t
+	goxc -t
 
  * Write a config file with info about your repo
 
-    goxc -wc default publish-github -owner=<username> 
-    goxc -wc default publish-github -repository=<reponame>
-    cat .goxc.json
+	goxc -wc default publish-github -owner=<username> 
+	goxc -wc default publish-github -repository=<reponame>
+	cat .goxc.json
 
  * Bump a version, to get a meaningful version number.
 
-    goxc bump
+	goxc bump
 
  * *Go to your github account and create a personal access token*
 
@@ -180,12 +180,12 @@ This is the good stuff, so let’s go from the top.
 
  * Write a local config file with your key info. Note that you can put a dummy key into the commandline and edit the file later with the real key.
 
-    goxc -wcl default publish-github -apikey=123456789012
-    echo “.goxc.local.json” >> .gitignore
+	goxc -wcl default publish-github -apikey=123456789012
+	echo “.goxc.local.json” >> .gitignore
 
  * Now, cross-compile, package and upload. All in one go.
 
-    goxc
+	goxc
 
 There’s heaps of ways to reconfigure each task to get the outcome you really want, but this produces some pretty sensible defaults. Have fun.
 
