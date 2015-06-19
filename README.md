@@ -144,11 +144,15 @@ Configuration file
 
 For repeatable builds (and some extra options), it is recomended to use goxc with one or more configuration file(s) to save and re-run compilations.
 
-To create a config file, just use the -wc (write config) option.
+To create a config file (`.goxc.json`), just use the -wc (write config) option.
 
 	goxc -wc -d=../site/downloads -bc="linux windows" xc -GOARM=7
 
 You can also use multiple config files to support different paremeters for each platform.
+
+The following would add a 'local' config file, `.goxc.local.json`. This file's contents will override `.goxc.json`. The idea of the .local.json files is to git-ignore them - for any local parameters which you only want on this particular computer, but not for other users or even for yourself on other computers/OS's.
+
+	goxc -wlc -d=../site/downloads
 
 The configuration file(s) feature is documented in much more detail in [the wiki](https://github.com/laher/goxc/wiki/config)
 
@@ -166,7 +170,7 @@ This is the good stuff, so let’s go from the top.
 	goxc -t
 ```
 
- * Write a config file with info about your repo
+ * Write a config file `.goxc.json` with info about your repo
 
 ```
 	goxc -wc default publish-github -owner=<username> 
@@ -184,10 +188,10 @@ This is the good stuff, so let’s go from the top.
 
 [https://github.com/settings/tokens](https://github.com/settings/tokens)
 
- * Write a local config file with your key info, ensuring that the key doesn’t end up in your git repo. 
+ * Write a local config file `.goxc.local.json` with your key info, ensuring that the key doesn’t end up in your git repo. See more about config files in [the wiki](https://github.com/laher/goxc/wiki/config)
 
 ```
-	goxc -wcl default publish-github -apikey=123456789012
+	goxc -wlc default publish-github -apikey=123456789012
 	echo “.goxc.local.json” >> .gitignore
 ```
 
