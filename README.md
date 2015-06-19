@@ -188,7 +188,7 @@ This is the good stuff, so let’s go from the top.
 
 ```
 	goxc -wcl default publish-github -apikey=123456789012
-	echo “.goxc.local.json” >> .gitignore
+	echo ".goxc.local.json" >> .gitignore
 ```
 
 *Note that you can put a dummy key into the commandline and edit the file later with the real key.*
