@@ -187,7 +187,7 @@ This is the good stuff, so let’s go from the top.
  * Write a local config file with your key info, ensuring that the key doesn’t end up in your git repo. 
 
 ```
-	goxc -wcl default publish-github -apikey=123456789012
+	goxc -wlc default publish-github -apikey=123456789012
 	echo ".goxc.local.json" >> .gitignore
 ```
 
