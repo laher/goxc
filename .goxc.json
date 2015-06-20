@@ -9,7 +9,7 @@
 	],
 	"ResourcesInclude": "README.md,.\\_test1/*,_test2",
 	"ResourcesExclude": "*.go",
-	"PackageVersion": "0.16.5",
+	"PackageVersion": "0.16.7",
 	"TaskSettings": {
 		"archive-zip": {},
 		"bintray": {
@@ -44,7 +44,8 @@
 		},
 		"publish-github": {
 			"owner": "laher",
-			"repository": "goxc"
+			"repository": "goxc",
+            "pre-release": true
 		},
 		"xc": {
 			"test-setting": "test-value"

@@ -162,7 +162,7 @@ Github Releases
 
 This is the good stuff, so let’s go from the top.
 
- * *First, install Go from source. See above*
+ * *First, install Go from source, and goxc. See ‘Installation’, above*
 
  * If you haven’t already, build toolchain (all platforms!). This takes a while.
 

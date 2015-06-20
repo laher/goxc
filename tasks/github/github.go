@@ -63,6 +63,9 @@ func RunTaskPubGH(tp tasks.TaskParams) error {
 	templateText := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "templateText")
 	templateFile := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "templateFile")
 	format := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "outputFormat")
+	body := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "body")
+	preRelease := tp.Settings.GetTaskSettingBool(tasks.TASK_PUBLISH_GITHUB, "pre-release")
+	draft := tp.Settings.GetTaskSettingBool(tasks.TASK_PUBLISH_GITHUB, "draft")
 	if format == "by-file-extension" {
 		if strings.HasSuffix(outFilename, ".md") || strings.HasSuffix(outFilename, ".markdown") {
 			format = "markdown"
@@ -85,7 +88,7 @@ func RunTaskPubGH(tp tasks.TaskParams) error {
 	}
 	prefix := tp.Settings.GetTaskSettingString(tasks.TASK_TAG, "prefix")
 	tagName := prefix + tp.Settings.GetFullVersionName()
-	err = createRelease(apiHost, owner, apikey, repository, tagName, tp.Settings.GetFullVersionName(), tp.Settings.IsVerbose())
+	err = createRelease(apiHost, owner, apikey, repository, tagName, tp.Settings.GetFullVersionName(), body, draft, preRelease, tp.Settings.IsVerbose())
 	if err != nil {
 		if serr, ok := err.(httpc.HttpError); ok {
 			if serr.StatusCode == 422 {
@@ -218,7 +221,10 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 	version := tp.Settings.GetFullVersionName()
 	isquiet := tp.Settings.IsQuiet()
 	contentType := httpc.GetContentType(text)
-	release, err := ghGetReleaseForTag(apiHost, owner, apikey, repository, version, !isquiet)
+
+	prefix := tp.Settings.GetTaskSettingString(tasks.TASK_TAG, "prefix")
+	tagName := prefix + version
+	release, err := ghGetReleaseForTag(apiHost, owner, apikey, repository, tagName, !isquiet)
 	if err != nil {
 		return err
 	}
@@ -323,8 +329,8 @@ func ghPublish(apihost, user, apikey, owner, repository, version string, isVerbo
 
 //NOTE: not necessary.
 //POST /repos/:owner/:repo/releases
-func createRelease(apihost, owner, apikey, repo, tagName, version string, isVerbose bool) error {
-	req := map[string]interface{}{"tag_name": version, "name": version, "body": "built by goxc"}
+func createRelease(apihost, owner, apikey, repo, tagName, version, body string, draft, preRelease, isVerbose bool) error {
+	req := map[string]interface{}{"tag_name": tagName, "name": version, "body": body, "pre-release": preRelease, "draft": draft}
 	requestData, err := json.Marshal(req)
 	if err != nil {
 		return err
