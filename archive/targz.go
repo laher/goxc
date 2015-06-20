@@ -112,7 +112,10 @@ func addDirectoryToTarGz(dirPath ArchiveItem, tw *tar.Writer) error {
 		if err == nil {
 			for _, fi := range fis {
 				curPath := ArchiveItemFromFileSystem(filepath.Join(dirPath.FileSystemPath, fi.Name()), filepath.Join(dirPath.ArchivePath, fi.Name()))
-				addItemToTarGz(curPath, tw)
+				err = addItemToTarGz(curPath, tw)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}

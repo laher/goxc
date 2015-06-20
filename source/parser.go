@@ -167,7 +167,6 @@ func FindValue(f *ast.File, name string, toks []token.Token, isVerbose bool) *as
 	isName := false
 	isTok := false
 	value := ""
-	found := false
 	var ret *ast.BasicLit
 	ast.Inspect(f, func(n ast.Node) bool {
 		switch x := n.(type) {
@@ -186,7 +185,6 @@ func FindValue(f *ast.File, name string, toks []token.Token, isVerbose bool) *as
 					log.Printf("Found value (%s)", value)
 				}
 				ret = x
-				found = true
 				isName = false
 				return false //break out
 			}

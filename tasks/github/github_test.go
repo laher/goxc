@@ -77,7 +77,7 @@ func TestGhDoUpload(t *testing.T) {
 	relativePath := "tasks.go"
 	fullPath := "tasks.go"
 	contentType := "text/plain"
-	err := ghDoUpload(apihost, *apikey, owner, repo, version, relativePath, fullPath, contentType, false)
+	err := ghDoUpload(apihost, *apikey, owner, repo, version, relativePath, fullPath, contentType, true, false)
 	if err != nil {
 		t.Errorf("Error creating release %v", err)
 	}

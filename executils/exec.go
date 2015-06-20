@@ -83,9 +83,15 @@ func buildFlags(args map[string]interface{}, flag string) string {
 	for k, v := range args {
 		switch typedV := v.(type) {
 		case string:
-			buf.WriteString(flag + " " + k + " '" + typedV + "' ")
+			_, err := buf.WriteString(flag + " " + k + " '" + typedV + "' ")
+			if err != nil {
+				log.Printf("Error writing flags")
+			}
 		default:
-			buf.WriteString(fmt.Sprintf("%s %s '%v' ", flag, k, typedV))
+			_, err := buf.WriteString(fmt.Sprintf("%s %s '%v' ", flag, k, typedV))
+			if err != nil {
+				log.Printf("Error writing flags")
+			}
 		}
 	}
 	return buf.String()

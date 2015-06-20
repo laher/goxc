@@ -64,7 +64,7 @@ func RunTaskPubGH(tp tasks.TaskParams) error {
 	templateFile := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "templateFile")
 	format := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "outputFormat")
 	body := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "body")
-	preRelease := tp.Settings.GetTaskSettingBool(tasks.TASK_PUBLISH_GITHUB, "pre-release")
+	preRelease := tp.Settings.GetTaskSettingBool(tasks.TASK_PUBLISH_GITHUB, "prerelease")
 	draft := tp.Settings.GetTaskSettingBool(tasks.TASK_PUBLISH_GITHUB, "draft")
 	if format == "by-file-extension" {
 		if strings.HasSuffix(outFilename, ".md") || strings.HasSuffix(outFilename, ".markdown") {
@@ -103,7 +103,11 @@ func RunTaskPubGH(tp tasks.TaskParams) error {
 			return err
 		}
 	}
-	report := tasks.BtReport{tp.AppName, tp.Settings.GetFullVersionName(), map[string]*[]tasks.BtDownload{}, templateVars}
+	report := tasks.BtReport{
+		AppName:    tp.AppName,
+		Version:    tp.Settings.GetFullVersionName(),
+		Categories: map[string]*[]tasks.BtDownload{},
+		ExtraVars:  templateVars}
 	flags := os.O_WRONLY | os.O_TRUNC | os.O_CREATE
 	out, err := os.OpenFile(reportFilename, flags, 0600)
 	if err != nil {
@@ -219,16 +223,17 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 	//fmt.Printf("relative path %s, platform %s\n", relativePath, parent)
 	text := fi2.Name()
 	version := tp.Settings.GetFullVersionName()
-	isquiet := tp.Settings.IsQuiet()
+	isVerbose := tp.Settings.IsVerbose()
+	isQuiet := tp.Settings.IsQuiet()
 	contentType := httpc.GetContentType(text)
 
 	prefix := tp.Settings.GetTaskSettingString(tasks.TASK_TAG, "prefix")
 	tagName := prefix + version
-	release, err := ghGetReleaseForTag(apiHost, owner, apikey, repository, tagName, !isquiet)
+	release, err := ghGetReleaseForTag(apiHost, owner, apikey, repository, tagName, isVerbose)
 	if err != nil {
 		return err
 	}
-	err = ghDoUpload(uploadApiHost, apikey, owner, repository, release, relativePath, fullPath, contentType, isquiet)
+	err = ghDoUpload(uploadApiHost, apikey, owner, repository, release, relativePath, fullPath, contentType, isVerbose, isQuiet)
 	if err != nil {
 		return err
 	}
@@ -242,7 +247,7 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 	}
 	category := tasks.GetCategory(relativePath)
 	downloadsUrl := downloadsHost + "/" + owner + "/" + repository + "/releases/download/" + version + "/" + relativePath + ""
-	download := tasks.BtDownload{text, downloadsUrl}
+	download := tasks.BtDownload{Text: text, RelativeLink: downloadsUrl}
 	v, ok := report.Categories[category]
 	var existing []tasks.BtDownload
 	if !ok {
@@ -280,13 +285,13 @@ func ghGetReleaseForTag(apihost, owner, apikey, repo, tagName string, isVerbose 
 }
 
 //POST https://<upload_url>/repos/:owner/:repo/releases/:id/assets?name=foo.zip
-func ghDoUpload(apiHost, apikey, owner, repository, release, relativePath, fullPath, contentType string, isQuiet bool) error {
+func ghDoUpload(apiHost, apikey, owner, repository, release, relativePath, fullPath, contentType string, isVerbose, isQuiet bool) error {
 	//POST /repos/:owner/:repo/releases/:id/assets?name=foo.zip
 	url := apiHost + "/repos/" + owner + "/" + repository + "/releases/" + release + "/assets?name=" + relativePath
 	if !isQuiet {
 		log.Printf("Uploading to %v", url)
 	}
-	resp, err := httpc.UploadFile("POST", url, repository, owner, apikey, fullPath, relativePath, contentType, !isQuiet)
+	resp, err := httpc.UploadFile("POST", url, repository, owner, apikey, fullPath, relativePath, contentType, isVerbose)
 	if err != nil {
 		if serr, ok := err.(httpc.HttpError); ok {
 			if serr.StatusCode == 409 {
@@ -304,33 +309,14 @@ func ghDoUpload(apiHost, apikey, owner, repository, release, relativePath, fullP
 		}
 	}
 	if !isQuiet {
-		log.Printf("File uploaded. (expected empty map[]): %v", resp)
-	}
-	//commaIfRequired := ""
-
-	//_, err = fmt.Fprintf(f, "%s [[%s](%s)]", commaIfRequired, text, downloadsUrl)
-	/*
-		if err != nil {
-			return err
-		}
-		err = ghPublish(apiHost, user, apikey, owner, repository, tp.Settings.GetFullVersionName(), !tp.Settings.IsQuiet())
-	*/return err
-}
-
-/*
-func ghPublish(apihost, user, apikey, owner, repository, version string, isVerbose bool) error {
-	resp, err := httpc.DoHttp("POST", apihost+"/content/"+owner+"/"+repository+"/"+pkg+"/"+version+"/publish", owner, user, apikey, nil, 0, isVerbose)
-	if err == nil {
-		log.Printf("Version published. %v", resp)
+		log.Printf("File uploaded. Response: %v", resp)
 	}
 	return err
 }
-*/
 
-//NOTE: not necessary.
 //POST /repos/:owner/:repo/releases
 func createRelease(apihost, owner, apikey, repo, tagName, version, body string, draft, preRelease, isVerbose bool) error {
-	req := map[string]interface{}{"tag_name": tagName, "name": version, "body": body, "pre-release": preRelease, "draft": draft}
+	req := map[string]interface{}{"tag_name": tagName, "name": version, "body": body, "prerelease": preRelease, "draft": draft}
 	requestData, err := json.Marshal(req)
 	if err != nil {
 		return err
