@@ -113,14 +113,6 @@ func RunTaskPubGH(tp tasks.TaskParams) error {
 		return err
 	}
 	defer out.Close()
-	//	fileheader := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "fileheader")
-	//if fileheader != "" {
-	//_, err = fmt.Fprintf(f, "%s\n\n", fileheader)
-	//}
-	//	_, err = fmt.Fprintf(f, "%s downloads (version %s)\n-------------\n", tp.AppName, tp.Settings.GetFullVersionName())
-	//	if !tp.Settings.IsQuiet() {
-	//		log.Printf("Read directory %s", versionDir)
-	//	}
 	//for 'first entry in dir' detection.
 	dirs := []string{}
 	err = filepath.Walk(versionDir, func(path string, info os.FileInfo, e error) error {
@@ -143,7 +135,7 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 	versionDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
 	relativePath := strings.Replace(fullPath, versionDir, "", -1)
 	relativePath = strings.TrimPrefix(relativePath, "/")
-	fmt.Printf("relative path %s, full path %s\n", relativePath, fullPath)
+	//fmt.Printf("relative path %s, full path %s\n", relativePath, fullPath)
 	if fi2.IsDir() {
 		//check globs ...
 		for _, excludeGlob := range excludeGlobs {
@@ -152,7 +144,7 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 				return err
 			}
 			if ok {
-				if !tp.Settings.IsQuiet() {
+				if tp.Settings.IsVerbose() {
 					log.Printf("Excluded: %s (pattern %v)", relativePath, excludeGlob)
 				}
 				return filepath.SkipDir
@@ -189,7 +181,7 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 		}
 	}
 	if matches == false {
-		if !tp.Settings.IsQuiet() {
+		if tp.Settings.IsVerbose() {
 			log.Printf("Not included: %s (pattern %v)", relativePath, includeResources)
 		}
 		return nil
@@ -200,7 +192,7 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 			return err
 		}
 		if ok {
-			if !tp.Settings.IsQuiet() {
+			if tp.Settings.IsVerbose() {
 				log.Printf("Excluded: %s (pattern %v)", relativePath, excludeGlob)
 			}
 			return nil
@@ -307,8 +299,10 @@ func ghDoUpload(apiHost, apikey, owner, repository, release, relativePath, fullP
 			return err
 		}
 	}
-	if !isQuiet {
+	if isVerbose {
 		log.Printf("File uploaded. Response: %v", resp)
+	} else if !isQuiet {
+		log.Printf("File uploaded.")
 	}
 	return err
 }
