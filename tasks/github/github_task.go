@@ -11,7 +11,6 @@ func init() {
 		DefaultSettings: map[string]interface{}{"owner": "", "apikey": "", "repository": "",
 			"apihost":       "https://api.github.com",
 			"prerelease":    false,
-			"draft":         false,
 			"body":          "Built by goxc",
 			"downloadshost": "https://github.com/",
 			"downloadspage": "github.md",

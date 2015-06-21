@@ -25,7 +25,7 @@ func TestCreateRelease(t *testing.T) {
 		t.Skip("api-key is required to run this integration test")
 	}
 	t.Logf("create release")
-	err := createRelease(apihost, owner, *apikey, repo, tagName, version, "Built by goxc", true, true, isVerbose)
+	err := createRelease(apihost, owner, *apikey, repo, tagName, version, "Built by goxc", true, isVerbose)
 	if err != nil {
 		t.Errorf("Error creating release %v", err)
 	}

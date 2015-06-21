@@ -65,7 +65,6 @@ func RunTaskPubGH(tp tasks.TaskParams) error {
 	format := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "outputFormat")
 	body := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "body")
 	preRelease := tp.Settings.GetTaskSettingBool(tasks.TASK_PUBLISH_GITHUB, "prerelease")
-	draft := tp.Settings.GetTaskSettingBool(tasks.TASK_PUBLISH_GITHUB, "draft")
 	if format == "by-file-extension" {
 		if strings.HasSuffix(outFilename, ".md") || strings.HasSuffix(outFilename, ".markdown") {
 			format = "markdown"
@@ -88,7 +87,7 @@ func RunTaskPubGH(tp tasks.TaskParams) error {
 	}
 	prefix := tp.Settings.GetTaskSettingString(tasks.TASK_TAG, "prefix")
 	tagName := prefix + tp.Settings.GetFullVersionName()
-	err = createRelease(apiHost, owner, apikey, repository, tagName, tp.Settings.GetFullVersionName(), body, draft, preRelease, tp.Settings.IsVerbose())
+	err = createRelease(apiHost, owner, apikey, repository, tagName, tp.Settings.GetFullVersionName(), body, preRelease, tp.Settings.IsVerbose())
 	if err != nil {
 		if serr, ok := err.(httpc.HttpError); ok {
 			if serr.StatusCode == 422 {
@@ -315,8 +314,8 @@ func ghDoUpload(apiHost, apikey, owner, repository, release, relativePath, fullP
 }
 
 //POST /repos/:owner/:repo/releases
-func createRelease(apihost, owner, apikey, repo, tagName, version, body string, draft, preRelease, isVerbose bool) error {
-	req := map[string]interface{}{"tag_name": tagName, "name": version, "body": body, "prerelease": preRelease, "draft": draft}
+func createRelease(apihost, owner, apikey, repo, tagName, version, body string, preRelease, isVerbose bool) error {
+	req := map[string]interface{}{"tag_name": tagName, "name": version, "body": body, "prerelease": preRelease}
 	requestData, err := json.Marshal(req)
 	if err != nil {
 		return err
