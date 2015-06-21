@@ -19,7 +19,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -183,48 +182,6 @@ func goXC(call []string) error {
 	}
 }
 
-//tasks (and task settings) are defined as args after the main flags
-func parseCliTasksAndTaskSettings(args []string) ([]string, map[string]map[string]interface{}, error) {
-	tasks := []string{}
-	taskSettings := map[string]map[string]interface{}{}
-	lastArg := ""
-	lastKey := ""
-	for _, arg := range args {
-		if lastKey != "" {
-			taskSettings[lastArg][lastKey] = arg
-			lastKey = ""
-		} else if strings.HasPrefix(arg, "-") {
-			taskSettings[lastArg] = map[string]interface{}{}
-			if strings.Contains(arg, "=") {
-				splut := strings.Split(arg, "=")
-				key := splut[0][1:]
-				//strip double-hyphen
-				if strings.HasPrefix(key, "-") {
-					key = key[1:]
-				}
-				val := splut[1]
-				taskSettings[lastArg][key] = val
-			} else {
-				key := arg[1:]
-				//strip double-hyphen
-				if strings.HasPrefix(key, "-") {
-					key = key[1:]
-				}
-				lastKey = key
-			}
-
-		} else {
-			tasks = append(tasks, arg)
-			lastArg = arg
-		}
-	}
-	if lastKey != "" {
-		return tasks, taskSettings, errors.New("Received a task setting with no value. Please at least use empty quotes")
-	}
-	//log.Printf("TaskSettings: %+v", taskSettings)
-	return tasks, taskSettings, nil
-}
-
 func flagVisitor(f *flag.Flag) {
 
 	switch f.Name {
@@ -293,7 +250,7 @@ func interpretFlags(call []string) {
 		//settings.Tasks = flagSet.Args()
 
 		//0.10.x: per-task flags
-		settings.Tasks, settings.TaskSettings, err = parseCliTasksAndTaskSettings(flagSet.Args())
+		settings.Tasks, settings.TaskSettings, err = config.ParseCliTasksAndTaskSettings(flagSet.Args())
 		if err != nil {
 			log.Printf("Error parsing arguments: %s", err)
 			os.Exit(1)

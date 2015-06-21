@@ -127,6 +127,23 @@ func MergeMapsStringMapStringInterface(high, low map[string]map[string]interface
 	return high
 }
 
+func AreMapStringMapStringInterfacesEqual(a, b map[string]map[string]interface{}) bool {
+	if a == nil {
+		return b == nil
+	} else {
+		if len(a) != len(b) {
+			return false
+		}
+		for key, aVal := range a {
+			bVal := b[key]
+			if !AreMapsEqual(aVal, bVal) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func AreMapsEqual(a, b map[string]interface{}) bool {
 	if a == nil {
 		return b == nil
