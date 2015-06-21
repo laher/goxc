@@ -285,7 +285,7 @@ func ghDoUpload(apiHost, apikey, owner, repository, release, relativePath, fullP
 	resp, err := httpc.UploadFile("POST", url, repository, owner, apikey, fullPath, relativePath, contentType, isVerbose)
 	if err != nil {
 		if serr, ok := err.(httpc.HttpError); ok {
-			if serr.StatusCode == 409 {
+			if serr.StatusCode == 409 || serr.StatusCode == 422 {
 				//conflict. skip
 				//continue but dont publish.
 				//TODO - provide an option to replace existing artifact
