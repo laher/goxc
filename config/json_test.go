@@ -2,6 +2,7 @@ package config
 
 import (
 	"log"
+	"path/filepath"
 	"testing"
 )
 
@@ -35,6 +36,13 @@ func TestLoadSettings(t *testing.T) {
 	}
 	if !settings.IsVerbose() {
 		t.Fatalf("Verbose flag not set!")
+	}
+}
+
+func TestLoadJsonConfigsInvalid(t *testing.T) {
+	_, err := LoadJsonConfigs("", []string{filepath.Join("testdata", "invalid.goxc.json")}, false)
+	if err == nil {
+		t.Fatalf("invalid.goxc.json was loaded without an error, despite being invalid")
 	}
 }
 

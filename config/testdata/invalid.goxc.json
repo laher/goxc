@@ -1,0 +1,19 @@
+{
+	"AppName": "example",
+	"ArtifactsDest": "release",
+	"OutPath": "foo",
+	"Tasks": [
+		"xc"
+	],
+	"Arch": "amd64",
+	"Os": "linux darwin",
+	"MainDirsExclude": "bar",
+	"ConfigVersion": "0.9",
+	"BuildSettings": {
+		"LdFlagsXVars": {
+			"Version": "baz.Version"
+		},
+		"Tags": "important",
+		"ExtraArgs": "-a"
+	}
+}
