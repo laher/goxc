@@ -294,7 +294,8 @@ func loadSettingsSection(settingsSection map[string]interface{}) (settings Setti
 		case "ConfigVersion":
 			settings.GoxcConfigVersion, err = typeutils.ToString(v, k)
 		case "BuildSettings":
-			m, err := typeutils.ToMap(v, k)
+			var m map[string]interface{}
+			m, err = typeutils.ToMap(v, k)
 			if err == nil {
 				settings.BuildSettings, err = buildSettingsFromMap(m)
 				if err == nil {
