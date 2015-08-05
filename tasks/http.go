@@ -18,11 +18,11 @@ package tasks
 import (
 	"bytes"
 	"fmt"
-	"net/http"
 	"text/template"
 	//Tip for Forkers: please 'clone' from my url and then 'pull' from your url. That way you wont need to change the import path.
 	//see https://groups.google.com/forum/?fromgroups=#!starred/golang-nuts/CY7o2aVNGZY
 	"github.com/laher/goxc/core"
+	"github.com/laher/goxc/tasks/httpc"
 	//"github.com/laher/goxc/typeutils"
 	"log"
 	"os"
@@ -40,7 +40,6 @@ type httpTaskConfig struct {
 	password        string
 	exists          string
 	urlTemplate     *template.Template
-	client          *http.Client
 }
 
 func init() {
@@ -77,7 +76,6 @@ func httpRunTask(tp TaskParams) error {
 		username:        tp.Settings.GetTaskSettingString(TASK_PUBLISH_HTTP, "username"),
 		password:        tp.Settings.GetTaskSettingString(TASK_PUBLISH_HTTP, "password"),
 		urlTemplate:     template,
-		client:          &http.Client{},
 	}
 	versionDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
 	err := filepath.Walk(versionDir, func(path string, info os.FileInfo, e error) error {
@@ -153,7 +151,7 @@ func httpURLTemplateContext(tp TaskParams, fi os.FileInfo) map[string]interface{
 }
 
 func httpExistsFile(config *httpTaskConfig, url string) (bool, error) {
-	res, err := config.client.Head(url)
+	res, err := httpc.DoHttp("HEAD", url, "", config.username, config.password, "", nil, 0, true)
 	if err != nil {
 		return false, err
 	}
@@ -168,11 +166,7 @@ func httpExistsFile(config *httpTaskConfig, url string) (bool, error) {
 }
 
 func httpDeleteFile(config *httpTaskConfig, url string) error {
-	req, err := http.NewRequest("DELETE", url, nil)
-	if err != nil {
-		return err
-	}
-	res, err := config.client.Do(req)
+	res, err := httpc.DoHttp("DELETE", url, "", config.username, config.password, "", nil, 0, true)
 	if err != nil {
 		return err
 	}
@@ -218,14 +212,7 @@ func httpUploadFile(config *httpTaskConfig, fullPath string, fi os.FileInfo, tp 
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest("PUT", url, b)
-	if err != nil {
-		return err
-	}
-	if config.username != "" || config.password != "" {
-		req.SetBasicAuth(config.username, config.password)
-	}
-	res, err := config.client.Do(req)
+	res, err := httpc.DoHttp("PUT", url, "", config.username, config.password, "application/octet-stream", b, fi.Size(), true)
 	if err != nil {
 		return err
 	}
