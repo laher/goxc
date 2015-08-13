@@ -34,7 +34,7 @@ const (
 	RESOURCES_INCLUDE_DEFAULT = "INSTALL*,README*,LICENSE*"
 	RESOURCES_EXCLUDE_DEFAULT = "*.go" //TODO
 	// Main dirs to exclude by default (Godeps!)
-	MAIN_DIRS_EXCLUDE_DEFAULT = "Godeps,testdata"
+	MAIN_DIRS_EXCLUDE_DEFAULT = "Godeps,testdata,_project,vendor"
 
 	OS_DEFAULT              = ""
 	ARCH_DEFAULT            = ""
