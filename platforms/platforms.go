@@ -24,10 +24,12 @@ import (
 )
 
 const (
-	AMD64     = "amd64"
-	AMD64P32  = "amd64p32"
-	X86       = "386"
-	ARM       = "arm"
+	AMD64    = "amd64"
+	AMD64P32 = "amd64p32"
+	X86      = "386"
+	ARM      = "arm"
+	ARM64    = "arm64"
+
 	DARWIN    = "darwin"
 	DRAGONFLY = "dragonfly"
 	FREEBSD   = "freebsd"
@@ -48,7 +50,7 @@ type Platform struct {
 
 var (
 	OSES                    = []string{DARWIN, LINUX, FREEBSD, NETBSD, OPENBSD, PLAN9, WINDOWS, SOLARIS, DRAGONFLY, NACL}
-	ARCHS                   = []string{X86, AMD64, ARM}
+	ARCHS                   = []string{X86, AMD64, ARM, ARM64}
 	SUPPORTED_PLATFORMS_1_0 = []Platform{
 		Platform{DARWIN, X86},
 		Platform{DARWIN, AMD64},
@@ -76,13 +78,21 @@ var (
 	NEW_PLATFORMS_1_4 = []Platform{
 		Platform{NACL, ARM},
 	}
+	NEW_PLATFORMS_1_5 = []Platform{
+		Platform{PLAN9, AMD64},
+		//	Platform{DARWIN, ARM}, <-- requires admin rights and special IOS stuffs. Same for DARWIN/ARM64
+	}
 
 	SUPPORTED_PLATFORMS_1_1 = append(append([]Platform{}, SUPPORTED_PLATFORMS_1_0...), NEW_PLATFORMS_1_1...)
-	SUPPORTED_PLATFORMS_1_3 = append(SUPPORTED_PLATFORMS_1_1, NEW_PLATFORMS_1_3...)
-	SUPPORTED_PLATFORMS_1_4 = append(SUPPORTED_PLATFORMS_1_3, NEW_PLATFORMS_1_4...)
+	SUPPORTED_PLATFORMS_1_3 = append(append([]Platform{}, SUPPORTED_PLATFORMS_1_1...), NEW_PLATFORMS_1_3...)
+	SUPPORTED_PLATFORMS_1_4 = append(append([]Platform{}, SUPPORTED_PLATFORMS_1_3...), NEW_PLATFORMS_1_4...)
+	SUPPORTED_PLATFORMS_1_5 = append(append([]Platform{}, SUPPORTED_PLATFORMS_1_4...), NEW_PLATFORMS_1_5...)
 )
 
 func getSupportedPlatforms() []Platform {
+	if strings.HasPrefix(runtime.Version(), "go1.5") {
+		return SUPPORTED_PLATFORMS_1_5
+	}
 	if strings.HasPrefix(runtime.Version(), "go1.4") {
 		return SUPPORTED_PLATFORMS_1_4
 	}
