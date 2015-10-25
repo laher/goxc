@@ -104,7 +104,7 @@ func resolveToFiles(item string) ([]string, error) {
 func dirToFiles(dir string) ([]string, error) {
 	files := []string{}
 	err := filepath.Walk(dir, func(path string, fi os.FileInfo, err error) error {
-		if !fi.IsDir() {
+		if fi != nil && !fi.IsDir() {
 			files = append(files, path)
 		}
 		return nil
