@@ -70,7 +70,7 @@ var (
 		Platform{NETBSD, ARM},
 		Platform{PLAN9, X86}}
 	NEW_PLATFORMS_1_3 = []Platform{
-		Platform{DRAGONFLY, X86},
+		//	Platform{DRAGONFLY, X86}, <-- no longer supported even by dragonfly
 		Platform{DRAGONFLY, AMD64},
 		Platform{NACL, X86},
 		Platform{NACL, AMD64P32},
