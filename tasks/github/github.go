@@ -163,7 +163,7 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 	apikey := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "apikey")
 	repository := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "repository")
 	apiHost := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "apihost")
-	uploadApiHost := "https://uploads.github.com"
+	//uploadApiHost := "https://uploads.github.com"
 	downloadsHost := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "downloadshost")
 	includeResources := tp.Settings.GetTaskSettingString(tasks.TASK_PUBLISH_GITHUB, "include")
 
@@ -220,7 +220,7 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 
 	prefix := tp.Settings.GetTaskSettingString(tasks.TASK_TAG, "prefix")
 	tagName := prefix + version
-	release, err := ghGetReleaseForTag(apiHost, owner, apikey, repository, tagName, isVerbose)
+	release, uploadApiHost, err := ghGetReleaseForTag(apiHost, owner, apikey, repository, tagName, isVerbose)
 	if err != nil {
 		return err
 	}
@@ -252,33 +252,40 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 	return err
 }
 
-func ghGetReleaseForTag(apihost, owner, apikey, repo, tagName string, isVerbose bool) (string, error) {
+func ghGetReleaseForTag(apihost, owner, apikey, repo, tagName string, isVerbose bool) (string, string, error) {
 	r, err := httpc.DoHttp("GET", apihost+"/repos/"+owner+"/"+repo+"/releases/tags/"+tagName, "", owner, apikey, "", nil, 0, isVerbose)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	i, err := httpc.ParseMap(r, isVerbose)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	var id string
 	idI, ok := i["id"]
 	if !ok {
-		return "", fmt.Errorf("Id not provided")
+		return "", "", fmt.Errorf("Id not provided")
 	}
 	switch i := idI.(type) {
 	case float64:
 		id = fmt.Sprintf("%0.f", i)
 	default:
-		return "", fmt.Errorf("ID not a float")
+		return "", "", fmt.Errorf("ID not a float")
 	}
-	return id, err
+
+	uploadURLi, ok := i["upload_url"]
+	if !ok {
+		return "", "", fmt.Errorf("Upload URL not provided")
+	}
+	uploadURL := uploadURLi.(string)
+	uploadURL = strings.Split(uploadURL, "{")[0]
+	return id, uploadURL, err
 }
 
 //POST https://<upload_url>/repos/:owner/:repo/releases/:id/assets?name=foo.zip
 func ghDoUpload(apiHost, apikey, owner, repository, release, relativePath, fullPath, contentType string, isVerbose, isQuiet bool) error {
 	//POST /repos/:owner/:repo/releases/:id/assets?name=foo.zip
-	url := apiHost + "/repos/" + owner + "/" + repository + "/releases/" + release + "/assets?name=" + relativePath
+	url := apiHost + "?name=" + relativePath
 	if !isQuiet {
 		log.Printf("Uploading to %v", url)
 	}
