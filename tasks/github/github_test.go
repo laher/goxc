@@ -36,11 +36,11 @@ func TestGetTagRelease(t *testing.T) {
 	if *apikey == "" {
 		t.Skip("api-key is required to run this integration test")
 	}
-	id, err := ghGetReleaseForTag(apihost, owner, *apikey, repo, tagName, isVerbose)
+	id, uploadURL, err := ghGetReleaseForTag(apihost, owner, *apikey, repo, tagName, isVerbose)
 	if err != nil {
 		t.Errorf("Error getting release %v", err)
 	}
-	t.Logf("ID: %s", id)
+	t.Logf("ID: %s uploadURL: %s", id, uploadURL)
 }
 
 func TestGetReleases(t *testing.T) {
