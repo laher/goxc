@@ -134,6 +134,7 @@ func ghWalkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename stri
 	excludeGlobs := core.ParseCommaGlobs(excludeResources)
 	versionDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
 	relativePath := strings.Replace(fullPath, versionDir, "", -1)
+	relativePath = strings.Replace(relativePath, "\\", "/", -1)
 	relativePath = strings.TrimPrefix(relativePath, "/")
 	//fmt.Printf("relative path %s, full path %s\n", relativePath, fullPath)
 	if fi2.IsDir() {

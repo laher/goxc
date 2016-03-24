@@ -95,7 +95,9 @@ func httpWalk(config *httpTaskConfig, fullPath string, fi os.FileInfo, err error
 		return nil
 	}
 	versionDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
-	relativePath := strings.TrimPrefix(strings.Replace(fullPath, versionDir, "", -1), "/")
+	relativePath := strings.Replace(fullPath, versionDir, "", -1)
+	relativePath = strings.Replace(relativePath, "\\", "/", -1)
+	relativePath = strings.TrimPrefix(relativePath, "/")
 	if !tp.Settings.IsQuiet() {
 		log.Printf("Considering %s", relativePath)
 	}
