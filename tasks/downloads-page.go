@@ -159,6 +159,7 @@ func downloadsWalkFunc(fullPath string, Version string, fi2 os.FileInfo, err err
 
 	versionDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
 	relativePath := strings.Replace(fullPath, versionDir, "", -1)
+	relativePath = strings.Replace(relativePath, "\\", "/", -1)
 	relativePath = strings.TrimPrefix(relativePath, "/")
 	text := fi2.Name()
 	if format == "markdown" {

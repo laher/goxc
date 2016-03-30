@@ -186,6 +186,7 @@ func walkFunc(fullPath string, fi2 os.FileInfo, err error, reportFilename string
 	versionDir := filepath.Join(tp.OutDestRoot, tp.Settings.GetFullVersionName())
 
 	relativePath := strings.Replace(fullPath, versionDir, "", -1)
+	relativePath = strings.Replace(relativePath, "\\", "/", -1)
 	relativePath = strings.TrimPrefix(relativePath, "/")
 	fmt.Printf("relative path %s, full path %s\n", relativePath, fullPath)
 
