@@ -139,6 +139,12 @@ If non-archived, artifacts generated into a directory structure as follows:
 
  (outputdir)/(version)/(OS)\_(ARCH)/(appname)(.exe?)
 
+Be careful if you want to build a project with multiple executables. You need to add `{{.ExeName}}` to your `OutPath`-setting in your '.goxc.json'. So it may look like the following code snippet.
+
+```
+"OutPath": "{{.Dest}}{{.PS}}{{.AppName}}{{.PS}}{{.Version}}{{.PS}}{{.ExeName}}_{{.Version}}_{{.Os}}_{{.Arch}}{{.Ext}}"
+``
+
 Configuration file
 -----------------
 
