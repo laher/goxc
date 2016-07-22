@@ -1,6 +1,10 @@
 goxc  [![build status](http://img.shields.io/travis/laher/goxc.svg)](https://travis-ci.org/laher/goxc)
 ====
 
+_NOTE: goxc has long been in maintenance mode. Ever since Go1.5 supported simple cross-compilation, this tool lost much of its value. There are still many aspects of goxc which I'm very proud of, and some packaging features in particular, which are still useful. I'm very much a go user, but I myself haven't had any need for goxc for a long while._
+
+_If you see something you'd like to add to goxc, please go ahead, fork and PR. Good PRs will earn you commit access to the repo. Thanks for everyone's help over the years._
+
 [goxc](https://github.com/laher/goxc) is a build tool for Go, with a focus on cross-compiling and packaging.
 
 
