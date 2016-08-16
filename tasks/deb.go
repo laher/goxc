@@ -197,9 +197,6 @@ func debBuild(dest platforms.Platform, tp TaskParams) error {
 	}
 	//'dev' Package should be a separate task
 	addDevPackage := false
-	/*
-		pkg := deb.NewPackage(tp.AppName, tp.Settings.GetFullVersionName(), maintainer, description)
-		pkg.AdditionalControlData = metadataDeb*/
 
 	build := debgen.NewBuildParams()
 	build.DestDir = debDir
@@ -212,6 +209,11 @@ func debBuild(dest platforms.Platform, tp TaskParams) error {
 	if os.IsNotExist(err) {
 		log.Printf("WARNING - no debian 'control' file found. Use `debber` to generate proper debian metadata")
 		ctrl = deb.NewControlDefault(tp.AppName, maintainerName, maintainerEmail, shortDescription, longDescription, addDevPackage)
+		for _, c := range *ctrl {
+			for k, v := range metadataDeb {
+				c.Set(k, v)
+			}
+		}
 	} else if err != nil {
 		return fmt.Errorf("%v", err)
 	} else {
