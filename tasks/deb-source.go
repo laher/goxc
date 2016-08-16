@@ -90,6 +90,7 @@ func init() {
 			},
 			"rmtemp":              true,
 			"go-sources-dir":      ".",
+			"resources-dir":       "",
 			"other-mappped-files": map[string]interface{}{},
 		}})
 }
@@ -216,8 +217,15 @@ func debSourceBuild(tp TaskParams) (err error) {
 	build := debgen.NewBuildParams()
 	build.DestDir = debDir
 	build.TmpDir = tmpDir
-	build.Init()
+	if err = build.Init(); err != nil {
+		return err
+	}
 	build.IsRmtemp = rmtemp
+
+	if resDir := tp.Settings.GetTaskSettingString(TASK_DEB_GEN, "resources-dir"); resDir != "" {
+		build.ResourcesDir = resDir
+	}
+
 	var ctrl *deb.Control
 	//Read control data. If control file doesnt exist, use parameters ...
 	fi, err := os.Open(filepath.Join(build.DebianDir, "control"))

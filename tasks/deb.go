@@ -41,8 +41,8 @@ func init() {
 		runTaskDebGen,
 		map[string]interface{}{
 			"metadata": map[string]interface{}{
-				"maintainer":      "unknown",
-				"maintainerEmail": "unknown@example.com",
+				"maintainer":       "unknown",
+				"maintainer-email": "unknown@example.com",
 			},
 			"metadata-deb": map[string]interface{}{"Depends": "",
 				"Build-Depends": "debhelper (>=4.0.0), golang-go, gcc",
@@ -50,6 +50,7 @@ func init() {
 			"rmtemp":              true,
 			"armarch":             "",
 			"go-sources-dir":      ".",
+			"resources-dir":       "",
 			"other-mappped-files": map[string]interface{}{},
 			"bin-dir":             "/usr/bin",
 		},
@@ -204,8 +205,15 @@ func debBuild(dest platforms.Platform, tp TaskParams) error {
 	build := debgen.NewBuildParams()
 	build.DestDir = debDir
 	build.TmpDir = tmpDir
-	build.Init()
+	if err = build.Init(); err != nil {
+		return err
+	}
 	build.IsRmtemp = rmtemp
+
+	if resDir := tp.Settings.GetTaskSettingString(TASK_DEB_GEN, "resources-dir"); resDir != "" {
+		build.ResourcesDir = resDir
+	}
+
 	var ctrl *deb.Control
 	//Read control data. If control file doesnt exist, use parameters ...
 	fi, err := os.Open(filepath.Join(build.DebianDir, "control"))
