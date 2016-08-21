@@ -42,9 +42,10 @@ const (
 	TASK_GO_TEST = "go-test"
 	TASK_GO_FMT  = "go-fmt"
 
-	TASK_GO_INSTALL = "go-install"
-	TASK_XC         = "xc"
-	TASK_CODESIGN   = "codesign"
+	TASK_GO_INSTALL  = "go-install"
+	TASK_XC          = "xc"
+	TASK_CODESIGN    = "codesign"
+	TASK_RICE_APPEND = "rice-append"
 
 	TASK_COPY_RESOURCES = "copy-resources"
 	TASK_ARCHIVE_ZIP    = "archive-zip"
@@ -78,7 +79,7 @@ var (
 	TASKS_PKG_SOURCE                  = []string{TASK_DEB_SOURCE}
 	TASKS_VALIDATE                    = []string{TASK_GO_VET, TASK_GO_TEST}
 	TASKS_DEFAULT                     = append(append(append([]string{}, TASKS_VALIDATE...), TASKS_COMPILE...), TASKS_PACKAGE...)
-	TASKS_OTHER                       = []string{TASK_BUILD_TOOLCHAIN, TASK_GO_FMT, TASK_PUBLISH_GITHUB}
+	TASKS_OTHER                       = []string{TASK_BUILD_TOOLCHAIN, TASK_GO_FMT, TASK_RICE_APPEND, TASK_PUBLISH_GITHUB}
 	TASKS_ALL                         = append(append([]string{}, TASKS_OTHER...), TASKS_DEFAULT...)
 	TASK_ALIASES_FOR_MERGING_SETTINGS = map[string][]string{TASKALIAS_PKG_BUILD: TASKS_PKG_BUILD, TASKALIAS_PKG_SOURCE: TASKS_PKG_SOURCE, TASKALIAS_DEBS: TASKS_DEBS}
 
