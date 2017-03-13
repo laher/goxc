@@ -147,7 +147,7 @@ Be careful if you want to build a project with multiple executables. You need to
 
 ```
 "OutPath": "{{.Dest}}{{.PS}}{{.AppName}}{{.PS}}{{.Version}}{{.PS}}{{.ExeName}}_{{.Version}}_{{.Os}}_{{.Arch}}{{.Ext}}"
-``
+```
 
 Configuration file
 -----------------
