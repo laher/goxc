@@ -128,7 +128,9 @@ func debDevBuild(tp TaskParams) error {
 	build := debgen.NewBuildParams()
 	build.DestDir = debDir
 	build.TmpDir = tmpDir
-	build.Init()
+	if err = build.Init(); err != nil {
+		return err
+	}
 	build.IsRmtemp = rmtemp
 	var ctrl *deb.Control
 	//Read control data. If control file doesnt exist, use parameters ...
