@@ -311,8 +311,6 @@ func publish(apihost, user, apikey, subject, repository, pkg, version string, is
 	return err
 }
 
-
-
 //NOTE: not necessary.
 //POST /packages/:subject/:repo/:package/versions
 func createVersion(apihost, user, apikey, subject, repository, pkg, version string, isVerbose bool) error {
