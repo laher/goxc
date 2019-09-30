@@ -152,7 +152,7 @@ Be careful if you want to build a project with multiple executables. You need to
 Configuration file
 -----------------
 
-For repeatable builds (and some extra options), it is recomended to use goxc with one or more configuration file(s) to save and re-run compilations.
+For repeatable builds (and some extra options), it is recommended to use goxc with one or more configuration file(s) to save and re-run compilations.
 
 To create a config file (`.goxc.json`), just use the -wc (write config) option.
 
